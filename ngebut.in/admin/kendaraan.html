@@ -56,39 +56,39 @@
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-      <div class="page-header">
+      <div class="page-header glass" style="padding: 1.5rem; border-radius: var(--radius-xl); margin-bottom: 2.5rem;">
         <div class="page-title">
-          <h1>Kelola Kendaraan</h1>
-          <p>Tambah, edit, dan atur status kendaraan rental</p>
+          <h1 style="background: linear-gradient(to right, var(--secondary), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Kelola Kendaraan</h1>
+          <p>Tambah, edit, dan atur status kendaraan rental Anda.</p>
         </div>
-        <button class="btn btn-primary" onclick="openAddModal()">
+        <button class="btn btn-primary" onclick="openAddModal()" style="padding: 0.8rem 2rem; border-radius: 12px; box-shadow: var(--shadow-primary);">
           <i class="fas fa-plus"></i> Tambah Motor
         </button>
       </div>
 
       <!-- FILTER BAR -->
-      <div class="filter-bar">
-        <div class="search-box">
+      <div class="filter-bar glass" style="padding: 1.25rem; border-radius: var(--radius-lg); margin-bottom: 2.5rem; border: 1px solid rgba(255,255,255,0.5);">
+        <div class="search-box" style="flex: 1; min-width: 300px;">
           <i class="fas fa-search" style="color: var(--gray-400)"></i>
           <input
             type="text"
             id="searchInput"
-            placeholder="Cari motor..."
+            placeholder="Cari model atau merk motor..."
             onkeyup="renderMotorList()"
           />
-          <button onclick="renderMotorList()">Cari</button>
+          <button class="btn btn-primary" onclick="renderMotorList()" style="border-radius: 10px;">Cari</button>
         </div>
-        <div class="filter-tabs">
-          <button class="filter-tab active" onclick="setFilter('all')">
+        <div class="filter-tabs" style="background: var(--gray-100); padding: 5px; border-radius: 12px;">
+          <button class="filter-tab active" onclick="setFilter('all')" style="border-radius: 10px;">
             Semua
           </button>
-          <button class="filter-tab" onclick="setFilter('available')">
+          <button class="filter-tab" onclick="setFilter('available')" style="border-radius: 10px;">
             Tersedia
           </button>
-          <button class="filter-tab" onclick="setFilter('booked')">
+          <button class="filter-tab" onclick="setFilter('booked')" style="border-radius: 10px;">
             Disewa
           </button>
-          <button class="filter-tab" onclick="setFilter('service')">
+          <button class="filter-tab" onclick="setFilter('service')" style="border-radius: 10px;">
             Service
           </button>
         </div>

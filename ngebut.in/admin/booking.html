@@ -250,17 +250,21 @@
                 return;
             }
 
-            let csvContent = "\uFEFF"; 
+            // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
+            let csvContent = "\uFEFFsep=,\n"; 
             csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga,Status\n";
 
             bookings.forEach(b => {
                 const days = calculateDays(b.startDate, b.endDate);
+                const tglSewa = b.startDate ? b.startDate.split('T')[0] : '-';
+                const tglKembali = b.endDate ? b.endDate.split('T')[0] : '-';
+
                 const row = [
                     `#${b.id.toString().slice(-6)}`,
                     `"${b.userName}"`,
                     `"${b.motorName}"`,
-                    b.startDate,
-                    b.endDate,
+                    tglSewa,
+                    tglKembali,
                     `${days} Hari`,
                     b.totalHarga,
                     b.status.toUpperCase()
