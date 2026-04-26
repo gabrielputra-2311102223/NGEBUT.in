@@ -138,51 +138,80 @@
         const tarif = booking.totalHarga / days;
 
         document.getElementById("invoiceContent").innerHTML = `
-            <div>
-                <div style="display:flex; justify-content:space-between;">
+            <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; background: white; color: #1a1a1a; max-width: 800px; margin: auto; border: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px;">
                     <div>
-                        <h2><span style="color:#cc0000;">NGEBUT</span>.IN</h2>
-                        <p style="line-height:1.8;">
-                            Jalan DI Panjaitan No. 128<br>
+                        <img src="../assets/img/logo.png" alt="Ngebut.in" style="height: 60px; margin-bottom: 15px; mix-blend-mode: multiply;">
+                        <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
+                            Jl. DI Panjaitan No. 128<br>
                             Purwokerto Selatan, Banyumas<br>
                             Telp: (022) 123-4567<br>
                             Halo@ngebut.in
                         </p>
                     </div>
-                    <div style="text-align:right;">
-                        <h2>KUITANSI SEWA</h2>
-                        <p>INVOICE: #${booking.id.toString().slice(-6)}</p>
-                        <p>TANGGAL: ${new Date().toLocaleDateString("id-ID", {day: "2-digit", month: "2-digit", year: "numeric"})}</p>
+                    <div style="text-align: right;">
+                        <h1 style="margin: 0; color: #cc0000; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">KUITANSI</h1>
+                        <p style="font-size: 16px; font-weight: 600; margin: 5px 0 0;">#${booking.id.toString().slice(-6)}</p>
+                        <p style="font-size: 14px; color: #666; margin: 5px 0 0;">${formatDate(new Date())}</p>
                     </div>
                 </div>
-                <hr style="margin:25px 0;">
-                <div style="border-left:5px solid #cc0000;padding-left:15px;">
-                    <h3>Informasi Penyewa</h3>
-                    <p><b>Nama:</b> ${booking.userName}</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; padding: 25px; background: #f9fafb; border-radius: 12px;">
+                    <div>
+                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Ditujukan Kepada</h4>
+                        <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.userName}</p>
+                        <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Penyewa Terverifikasi</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Status Pembayaran</h4>
+                        <span style="display: inline-block; padding: 6px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-weight: 700; font-size: 12px;">LUNAS</span>
+                    </div>
                 </div>
-                <table style="width:100%;margin-top:30px;border-collapse:collapse;text-align:left;">
-                    <tr style="color:#999;">
-                        <th>Kendaraan</th>
-                        <th>Ambil</th>
-                        <th>Kembali</th>
-                        <th>Durasi</th>
-                        <th>Total</th>
-                    </tr>
-                    <tr style="border-top:1px solid #ddd;">
-                        <td><b>${booking.motorName}</b></td>
-                        <td>${formatShortDate(booking.startDate)}</td>
-                        <td>${formatShortDate(booking.endDate)}</td>
-                        <td>${days} Hari</td>
-                        <td><b>${formatRupiah(booking.totalHarga)}</b></td>
-                    </tr>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #1a1a1a;">
+                            <th style="text-align: left; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Deskripsi Unit</th>
+                            <th style="text-align: center; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Durasi</th>
+                            <th style="text-align: right; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 25px 0;">
+                                <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.motorName}</p>
+                                <p style="margin: 5px 0 0; color: #666; font-size: 13px;">Sewa Motor ${formatShortDate(booking.startDate)} - ${formatShortDate(booking.endDate)}</p>
+                            </td>
+                            <td style="text-align: center; padding: 25px 0; font-weight: 600;">${days} Hari</td>
+                            <td style="text-align: right; padding: 25px 0; font-weight: 700; font-size: 16px;">${formatRupiah(booking.totalHarga)}</td>
+                        </tr>
+                    </tbody>
                 </table>
-                <div style="text-align:right; margin-top:40px;">
-                    <p style="margin-bottom:5px; font-size:14px; color:#666;">GRAND TOTAL</p>
-                    <h2 style="color:#cc0000; font-size:28px; margin:0;">${formatRupiah(booking.totalHarga)}</h2>
+
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 60px;">
+                    <div style="width: 250px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                            <span style="color: #666;">Subtotal</span>
+                            <span style="font-weight: 600;">${formatRupiah(booking.totalHarga)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-top: 15px; border-top: 2px solid #1a1a1a;">
+                            <span style="font-weight: 800; font-size: 18px;">TOTAL</span>
+                            <span style="font-weight: 800; font-size: 18px; color: #cc0000;">${formatRupiah(booking.totalHarga)}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="invoice-footer" style="margin-top: 40px; font-size: 12px; color: #888;">
-                    Dokumen ini sah dikeluarkan oleh Sistem Ngebut.in.<br>
-                    Terima kasih telah mempercayakan perjalanan Anda kepada Ngebut.in 🚀
+
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: #999;">
+                    <div>
+                        <p style="margin: 0;"><b>Catatan:</b></p>
+                        <p style="margin: 5px 0 0;">Kuitansi ini adalah bukti pembayaran yang sah dan dihasilkan secara otomatis oleh sistem.</p>
+                    </div>
+                    <div style="text-align: center; min-width: 150px;">
+                        <div style="margin-bottom: 10px; height: 40px;">
+                             <img src="../assets/img/logo.png" style="height: 30px; opacity: 0.3; filter: grayscale(1);">
+                        </div>
+                        <p style="margin: 0; font-weight: 700; color: #666;">NGEBUT.IN OFFICIAL</p>
+                    </div>
                 </div>
             </div>
         `;
