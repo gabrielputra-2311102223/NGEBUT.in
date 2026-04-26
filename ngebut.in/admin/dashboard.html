@@ -363,10 +363,6 @@
             csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Total Harga,Status\\n";
 
             bookings.forEach(b => {
-                const row = [
-                    b.id,
-                    `"${b.userName}"`,
-                    `"${b.motorName}"`,
                 csvContent += `${b.id},${b.userName},${b.motorName},${b.startDate},${b.endDate},${b.totalHarga},${b.status}\n`;
             });
 
