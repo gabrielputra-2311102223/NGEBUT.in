@@ -97,3 +97,22 @@ function checkReturnNotifications(userId) {
     
     return notifications;
 }
+
+// Sidebar toggle logic for mobile
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (sidebarToggle && sidebar && overlay) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-active');
+            overlay.classList.remove('active');
+        });
+    }
+});

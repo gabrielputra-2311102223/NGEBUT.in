@@ -367,12 +367,7 @@
                     b.id,
                     `"${b.userName}"`,
                     `"${b.motorName}"`,
-                    b.startDate,
-                    b.endDate,
-                    b.totalHarga,
-                    b.status
-                ].join(",");
-                csvContent += row + "\\n";
+                csvContent += `${b.id},${b.userName},${b.motorName},${b.startDate},${b.endDate},${b.totalHarga},${b.status}\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -386,28 +381,6 @@
 
         renderDashboard();
         setInterval(renderDashboard, 5000);
-    </script>
-    <script>
-        // Sidebar Toggle Logic
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const sidebar = document.querySelector('.sidebar');
-
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                sidebar.classList.add('mobile-active');
-                sidebarOverlay.classList.add('active');
-            });
-        }
-
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', () => {
-                sidebar.classList.remove('mobile-active');
-                sidebarOverlay.classList.remove('active');
-            });
-        }
-
-        // Dashboard Stats Logic... (keep original)
     </script>
 </body>
 </html>
