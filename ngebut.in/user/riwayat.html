@@ -97,7 +97,7 @@
         const allBookings = getBooking();
 
         const bookings = allBookings.filter(b => 
-            b.userId === user.id && 
+            String(b.userId) === String(user.id) && 
             ['done', 'cancelled'].includes(b.status)
         );
         

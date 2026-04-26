@@ -98,6 +98,11 @@ function checkReturnNotifications(userId) {
     return notifications;
 }
 
+// Auto update status (placeholder for now)
+function syncAutoDone() {
+    // Logic to auto-complete bookings can be added here
+}
+
 // Sidebar toggle logic for mobile
 document.addEventListener('DOMContentLoaded', () => {
     const sidebarToggle = document.getElementById('sidebarToggle');

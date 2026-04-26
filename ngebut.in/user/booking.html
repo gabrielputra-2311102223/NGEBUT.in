@@ -100,8 +100,9 @@
 
         function renderBookings() {
             syncAutoDone();
-            const bookings = getBooking().filter(b => 
-                b.userId === user.id && 
+            const allBookings = getBooking();
+            const bookings = allBookings.filter(b => 
+                String(b.userId) === String(user.id) && 
                 ['confirm', 'booked', 'paid'].includes(b.status)
             );
             
