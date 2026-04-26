@@ -51,6 +51,9 @@
             </div>
         </div>
 
+        <!-- ACTIVE RENTAL AREA (NEW) -->
+        <div id="activeRentalArea"></div>
+
         <!-- NOTIFICATION AREA -->
         <div id="notificationArea"></div>
 
@@ -350,10 +353,65 @@
         if (e.target === this) closeModal();
     });
 
+    // RENDER ACTIVE RENTALS
+    function renderActiveRentals() {
+        const bookings = getBooking().filter(b => 
+            String(b.userId) === String(user.id) && b.status === 'paid'
+        );
+        const area = document.getElementById('activeRentalArea');
+        
+        if (bookings.length > 0) {
+            area.innerHTML = `
+                <div style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); border-left: 5px solid var(--success); margin-bottom: 2rem; box-shadow: var(--shadow-md);">
+                    <h3 style="margin-bottom: 1rem; color: var(--secondary);">
+                        <i class="fas fa-motorcycle" style="color: var(--success);"></i> Sewa Aktif Kamu
+                    </h3>
+                    ${bookings.map(b => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--gray-50); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>${b.motorName}</strong><br>
+                                <small style="color: var(--gray-500);">Sampai: ${new Date(b.endDate).toLocaleDateString('id-ID')}</small>
+                            </div>
+                            <button class="btn btn-sm" style="background: var(--success); color: white; border-radius: 50px; padding: 8px 20px;" onclick="kembalikanMotor(${b.id}, this)">
+                                <i class="fas fa-undo"></i> Selesai Sewa
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            area.innerHTML = '';
+        }
+    }
+
+    async function kembalikanMotor(bookingId, btn) {
+        if (!confirm('Apakah Anda yakin sudah selesai menyewa dan ingin mengembalikan motor ini?')) return;
+        
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
+
+        const success = updateBookingStatus(bookingId, 'returning');
+        if (success) {
+            alert('✅ Permintaan pengembalian dikirim! Silakan hubungi admin untuk pengecekan fisik motor.');
+            renderActiveRentals();
+            renderKatalog();
+        } else {
+            alert('❌ Gagal memproses pengembalian.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
     // Initialize
+    renderActiveRentals();
     checkNotifications();
     renderKatalog();
 
-    // AUTO REFRESH NOTIF
-    setInterval(checkNotifications, 10000);
+    // AUTO REFRESH
+    setInterval(() => {
+        renderActiveRentals();
+        checkNotifications();
+        renderKatalog();
+    }, 10000);
 </script>

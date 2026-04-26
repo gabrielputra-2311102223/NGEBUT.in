@@ -140,8 +140,8 @@ app.put('/api/bookings/:id/status', async (req, res) => {
         // 3. Update Motor Status accordingly
         if (motorId) {
             let motorStatus = 'available';
-            if (status === 'booked' || status === 'paid') motorStatus = 'booked';
-            else if (status === 'confirm') motorStatus = 'available'; // actually already available
+            if (status === 'booked' || status === 'paid' || status === 'returning') motorStatus = 'booked';
+            else if (status === 'done' || status === 'confirm' || status === 'cancelled') motorStatus = 'available';
             
             await pool.request()
                 .input('id', sql.Int, motorId)

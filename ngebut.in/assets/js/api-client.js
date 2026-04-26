@@ -170,7 +170,7 @@ function updateBookingStatus(id, status) {
 function checkReturnNotifications(userId) {
     try {
         const bookings = getBooking().filter(b => 
-            b.userId === userId && b.status === 'paid'
+            String(b.userId) === String(userId) && b.status === 'paid'
         );
         const now = new Date();
         now.setHours(0, 0, 0, 0);

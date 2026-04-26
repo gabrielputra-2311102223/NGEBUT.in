@@ -99,10 +99,9 @@
             }
         }
 
-        async function kembalikanMotor(bookingId) {
+        async function kembalikanMotor(bookingId, btn) {
             if (!confirm('Apakah Anda yakin sudah selesai menyewa dan ingin mengembalikan motor ini?')) return;
             
-            const btn = event.target;
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
@@ -143,7 +142,7 @@
                 
                 if (b.status === 'paid') {
                     aksiHtml = `
-                        <button class="btn btn-sm" style="background: var(--success); color: white; border-radius: 20px; padding: 5px 15px;" onclick="kembalikanMotor(${b.id})">
+                        <button class="btn btn-sm" style="background: var(--success); color: white; border-radius: 20px; padding: 5px 15px;" onclick="kembalikanMotor(${b.id}, this)">
                             <i class="fas fa-undo"></i> Selesai Sewa
                         </button>
                     `;
