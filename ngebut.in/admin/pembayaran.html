@@ -141,7 +141,7 @@
               b.status === "confirm", // jaga-jaga juga
           );
         } else {
-          bookings = bookings.filter((b) => b.status === "paid");
+          bookings = bookings.filter((b) => b.status === "paid" || b.status === "done");
         }
 
         if (bookings.length === 0) {
@@ -219,19 +219,16 @@
       function confirmPayment(bookingId) {
         if (!confirm("Konfirmasi pembayaran untuk booking ini?")) return;
 
-        let bookings = getBooking();
-        const booking = bookings.find((b) => String(b.id) === String(bookingId));
-        if (!booking) return;
+        // Gunakan API untuk update status
+        const success = updateBookingStatus(bookingId, "paid");
 
-        booking.status = "paid";
-        booking.paidAt = new Date().toISOString();
-
-        saveBooking(bookings);
-
-        alert("✅ Pembayaran berhasil dikonfirmasi!");
-
-        renderPayments();
-        showInvoice(bookingId);
+        if (success) {
+            alert("✅ Pembayaran berhasil dikonfirmasi!");
+            renderPayments();
+            showInvoice(bookingId);
+        } else {
+            alert("❌ Gagal mengonfirmasi pembayaran. Silakan coba lagi.");
+        }
       }
 
       // ✅ KUITANSI FINAL
