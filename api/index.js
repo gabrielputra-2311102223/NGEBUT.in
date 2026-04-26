@@ -11,17 +11,7 @@ app.use(bodyParser.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ngebutin_super_secret_123';
 
-// --- DATABASE MIGRATION ---
-const runMigration = async () => {
-    try {
-        const pool = await poolPromise;
-        await pool.request().query("ALTER TABLE Motors ALTER COLUMN gambar NVARCHAR(MAX)");
-        console.log("Migration: Motors.gambar is now NVARCHAR(MAX)");
-    } catch (err) {
-        // Abaikan jika sudah MAX atau kolom tidak ada
-    }
-};
-runMigration();
+
 
 // --- AUTH ROUTES ---
 
