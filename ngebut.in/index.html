@@ -13,7 +13,7 @@
     <!-- NAVBAR -->
     <nav class="navbar">
       <a href="index.html" class="logo" style="display: flex; align-items: center; justify-content: center;">
-        <img src="/assets/img/logo.png" alt="Ngebut.in Logo" style="height: 50px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+        <img src="assets/img/logo.png" alt="Ngebut.in Logo" style="height: 50px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
       </a>
       <div class="nav-links">
         <a href="#catalog" class="nav-link">Motor</a>
@@ -21,7 +21,7 @@
         <a href="#how-it-works" class="nav-link">Cara Kerja</a>
         <a href="#contact" class="nav-link">Kontak</a>
       </div>
-      <div class="nav-buttons">
+      <div class="nav-buttons" id="navAuthButtons">
         <a href="login.html" class="btn btn-outline">Masuk</a>
         <a href="register.html" class="btn btn-primary">Daftar</a>
       </div>
@@ -521,7 +521,34 @@
         window.location.href = "user/dashboard.html";
       }
 
-      window.onload = renderKatalog;
+      function updateNavbar() {
+        const user = ApiClient.getCurrentUser();
+        const desktopButtons = document.getElementById("navAuthButtons");
+        const mobileLinks = document.getElementById("mobileMenu").querySelector(".mobile-links");
+
+        if (user) {
+          const dashboardUrl = user.role === 'admin' ? 'admin/dashboard.html' : 'user/dashboard.html';
+          const dashboardText = user.role === 'admin' ? 'Panel Admin' : 'Dashboard';
+          
+          desktopButtons.innerHTML = `
+            <a href="${dashboardUrl}" class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);">
+                <i class="fas fa-user-circle"></i> ${dashboardText}
+            </a>
+          `;
+
+          // Update mobile menu too
+          const loginBtn = document.querySelector('.mobile-menu .btn-outline');
+          const registerBtn = document.querySelector('.mobile-menu .btn-primary');
+          if (loginBtn) loginBtn.href = dashboardUrl;
+          if (loginBtn) loginBtn.innerText = dashboardText;
+          if (registerBtn) registerBtn.style.display = 'none';
+        }
+      }
+
+      window.onload = () => {
+          renderKatalog();
+          updateNavbar();
+      };
     </script>
   </body>
 </html>

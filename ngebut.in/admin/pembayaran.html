@@ -371,26 +371,32 @@
             return;
         }
 
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Total Harga,Status\\n";
+        // Gunakan BOM agar Excel membaca UTF-8 dengan benar
+        let csvContent = "\uFEFF"; 
+        csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga,Status\n";
 
         bookings.forEach(b => {
+            const days = calculateDays(b.startDate, b.endDate);
             const row = [
-                b.id,
+                `#${b.id.toString().slice(-6)}`,
                 `"${b.userName}"`,
                 `"${b.motorName}"`,
                 b.startDate,
                 b.endDate,
+                `${days} Hari`,
                 b.totalHarga,
-                b.status
+                b.status.toUpperCase()
             ].join(",");
-            csvContent += row + "\\n";
+            csvContent += row + "\n";
         });
 
-        const encodedUri = encodeURI(csvContent);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
         link.setAttribute("download", `Laporan_Transaksi_NgebutIN_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
