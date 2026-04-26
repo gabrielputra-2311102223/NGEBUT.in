@@ -190,34 +190,26 @@
             }).join('');
         }
 
-        async function approveBooking(bookingId) {
+        function approveBooking(bookingId) {
             if (!confirm('Setujui permintaan sewa ini? Motor akan berstatus DISEWA.')) return;
             
-            try {
-                await fetch(window.location.origin + '/api/bookings/' + bookingId + '/status', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'booked' })
-                });
+            const success = updateBookingStatus(bookingId, 'booked');
+            if (success) {
                 showNotification('✅ Booking berhasil disetujui!', 'success');
                 renderBookings();
-            } catch (err) {
+            } else {
                 alert('Gagal mengupdate booking');
             }
         }
 
-        async function rejectBooking(bookingId) {
+        function rejectBooking(bookingId) {
             if (!confirm('Tolak permintaan sewa ini? Motor akan kembali TERSEDIA.')) return;
             
-            try {
-                await fetch(window.location.origin + '/api/bookings/' + bookingId + '/status', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'cancelled' })
-                });
+            const success = updateBookingStatus(bookingId, 'cancelled');
+            if (success) {
                 showNotification('❌ Booking ditolak. Motor kembali tersedia.', 'danger');
                 renderBookings();
-            } catch (err) {
+            } else {
                 alert('Gagal mengupdate booking');
             }
         }

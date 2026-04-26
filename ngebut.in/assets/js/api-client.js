@@ -133,6 +133,15 @@ function saveUsers(data) {
     console.log('saveUsers is deprecated in production mode');
 }
 
+function updateBookingStatus(id, status) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', API_URL + '/api/bookings/' + id + '/status', false);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.send(JSON.stringify({ status }));
+    return xhr.status === 200;
+}
+
 function checkReturnNotifications(userId) {
     try {
         const bookings = getBooking().filter(b => 
