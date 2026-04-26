@@ -1615,9 +1615,9 @@ a {
         background: white;
     }
 
-    .sidebar.mobile-active {
+    .sidebar.active {
         left: 0;
-        box-shadow: var(--shadow-2xl);
+        box-shadow: var(--shadow-xl);
     }
 
     .sidebar-overlay {
