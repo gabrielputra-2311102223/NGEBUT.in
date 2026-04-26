@@ -180,8 +180,8 @@
                 <div class="motor-card">
                     <div class="motor-image">
                         <img src="${motor?.gambar ? (motor.gambar.startsWith('http') || motor.gambar.startsWith('../') || motor.gambar.startsWith('/') ? motor.gambar : '../' + motor.gambar) : 'https://placehold.co/400x300'}">
-                        <span class="motor-badge ${b.status === "paid" ? "badge-available" : "badge-booked"}">
-                            ${b.status === "paid" ? "LUNAS" : "BELUM BAYAR"}
+                        <span class="motor-badge ${['paid', 'returning', 'done'].includes(b.status) ? 'badge-available' : 'badge-booked'}">
+                            ${['paid', 'returning', 'done'].includes(b.status) ? 'LUNAS' : 'BELUM BAYAR'}
                         </span>
                     </div>
 
