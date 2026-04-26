@@ -16,7 +16,7 @@ CREATE TABLE Motors (
     nama NVARCHAR(100) NOT NULL,
     harga INT NOT NULL,
     deskripsi NVARCHAR(MAX),
-    gambar NVARCHAR(255),
+    gambar NVARCHAR(MAX),
     status NVARCHAR(20) DEFAULT 'available', -- 'available' atau 'booked'
     kategori NVARCHAR(50) -- 'sport', 'matic', 'bebek'
 );
