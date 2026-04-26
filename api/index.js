@@ -116,16 +116,38 @@ app.post('/api/bookings', async (req, res) => {
     }
 });
 
-// Update booking status (approve/reject)
+// Update booking status (approve/reject/done)
 app.put('/api/bookings/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
         const pool = await poolPromise;
+        
+        // 1. Get motor_id from this booking
+        const bookingRes = await pool.request()
+            .input('id', sql.Int, req.params.id)
+            .query('SELECT motor_id FROM Bookings WHERE id = @id');
+        
+        const motorId = bookingRes.recordset[0]?.motor_id;
+        
+        // 2. Update Booking Status
         await pool.request()
             .input('id', sql.Int, req.params.id)
             .input('status', sql.NVarChar, status)
             .query('UPDATE Bookings SET status = @status WHERE id = @id');
-        res.json({ message: 'Booking status updated' });
+            
+        // 3. Update Motor Status accordingly
+        if (motorId) {
+            let motorStatus = 'available';
+            if (status === 'booked' || status === 'paid') motorStatus = 'booked';
+            else if (status === 'confirm') motorStatus = 'available'; // actually already available
+            
+            await pool.request()
+                .input('id', sql.Int, motorId)
+                .input('status', sql.NVarChar, motorStatus)
+                .query('UPDATE Motors SET status = @status WHERE id = @id');
+        }
+            
+        res.json({ message: 'Booking and Motor status updated' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

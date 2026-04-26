@@ -255,11 +255,21 @@
         const tglMulai = document.getElementById('tglMulai').value;
         const tglSelesai = document.getElementById('tglSelesai').value;
         
-        if (!tglMulai || !tglSelesai) return 0;
+        if (!tglMulai || !tglSelesai) {
+            document.getElementById('totalBayarText').innerText = 'Rp 0';
+            return 0;
+        }
 
         const days = calculateDays(tglMulai, tglSelesai);
         const motor = getMotor().find(m => m.id === selectedMotorId);
-        const total = days * motor.harga;
+        
+        if (!motor) {
+            console.error('Motor not found:', selectedMotorId);
+            return 0;
+        }
+
+        const total = days * Number(motor.harga);
+        console.log('Calculation:', { days, price: motor.harga, total });
 
         document.getElementById('totalBayarText').innerText = formatRupiah(total);
         return total;
@@ -272,22 +282,28 @@
         const tglSelesai = document.getElementById('tglSelesai').value;
         
         if (!tglMulai || !tglSelesai) {
-            alert('Pilih tanggal mulai dan selesai');
+            alert('Silakan pilih tanggal sewa terlebih dahulu.');
             return;
         }
 
         const total = hitungTotal();
-        if (total <= 0) return;
+        if (total <= 0) {
+            alert('Durasi sewa minimal 1 hari.');
+            return;
+        }
 
-        const motors = getMotor();
-        const motor = motors.find(m => m.id === selectedMotorId);
-        
-        if (motor.status !== 'available') {
-            alert('Motor tidak tersedia');
+        const motor = getMotor().find(m => m.id === selectedMotorId);
+        if (!motor || motor.status !== 'available') {
+            alert('Motor sudah tidak tersedia.');
             return;
         }
 
         try {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
             const res = await fetch(window.location.origin + '/api/bookings', {
                 method: 'POST',
                 headers: { 
@@ -302,16 +318,30 @@
                     total_harga: total
                 })
             });
+
             const data = await res.json();
-            if (data.error) {
-                alert('Gagal booking: ' + data.error);
-            } else {
-                alert('✅ Booking berhasil! Menunggu konfirmasi admin.');
-                closeModal();
-                renderKatalog();
+            if (!res.ok || data.error) {
+                throw new Error(data.error || 'Gagal menyimpan data');
             }
+
+            alert('✅ Booking berhasil! Menunggu konfirmasi admin.');
+            closeModal();
+            renderKatalog();
+            
+            // Redirect ke halaman booking saya agar user bisa melihat statusnya
+            setTimeout(() => {
+                window.location.href = 'booking.html';
+            }, 1000);
+
         } catch (err) {
-            alert('Gagal menghubungkan ke server');
+            console.error('Booking error:', err);
+            alert('Gagal melakukan booking: ' + err.message);
+        } finally {
+            const btn = document.querySelector('.modal-footer .btn-primary');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'Pesan Sekarang';
+            }
         }
     }
 

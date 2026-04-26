@@ -27,11 +27,16 @@ function formatShortDate(dateString) {
 
 // Calculate rental days
 function calculateDays(startDate, endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diff = end - start;
-    let days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days === 0 ? 1 : days;
+    const d1 = new Date(startDate);
+    const d2 = new Date(endDate);
+    if (isNaN(d1) || isNaN(d2)) return 0;
+    
+    d1.setHours(0,0,0,0);
+    d2.setHours(0,0,0,0);
+    
+    const diffTime = d2 - d1;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays > 0 ? diffDays : 0;
 }
 
 // Get status badge HTML

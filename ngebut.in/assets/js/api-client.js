@@ -177,17 +177,31 @@ function checkReturnNotifications(userId) {
     }
 }
 
+function calculateDays(start, end) {
+    const d1 = new Date(start);
+    const d2 = new Date(end);
+    if (isNaN(d1) || isNaN(d2)) return 0;
+    
+    // Set to midnight to avoid time diff issues
+    d1.setHours(0,0,0,0);
+    d2.setHours(0,0,0,0);
+    
+    const diffTime = d2 - d1;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays > 0 ? diffDays : 0;
+}
+
 function formatRupiah(angka) {
     return 'Rp ' + Number(angka).toLocaleString('id-ID');
 }
 
 function showNotification(message, type) {
     const notif = document.createElement('div');
+    notif.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
     notif.style.cssText = `
         position: fixed; top: 20px; right: 20px; z-index: 9999;
         padding: 1rem 1.5rem; border-radius: 8px; color: white;
         font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: slideIn 0.3s ease;
         background: ${type === 'success' ? '#22c55e' : type === 'danger' ? '#ef4444' : '#f59e0b'};
     `;
     notif.innerText = message;
