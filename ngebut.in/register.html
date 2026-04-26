@@ -67,9 +67,9 @@
         </div>
     </div>
 
-    <script src="assets/js/storage.js"></script>
+    <script src="assets/js/api-client.js"></script>
     <script>
-        function register() {
+        async function register() {
             const nama = document.getElementById('nama').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -93,27 +93,17 @@
                 return;
             }
 
-            const users = getUsers();
-            
-            if (users.find(u => u.email === email)) {
-                errorEl.innerText = 'Email sudah terdaftar';
-                return;
+            try {
+                const result = await ApiClient.register(nama, email, password);
+                if (result.error) {
+                    errorEl.innerText = result.error;
+                } else {
+                    alert('✅ Registrasi berhasil! Silakan login.');
+                    window.location.href = 'login.html';
+                }
+            } catch (err) {
+                errorEl.innerText = 'Gagal menghubungkan ke server';
             }
-
-            const newUser = {
-                id: Date.now(),
-                nama,
-                email,
-                password,
-                role: 'user',
-                createdAt: new Date().toISOString()
-            };
-
-            users.push(newUser);
-            saveUsers(users);
-
-            alert('✅ Registrasi berhasil! Silakan login.');
-            window.location.href = 'login.html';
         }
 
         document.addEventListener('keypress', function(e) {

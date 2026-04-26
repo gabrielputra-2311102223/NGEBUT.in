@@ -73,10 +73,9 @@
         </div>
     </div>
 
-    <script src="assets/js/storage.js"></script>
-    <script src="assets/js/script.js"></script>
+    <script src="assets/js/api-client.js"></script>
     <script>
-        function login() {
+        async function login() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             const errorEl = document.getElementById('loginError');
@@ -86,23 +85,21 @@
                 return;
             }
 
-            // Admin hardcoded
-            if (email === 'admin@gmail.com' && password === 'admin123') {
-                saveCurrentUser({ id: 0, nama: 'Administrator', email, role: 'admin' });
-                window.location.href = 'admin/dashboard.html';
-                return;
+            try {
+                const result = await ApiClient.login(email, password);
+                if (result.error) {
+                    errorEl.innerText = result.error;
+                } else {
+                    const user = ApiClient.getCurrentUser();
+                    if (user.role === 'admin') {
+                        window.location.href = 'admin/dashboard.html';
+                    } else {
+                        window.location.href = 'user/dashboard.html';
+                    }
+                }
+            } catch (err) {
+                errorEl.innerText = 'Gagal menghubungkan ke server';
             }
-
-            const users = getUsers();
-            const user = users.find(u => u.email === email && u.password === password);
-            
-            if (!user) {
-                errorEl.innerText = 'Email atau password salah';
-                return;
-            }
-
-            saveCurrentUser(user);
-            window.location.href = 'user/dashboard.html';
         }
 
         // Enter key to login
