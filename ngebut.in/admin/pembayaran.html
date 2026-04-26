@@ -396,34 +396,20 @@
         let csvContent = "\uFEFFsep=,\n"; 
         csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga,Status\n";
 
-        bookings.forEach(b => {
-            const days = calculateDays(b.startDate, b.endDate);
-            const tglSewa = b.startDate ? b.startDate.split('T')[0] : '-';
-            const tglKembali = b.endDate ? b.endDate.split('T')[0] : '-';
+        const headers = ["ID Transaksi", "Penyewa", "Email", "Motor", "Tgl Mulai", "Tgl Selesai", "Total Bayar", "Status", "Waktu Transaksi"];
+        const rows = bookings.map(b => [
+            `#${b.id.toString().slice(-6)}`,
+            b.userName,
+            b.userEmail || "-",
+            b.motorName,
+            b.startDate,
+            b.endDate,
+            b.totalHarga,
+            b.status.toUpperCase(),
+            b.createdAt
+        ]);
 
-            const row = [
-                `#${b.id.toString().slice(-6)}`,
-                `"${b.userName}"`,
-                `"${b.motorName}"`,
-                tglSewa,
-                tglKembali,
-                `${days} Hari`,
-                b.totalHarga,
-                b.status.toUpperCase()
-            ].join(",");
-            csvContent += row + "\n";
-        });
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Laporan_Transaksi_NgebutIN_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadCSV("Laporan_Pembayaran_NgebutIN.csv", headers, rows);
       }
 
       renderPayments();

@@ -233,6 +233,34 @@ function calculateDays(start, end) {
     return diffDays > 0 ? diffDays : 0;
 }
 
+function downloadCSV(filename, headers, dataRows) {
+    // Escape special characters and wrap in quotes if needed
+    const processRow = (row) => row.map(val => {
+        const cleanVal = (val === null || val === undefined) ? '' : String(val).replace(/"/g, '""');
+        return `"${cleanVal}"`;
+    }).join(',');
+
+    const csvContent = [
+        headers.join(','),
+        ...dataRows.map(processRow)
+    ].join('\r\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, filename);
+    } else {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
 function getMotorImage(gambar) {
     if (!gambar) return 'https://placehold.co/400x300/1A1A1A/white?text=No+Image';
     
