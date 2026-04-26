@@ -44,16 +44,10 @@
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-        <div class="page-header glass" style="padding: 2rem; border-radius: var(--radius-xl); margin-bottom: 2.5rem;">
+        <div class="page-header">
             <div class="page-title">
-                <h1 style="font-size: 2.5rem; font-weight: 800; background: linear-gradient(to right, var(--secondary), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Selamat Datang, <span id="userName"></span>! 👋</h1>
-                <p style="font-size: 1.1rem; color: var(--gray-600); font-weight: 500;">Pilih motor favoritmu dan mulai perjalanan serumu hari ini.</p>
-            </div>
-            <div class="desktop-only">
-                <div style="background: var(--white); padding: 0.75rem 1.5rem; border-radius: 30px; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-motorcycle" style="color: var(--primary);"></i>
-                    <span style="color: var(--gray-700); font-weight: 700;">#NgebutTerus</span>
-                </div>
+                <h1>Selamat Datang, <span id="userName"></span>! 👋</h1>
+                <p>Pilih motor favoritmu dan mulai perjalananmu sekarang</p>
             </div>
         </div>
 
@@ -61,17 +55,17 @@
         <div id="notificationArea"></div>
 
         <!-- FILTER BAR -->
-        <div class="filter-bar glass" style="padding: 1.25rem; border-radius: var(--radius-lg); margin-bottom: 2.5rem; border: 1px solid rgba(255,255,255,0.5);">
-            <div class="search-box" style="flex: 1; min-width: 300px;">
+        <div class="filter-bar">
+            <div class="search-box">
                 <i class="fas fa-search" style="color: var(--gray-400);"></i>
-                <input type="text" id="searchInput" placeholder="Cari model motor (misal: Vario, NMAX)..." onkeyup="filterMotor()">
-                <button class="btn btn-primary" onclick="filterMotor()" style="padding: 0.6rem 1.5rem; border-radius: 10px;">Cari</button>
+                <input type="text" id="searchInput" placeholder="Cari motor..." onkeyup="filterMotor()">
+                <button onclick="filterMotor()">Cari</button>
             </div>
-            <div class="filter-tabs" style="background: var(--gray-100); padding: 5px; border-radius: 12px;">
-                <button class="filter-tab active" onclick="setFilter('all')" style="border-radius: 10px;">Semua</button>
-                <button class="filter-tab" onclick="setFilter('available')" style="border-radius: 10px;">Tersedia</button>
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="setFilter('all')">Semua</button>
+                <button class="filter-tab" onclick="setFilter('available')">Tersedia</button>
             </div>
-        </div>
+        </div>iv>
 
         <!-- MOTOR GRID -->
         <div id="motorGrid" class="motor-grid"></div>

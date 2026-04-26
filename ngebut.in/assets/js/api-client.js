@@ -94,8 +94,33 @@ function getMotor() {
     return [];
 }
 
+function addMotor(data) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', API_URL + '/api/motors', false);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.send(JSON.stringify(data));
+    return xhr.status === 201;
+}
+
+function updateMotor(id, data) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', API_URL + '/api/motors/' + id, false);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.send(JSON.stringify(data));
+    return xhr.status === 200;
+}
+
+function deleteMotor(id) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('DELETE', API_URL + '/api/motors/' + id, false);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.send(null);
+    return xhr.status === 200;
+}
+
 function saveMotor(data) {
-    // Not used in production (admin manages via API)
     console.log('saveMotor is deprecated in production mode');
 }
 

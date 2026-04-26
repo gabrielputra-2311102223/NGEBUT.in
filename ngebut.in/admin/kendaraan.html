@@ -56,39 +56,39 @@
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-      <div class="page-header glass" style="padding: 1.5rem; border-radius: var(--radius-xl); margin-bottom: 2.5rem;">
+      <div class="page-header">
         <div class="page-title">
-          <h1 style="background: linear-gradient(to right, var(--secondary), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Kelola Kendaraan</h1>
-          <p>Tambah, edit, dan atur status kendaraan rental Anda.</p>
+          <h1>Kelola Kendaraan</h1>
+          <p>Tambah, edit, dan atur status kendaraan rental</p>
         </div>
-        <button class="btn btn-primary" onclick="openAddModal()" style="padding: 0.8rem 2rem; border-radius: 12px; box-shadow: var(--shadow-primary);">
+        <button class="btn btn-primary" onclick="openAddModal()">
           <i class="fas fa-plus"></i> Tambah Motor
         </button>
       </div>
 
       <!-- FILTER BAR -->
-      <div class="filter-bar glass" style="padding: 1.25rem; border-radius: var(--radius-lg); margin-bottom: 2.5rem; border: 1px solid rgba(255,255,255,0.5);">
-        <div class="search-box" style="flex: 1; min-width: 300px;">
+      <div class="filter-bar">
+        <div class="search-box">
           <i class="fas fa-search" style="color: var(--gray-400)"></i>
           <input
             type="text"
             id="searchInput"
-            placeholder="Cari model atau merk motor..."
+            placeholder="Cari motor..."
             onkeyup="renderMotorList()"
           />
-          <button class="btn btn-primary" onclick="renderMotorList()" style="border-radius: 10px;">Cari</button>
+          <button onclick="renderMotorList()">Cari</button>
         </div>
-        <div class="filter-tabs" style="background: var(--gray-100); padding: 5px; border-radius: 12px;">
-          <button class="filter-tab active" onclick="setFilter('all')" style="border-radius: 10px;">
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setFilter('all')">
             Semua
           </button>
-          <button class="filter-tab" onclick="setFilter('available')" style="border-radius: 10px;">
+          <button class="filter-tab" onclick="setFilter('available')">
             Tersedia
           </button>
-          <button class="filter-tab" onclick="setFilter('booked')" style="border-radius: 10px;">
+          <button class="filter-tab" onclick="setFilter('booked')">
             Disewa
           </button>
-          <button class="filter-tab" onclick="setFilter('service')" style="border-radius: 10px;">
+          <button class="filter-tab" onclick="setFilter('service')">
             Service
           </button>
         </div>
@@ -227,64 +227,7 @@
       let currentFilter = "all";
       let editingMotorId = null;
 
-      // Inisialisasi data motor default
-      function initDefaultMotors() {
-        let motors = getMotor();
-        if (motors.length === 0) {
-          motors = [
-            {
-              id: 1,
-              nama: "Honda Vario 125",
-              harga: 75000,
-              desc: "Irit & nyaman untuk harian",
-              gambar: "/ngebut.in/assets/img/motor2.jpg",
-              status: "available",
-            },
-            {
-              id: 2,
-              nama: "Honda Beat",
-              harga: 65000,
-              desc: "Hemat bensin, lincah di perkotaan",
-              gambar: "/ngebut.in/assets/img/motor3.jpg",
-              status: "available",
-            },
-            {
-              id: 3,
-              nama: "Honda PCX 160",
-              harga: 130000,
-              desc: "Premium, nyaman untuk touring",
-              gambar: "/ngebut.in/assets/img/motor6.jpg",
-              status: "available",
-            },
-            {
-              id: 4,
-              nama: "Yamaha NMAX",
-              harga: 120000,
-              desc: "Nyaman & bertenaga",
-              gambar: "/ngebut.in/assets/img/motor4.jpg",
-              status: "available",
-            },
-            {
-              id: 5,
-              nama: "Honda CRF 150L",
-              harga: 150000,
-              desc: "Motor trail tangguh",
-              gambar: "/ngebut.in/assets/img/motor5.jpg",
-              status: "available",
-            },
-            {
-              id: 6,
-              nama: "Suzuki GSX 150",
-              harga: 140000,
-              desc: "Sporty & bertenaga",
-              gambar: "/ngebut.in/assets/img/motor7.jpg",
-              status: "service",
-            },
-          ];
-          saveMotor(motors);
-        }
-        return motors;
-      }
+
 
       function setFilter(status) {
         currentFilter = status;
@@ -302,11 +245,10 @@
         const grid = document.getElementById("motorGrid");
 
         const filtered = motors.filter((m) => {
-          const matchSearch =
-            m.nama.toLowerCase().includes(searchTerm) ||
-            (m.desc || "").toLowerCase().includes(searchTerm);
-          const matchStatus =
-            currentFilter === "all" || m.status === currentFilter;
+          const name = m.nama || "";
+          const desc = m.deskripsi || m.desc || "";
+          const matchSearch = name.toLowerCase().includes(searchTerm) || desc.toLowerCase().includes(searchTerm);
+          const matchStatus = currentFilter === "all" || m.status === currentFilter;
           return matchSearch && matchStatus;
         });
 
@@ -336,7 +278,7 @@
                     </div>
                     <div class="motor-content">
                         <h3 class="motor-title">${m.nama}</h3>
-                        <p class="motor-desc">${m.desc || "-"}</p>
+                        <p class="motor-desc">${m.deskripsi || m.desc || "-"}</p>
                         <div class="motor-price">
                             <span class="price-amount">${formatRupiah(m.harga)}</span>
                             <span class="price-unit">/hari</span>
@@ -366,35 +308,24 @@
 
       function quickSetStatus(id, status) {
         const motors = getMotor();
-        const bookings = getBooking();
-
         const motor = motors.find((m) => m.id === id);
         if (!motor) return;
 
-        const masihDipakai = bookings.some(
-          (b) => b.motorId === id && b.status === "paid",
-        );
+        const updateData = {
+          nama: motor.nama,
+          harga: motor.harga,
+          deskripsi: motor.deskripsi || motor.desc || "-",
+          gambar: motor.gambar,
+          status: status,
+          kategori: motor.kategori || "umum"
+        };
 
-        if (status === "service" && masihDipakai) {
-          alert("❌ Motor masih disewa! Tidak bisa di-service.");
-          return;
+        const success = updateMotor(id, updateData);
+        if (success) {
+            renderMotorList();
+        } else {
+            alert("❌ Gagal memperbarui status motor.");
         }
-
-        motor.status = status;
-
-        // ✔ Jika jadi tersedia → selesaikan booking
-        if (status === "available") {
-          bookings.forEach((b) => {
-            if (b.motorId === id && b.status === "paid") {
-              b.status = "done";
-              b.completedAt = new Date().toISOString();
-            }
-          });
-          saveBooking(bookings);
-        }
-
-        saveMotor(motors);
-        renderMotorList();
       }
 
       function openAddModal() {
@@ -420,7 +351,7 @@
         document.getElementById("motorId").value = motor.id;
         document.getElementById("motorNama").value = motor.nama;
         document.getElementById("motorHarga").value = motor.harga;
-        document.getElementById("motorDesc").value = motor.desc || "";
+        document.getElementById("motorDesc").value = motor.deskripsi || motor.desc || "";
         document.getElementById("motorStatus").value = motor.status;
         document.getElementById("motorGambar").value = motor.gambar || "";
         document.getElementById("imagePreview").src = motor.gambar || "";
@@ -429,17 +360,18 @@
 
       function deleteMotor(id) {
         if (!confirm("Yakin ingin menghapus motor ini?")) return;
-
-        const motors = getMotor();
-        const filtered = motors.filter((m) => m.id !== id);
-        saveMotor(filtered);
-        renderMotorList();
+        const success = window.deleteMotor(id);
+        if (success) {
+            renderMotorList();
+        } else {
+            alert("❌ Gagal menghapus motor.");
+        }
       }
 
       function saveMotorData() {
         const nama = document.getElementById("motorNama").value.trim();
         const harga = parseInt(document.getElementById("motorHarga").value);
-        const desc = document.getElementById("motorDesc").value.trim();
+        const deskripsi = document.getElementById("motorDesc").value.trim();
         const status = document.getElementById("motorStatus").value;
         const gambar = document.getElementById("motorGambar").value.trim();
 
@@ -448,39 +380,28 @@
           return;
         }
 
-        const motors = getMotor();
+        const motorData = {
+          nama,
+          harga,
+          deskripsi: deskripsi || "-",
+          status,
+          gambar: gambar || "https://placehold.co/400x300/1A1A1A/white?text=Motor",
+          kategori: "umum"
+        };
 
+        let success = false;
         if (editingMotorId) {
-          // Edit existing
-          const index = motors.findIndex((m) => m.id === editingMotorId);
-          if (index !== -1) {
-            motors[index] = {
-              ...motors[index],
-              nama,
-              harga,
-              desc,
-              status,
-              gambar: gambar,
-            };
-          }
+          success = updateMotor(editingMotorId, motorData);
         } else {
-          // Add new
-          const newMotor = {
-            id: Date.now(),
-            nama,
-            harga,
-            desc,
-            status,
-            gambar:
-              gambar ||
-              `https://placehold.co/400x300/1A1A1A/white?text=${encodeURIComponent(nama)}`,
-          };
-          motors.push(newMotor);
+          success = addMotor(motorData);
         }
 
-        saveMotor(motors);
-        closeModal();
-        renderMotorList();
+        if (success) {
+          closeModal();
+          renderMotorList();
+        } else {
+          alert("❌ Gagal menyimpan data motor.");
+        }
       }
 
       function closeModal() {
@@ -503,7 +424,6 @@
         });
 
       // Initialize
-      initDefaultMotors();
       renderMotorList();
     </script>
   </body>

@@ -58,33 +58,29 @@
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-        <div class="page-header glass" style="padding: 1.5rem; border-radius: var(--radius-xl); margin-bottom: 2.5rem;">
+        <div class="page-header">
             <div class="page-title">
-                <h1 style="background: linear-gradient(to right, var(--secondary), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Dashboard Overview</h1>
+                <h1>Dashboard Overview</h1>
                 <p>Selamat datang kembali, Admin! Pantau performa rental hari ini.</p>
             </div>
-            <div class="desktop-only">
-                <div style="background: var(--white); padding: 0.75rem 1.5rem; border-radius: 30px; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-calendar-alt" style="color: var(--primary);"></i>
-                    <span id="currentDateTime" style="color: var(--gray-700); font-weight: 600;"></span>
-                </div>
+            <div>
+                <span id="currentDateTime" style="color: var(--gray-500);"></span>
             </div>
         </div>
 
         <!-- STATS CARDS -->
         <div class="stats-grid">
-            <div class="stat-card" style="border-bottom: 4px solid var(--primary);">
-                <div class="stat-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="stat-card" style="border-left: 4px solid var(--primary);">
+                <div class="stat-header">
                     <span class="stat-icon" style="background: rgba(204,0,0,0.1); color: var(--primary);">
                         <i class="fas fa-motorcycle"></i>
                     </span>
-                    <span style="color: var(--success); font-size: 0.8rem; font-weight: 700;"><i class="fas fa-arrow-up"></i> Terkini</span>
                 </div>
                 <div class="stat-value" id="totalMotor">0</div>
                 <div class="stat-label">Total Kendaraan</div>
             </div>
             
-            <div class="stat-card" style="border-bottom: 4px solid var(--success);">
+            <div class="stat-card" style="border-left: 4px solid var(--success);">
                 <div class="stat-header">
                     <span class="stat-icon" style="background: rgba(16,185,129,0.1); color: var(--success);">
                         <i class="fas fa-check-circle"></i>
@@ -94,7 +90,7 @@
                 <div class="stat-label">Motor Tersedia</div>
             </div>
             
-            <div class="stat-card" style="border-bottom: 4px solid var(--warning);">
+            <div class="stat-card" style="border-left: 4px solid var(--warning);">
                 <div class="stat-header">
                     <span class="stat-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);">
                         <i class="fas fa-clock"></i>
@@ -104,7 +100,7 @@
                 <div class="stat-label">Menunggu Approval</div>
             </div>
             
-            <div class="stat-card" style="border-bottom: 4px solid var(--info);">
+            <div class="stat-card" style="border-left: 4px solid var(--info);">
                 <div class="stat-header">
                     <span class="stat-icon" style="background: rgba(59,130,246,0.1); color: var(--info);">
                         <i class="fas fa-key"></i>
@@ -114,7 +110,7 @@
                 <div class="stat-label">Sedang Disewa</div>
             </div>
             
-            <div class="stat-card" style="border-bottom: 4px solid #8B5CF6;">
+            <div class="stat-card" style="border-left: 4px solid #8B5CF6;">
                 <div class="stat-header">
                     <span class="stat-icon" style="background: rgba(139,92,246,0.1); color: #8B5CF6;">
                         <i class="fas fa-wallet"></i>
@@ -124,7 +120,7 @@
                 <div class="stat-label">Lunas</div>
             </div>
             
-            <div class="stat-card" style="border-bottom: 4px solid var(--gray-500);">
+            <div class="stat-card" style="border-left: 4px solid var(--gray-500);">
                 <div class="stat-header">
                     <span class="stat-icon" style="background: rgba(107,114,128,0.1); color: var(--gray-500);">
                         <i class="fas fa-flag-checkered"></i>
@@ -363,13 +359,14 @@
                 return;
             }
 
+            const exportDate = new Date().toLocaleString('id-ID');
             // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
             let csvContent = "\uFEFFsep=,\n"; 
-            csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga,Status\n";
+            csvContent += `LAPORAN TRANSAKSI NGEBUT.IN,,,Exported: ${exportDate}\n\n`;
+            csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga (Rp),Status\n";
 
             bookings.forEach(b => {
                 const days = calculateDays(b.startDate, b.endDate);
-                // Format tanggal agar tidak ada T00:00:00.000Z
                 const tglSewa = b.startDate ? b.startDate.split('T')[0] : '-';
                 const tglKembali = b.endDate ? b.endDate.split('T')[0] : '-';
                 
@@ -379,8 +376,8 @@
                     `"${b.motorName}"`,
                     tglSewa,
                     tglKembali,
-                    `${days} Hari`,
-                    b.totalHarga,
+                    `"${days} Hari"`,
+                    b.totalHarga, // Angka murni agar Excel bisa hitung
                     b.status.toUpperCase()
                 ].join(",");
                 csvContent += row + "\n";
