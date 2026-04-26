@@ -52,10 +52,9 @@ function getStatusBadge(status) {
     return badges[status] || status;
 }
 
-// Check for return notifications (setelah LUNAS)
 function checkReturnNotifications(userId) {
     const bookings = getBooking().filter(b => 
-        b.userId === userId && 
+        String(b.userId) === String(userId) && 
         b.status === 'paid' // ✅ HANYA YANG SUDAH LUNAS
     );
     
