@@ -233,32 +233,53 @@ function calculateDays(start, end) {
     return diffDays > 0 ? diffDays : 0;
 }
 
-function downloadCSV(filename, headers, dataRows) {
-    // Escape special characters and wrap in quotes if needed
+function downloadCSV(filename, headers, dataRows, reportTitle = "LAPORAN") {
+    // Hitung ringkasan sederhana
+    const totalTransactions = dataRows.length;
+    let totalRevenue = 0;
+    dataRows.forEach(row => {
+        const amount = parseFloat(String(row[6]).replace(/[^\d.-]/g, ''));
+        if (!isNaN(amount)) totalRevenue += amount;
+    });
+
+    const now = new Date().toLocaleString('id-ID');
+    
+    // Header Laporan Premium
+    const reportHeader = [
+        [`NGEBUT.IN - SISTEM RENTAL MOTOR`],
+        [`${reportTitle.toUpperCase()}`],
+        [`Dicetak Pada: ${now}`],
+        [''],
+        ['RINGKASAN'],
+        ['Total Transaksi', totalTransactions],
+        ['Total Pendapatan', `Rp ${totalRevenue.toLocaleString('id-ID')}`],
+        [''],
+        ['DATA DETAIL'],
+        headers
+    ];
+
+    // Escape special characters and wrap in quotes
     const processRow = (row) => row.map(val => {
         const cleanVal = (val === null || val === undefined) ? '' : String(val).replace(/"/g, '""');
         return `"${cleanVal}"`;
     }).join(',');
 
     const csvContent = [
-        headers.join(','),
+        ...reportHeader.map(row => row.map(v => `"${v}"`).join(',')),
         ...dataRows.map(processRow)
     ].join('\r\n');
 
+    // Gunakan BOM untuk kompatibilitas Excel
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
     
-    if (navigator.msSaveBlob) { // IE 10+
-        navigator.msSaveBlob(blob, filename);
-    } else {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function getMotorImage(gambar) {
