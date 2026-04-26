@@ -58,10 +58,11 @@
                         <th>Durasi</th>
                         <th>Total</th>
                         <th>Status</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="bookingList">
-                    <tr><td colspan="5" style="text-align: center; padding: 2rem;">Memuat data...</td></tr>
+                    <tr><td colspan="6" style="text-align: center; padding: 2rem;">Memuat data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -98,18 +99,37 @@
             }
         }
 
+        async function kembalikanMotor(bookingId) {
+            if (!confirm('Apakah Anda yakin sudah selesai menyewa dan ingin mengembalikan motor ini?')) return;
+            
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
+
+            const success = updateBookingStatus(bookingId, 'returning');
+            if (success) {
+                alert('✅ Permintaan pengembalian dikirim! Silakan hubungi admin untuk pengecekan fisik motor.');
+                renderBookings();
+            } else {
+                alert('❌ Gagal memproses pengembalian.');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
         function renderBookings() {
             syncAutoDone();
             const allBookings = getBooking();
             const bookings = allBookings.filter(b => 
                 String(b.userId) === String(user.id) && 
-                ['confirm', 'booked', 'paid'].includes(b.status)
+                ['confirm', 'booked', 'paid', 'returning'].includes(b.status)
             );
             
             const tbody = document.getElementById('bookingList');
             
             if (bookings.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 3rem; color: var(--gray-500);">
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--gray-500);">
                     <i class="fas fa-calendar" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
                     <h3>Tidak ada booking aktif</h3>
                     <a href="dashboard.html" class="btn btn-primary" style="margin-top: 1rem;">Sewa Motor Sekarang</a>
@@ -119,6 +139,18 @@
 
             tbody.innerHTML = bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(b => {
                 const days = calculateDays(b.startDate, b.endDate);
+                let aksiHtml = '-';
+                
+                if (b.status === 'paid') {
+                    aksiHtml = `
+                        <button class="btn btn-sm" style="background: var(--success); color: white; border-radius: 20px; padding: 5px 15px;" onclick="kembalikanMotor(${b.id})">
+                            <i class="fas fa-undo"></i> Selesai Sewa
+                        </button>
+                    `;
+                } else if (b.status === 'returning') {
+                    aksiHtml = '<span style="color: var(--warning); font-size: 0.8rem;"><i class="fas fa-clock"></i> Menunggu Admin</span>';
+                }
+
                 return `
                     <tr>
                         <td><strong>${b.motorName}</strong></td>
@@ -126,6 +158,7 @@
                         <td>${days} hari</td>
                         <td>${formatRupiah(b.totalHarga)}</td>
                         <td>${getStatusBadge(b.status)}</td>
+                        <td>${aksiHtml}</td>
                     </tr>
                 `;
             }).join('');

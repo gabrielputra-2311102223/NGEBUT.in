@@ -45,6 +45,7 @@ function getStatusBadge(status) {
         'confirm': '<span class="status-badge status-confirm"><i class="fas fa-clock"></i> Menunggu Approval</span>',
         'booked': '<span class="status-badge status-booked"><i class="fas fa-motorcycle"></i> Sedang Disewa</span>',
         'paid': '<span class="status-badge status-paid"><i class="fas fa-check-circle"></i> Lunas</span>',
+        'returning': '<span class="status-badge status-warning"><i class="fas fa-undo"></i> Menunggu Dicek</span>',
         'done': '<span class="status-badge status-done"><i class="fas fa-flag-checkered"></i> Selesai</span>',
         'cancelled': '<span class="status-badge status-cancelled"><i class="fas fa-times-circle"></i> Dibatalkan</span>'
     };

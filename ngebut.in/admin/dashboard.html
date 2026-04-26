@@ -120,6 +120,16 @@
                 <div class="stat-label">Lunas</div>
             </div>
             
+            <div class="stat-card" style="border-left: 4px solid #EC4899;">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(236,72,153,0.1); color: #EC4899;">
+                        <i class="fas fa-undo"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="returningBooking">0</div>
+                <div class="stat-label">Menunggu Dicek</div>
+            </div>
+
             <div class="stat-card" style="border-left: 4px solid var(--gray-500);">
                 <div class="stat-header">
                     <span class="stat-icon" style="background: rgba(107,114,128,0.1); color: var(--gray-500);">
@@ -262,11 +272,13 @@
             const pending = bookings.filter(b => b.status === 'confirm').length;
             const active = bookings.filter(b => b.status === 'booked').length;
             const paid = bookings.filter(b => b.status === 'paid').length;
+            const returning = bookings.filter(b => b.status === 'returning').length;
             const completed = bookings.filter(b => b.status === 'done').length;
             
             document.getElementById('pendingBooking').innerText = pending;
             document.getElementById('activeBooking').innerText = active;
             document.getElementById('paidBooking').innerText = paid;
+            document.getElementById('returningBooking').innerText = returning;
             document.getElementById('completedBooking').innerText = completed;
             
             // Update badge pending di sidebar

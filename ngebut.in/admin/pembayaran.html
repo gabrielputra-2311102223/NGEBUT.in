@@ -77,6 +77,9 @@
         <button class="filter-tab" onclick="setFilter('paid', event)">
           <i class="fas fa-check-circle"></i> Sudah Dibayar
         </button>
+        <button class="filter-tab" onclick="setFilter('returning', event)">
+          <i class="fas fa-undo"></i> Permintaan Kembali
+        </button>
       </div>
 
       <div id="paymentGrid" class="motor-grid"></div>
@@ -137,9 +140,11 @@
           bookings = bookings.filter(
             (b) =>
               b.status === "booked" ||
-              b.status === "approved" || // jaga-jaga data lama
-              b.status === "confirm", // jaga-jaga juga
+              b.status === "approved" ||
+              b.status === "confirm",
           );
+        } else if (currentFilter === "returning") {
+          bookings = bookings.filter((b) => b.status === "returning");
         } else {
           bookings = bookings.filter((b) => b.status === "paid" || b.status === "done");
         }
@@ -202,6 +207,12 @@
                                 <i class="fas fa-receipt"></i> Lihat Kuitansi
                             </button>
                         `
+                            : b.status === "returning" 
+                            ? `
+                            <button class="btn btn-sm" style="width:100%;margin-top:1rem; background: var(--success); color: white;" onclick="confirmDone(${b.id})">
+                                <i class="fas fa-check-double"></i> Konfirmasi Selesai Sewa
+                            </button>
+                            `
                             : `
                             <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmPayment(${b.id})">
                                 <i class="fas fa-check-circle"></i> Konfirmasi Pembayaran
@@ -219,15 +230,26 @@
       function confirmPayment(bookingId) {
         if (!confirm("Konfirmasi pembayaran untuk booking ini?")) return;
 
-        // Gunakan API untuk update status
         const success = updateBookingStatus(bookingId, "paid");
-
         if (success) {
             alert("✅ Pembayaran berhasil dikonfirmasi!");
             renderPayments();
             showInvoice(bookingId);
         } else {
-            alert("❌ Gagal mengonfirmasi pembayaran. Silakan coba lagi.");
+            alert("❌ Gagal mengonfirmasi pembayaran.");
+        }
+      }
+
+      // ✅ KONFIRMASI SELESAI SEWA
+      function confirmDone(bookingId) {
+        if (!confirm("Konfirmasi bahwa motor sudah dikembalikan dan sewa selesai?")) return;
+
+        const success = updateBookingStatus(bookingId, "done");
+        if (success) {
+            alert("✅ Sewa berhasil diselesaikan! Motor kini berstatus tersedia kembali.");
+            renderPayments();
+        } else {
+            alert("❌ Gagal memproses data.");
         }
       }
 
