@@ -265,7 +265,7 @@
         return total;
     }
 
-    function prosesBooking() {
+    async function prosesBooking() {
         if (!selectedMotorId) return;
         
         const tglMulai = document.getElementById('tglMulai').value;
@@ -287,29 +287,32 @@
             return;
         }
 
-        motor.status = 'booked';
-        saveMotor(motors);
-
-        const bookings = getBooking();
-        const newBooking = {
-            id: Date.now(),
-            motorId: motor.id,
-            motorName: motor.nama,
-            userId: user.id,
-            userName: user.nama,
-            harga: motor.harga,
-            totalHarga: total,
-            startDate: tglMulai,
-            endDate: tglSelesai,
-            status: 'confirm',
-            createdAt: new Date().toISOString()
-        };
-        bookings.push(newBooking);
-        saveBooking(bookings);
-
-        alert('✅ Booking berhasil! Menunggu konfirmasi admin.');
-        closeModal();
-        renderKatalog();
+        try {
+            const res = await fetch(window.location.origin + '/api/bookings', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    motor_id: selectedMotorId,
+                    tgl_mulai: tglMulai,
+                    tgl_selesai: tglSelesai,
+                    total_harga: total
+                })
+            });
+            const data = await res.json();
+            if (data.error) {
+                alert('Gagal booking: ' + data.error);
+            } else {
+                alert('✅ Booking berhasil! Menunggu konfirmasi admin.');
+                closeModal();
+                renderKatalog();
+            }
+        } catch (err) {
+            alert('Gagal menghubungkan ke server');
+        }
     }
 
     document.getElementById('bookingModal').addEventListener('click', function(e) {

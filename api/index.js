@@ -108,7 +108,7 @@ app.post('/api/bookings', async (req, res) => {
             .input('tgl_mulai', sql.Date, tgl_mulai)
             .input('tgl_selesai', sql.Date, tgl_selesai)
             .input('total_harga', sql.Int, total_harga)
-            .query('INSERT INTO Bookings (user_id, motor_id, tgl_mulai, tgl_selesai, total_harga, status) VALUES (@user_id, @motor_id, @tgl_mulai, @tgl_selesai, @total_harga, \'pending\')');
+            .query('INSERT INTO Bookings (user_id, motor_id, tgl_mulai, tgl_selesai, total_harga, status) VALUES (@user_id, @motor_id, @tgl_mulai, @tgl_selesai, @total_harga, \'confirm\')');
             
         res.status(201).json({ message: 'Booking submitted' });
     } catch (err) {

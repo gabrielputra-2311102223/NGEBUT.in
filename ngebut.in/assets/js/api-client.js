@@ -134,10 +134,64 @@ function saveUsers(data) {
 }
 
 function checkReturnNotifications(userId) {
-    // Placeholder - returns empty for now
-    return [];
+    try {
+        const bookings = getBooking().filter(b => 
+            b.userId === userId && b.status === 'paid'
+        );
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const notifications = [];
+        
+        bookings.forEach(b => {
+            const endDate = new Date(b.endDate);
+            endDate.setHours(0, 0, 0, 0);
+            const diffTime = endDate - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                notifications.push({
+                    type: 'danger',
+                    title: '⚠️ Sewa Terlambat!',
+                    message: `Motor ${b.motorName} sudah melewati batas waktu pengembalian.`,
+                    icon: 'fa-exclamation-triangle'
+                });
+            } else if (diffDays === 0) {
+                notifications.push({
+                    type: 'warning',
+                    title: '⏰ Hari Terakhir!',
+                    message: `Motor ${b.motorName} harus dikembalikan hari ini.`,
+                    icon: 'fa-clock'
+                });
+            } else if (diffDays === 1) {
+                notifications.push({
+                    type: 'warning',
+                    title: '📅 Besok Pengembalian!',
+                    message: `Motor ${b.motorName} harus dikembalikan besok.`,
+                    icon: 'fa-calendar-alt'
+                });
+            }
+        });
+        return notifications;
+    } catch (err) {
+        return [];
+    }
 }
 
 function formatRupiah(angka) {
     return 'Rp ' + Number(angka).toLocaleString('id-ID');
 }
+
+function showNotification(message, type) {
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        padding: 1rem 1.5rem; border-radius: 8px; color: white;
+        font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? '#22c55e' : type === 'danger' ? '#ef4444' : '#f59e0b'};
+    `;
+    notif.innerText = message;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+

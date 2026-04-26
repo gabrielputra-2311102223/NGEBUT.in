@@ -189,54 +189,36 @@
             }).join('');
         }
 
-        function approveBooking(bookingId) {
+        async function approveBooking(bookingId) {
             if (!confirm('Setujui permintaan sewa ini? Motor akan berstatus DISEWA.')) return;
             
-            let bookings = getBooking();
-            let motors = getMotor();
-            
-            const booking = bookings.find(b => String(b.id) === String(bookingId));
-            if (!booking) return;
-            
-            // Update booking status
-            booking.status = 'booked';
-            
-            // Update motor status
-            const motor = motors.find(m => m.id === booking.motorId);
-            if (motor) {
-                motor.status = 'booked';
+            try {
+                await fetch(window.location.origin + '/api/bookings/' + bookingId + '/status', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'booked' })
+                });
+                showNotification('✅ Booking berhasil disetujui!', 'success');
+                renderBookings();
+            } catch (err) {
+                alert('Gagal mengupdate booking');
             }
-            
-            saveBooking(bookings);
-            saveMotor(motors);
-            
-            showNotification('✅ Booking berhasil disetujui!', 'success');
-            renderBookings();
         }
 
-        function rejectBooking(bookingId) {
+        async function rejectBooking(bookingId) {
             if (!confirm('Tolak permintaan sewa ini? Motor akan kembali TERSEDIA.')) return;
             
-            let bookings = getBooking();
-            let motors = getMotor();
-            
-            const booking = bookings.find(b => String(b.id) === String(bookingId));
-            if (!booking) return;
-            
-            // Update booking status
-            booking.status = 'cancelled';
-            
-            // Update motor status back to available
-            const motor = motors.find(m => m.id === booking.motorId);
-            if (motor) {
-                motor.status = 'available';
+            try {
+                await fetch(window.location.origin + '/api/bookings/' + bookingId + '/status', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'cancelled' })
+                });
+                showNotification('❌ Booking ditolak. Motor kembali tersedia.', 'danger');
+                renderBookings();
+            } catch (err) {
+                alert('Gagal mengupdate booking');
             }
-            
-            saveBooking(bookings);
-            saveMotor(motors);
-            
-            showNotification('❌ Booking ditolak. Motor kembali tersedia.', 'danger');
-            renderBookings();
         }
 
         function viewDetail(bookingId) {
