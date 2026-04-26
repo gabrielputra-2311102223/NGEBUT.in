@@ -1887,4 +1887,137 @@ a {
 .auth-footer a:hover::after {
     width: 100%;
 }
+
+/* ============================================
+   MOBILE RESPONSIVENESS (SUPER PREMIUM FIX)
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .hero-image {
+        display: none;
+    }
+    .hero-content {
+        max-width: 100%;
+        text-align: center;
+    }
+    .hero-stats {
+        justify-content: center;
+    }
+    .auth-left {
+        display: none;
+    }
+    .auth-right {
+        width: 100% !important;
+        padding: 2rem !important;
+    }
+    .auth-box {
+        width: 100% !important;
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 2rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 2rem; }
+    
+    .section { padding: 3rem 5%; }
+    
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        min-width: 100%;
+    }
+    
+    .filter-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 8px;
+        justify-content: flex-start;
+    }
+    
+    /* TABLE RESPONSIVENESS */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -1rem;
+        padding: 0 1rem;
+    }
+    
+    .data-table {
+        min-width: 600px; /* Force scroll */
+    }
+    
+    .data-table th, .data-table td {
+        padding: 12px 8px;
+        font-size: 0.85rem;
+    }
+
+    /* SIDEBAR & HEADER */
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 1rem !important;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        flex: 1;
+    }
+
+    /* DASHBOARD CARDS */
+    .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-card .icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    /* AUTH INPUTS */
+    .form-group input {
+        padding: 12px 20px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 2rem; }
+    
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .motor-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal {
+        width: 95%;
+        padding: 1.5rem;
+    }
+}
 

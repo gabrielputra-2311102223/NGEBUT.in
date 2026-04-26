@@ -59,9 +59,14 @@
                 <h1>Approval Booking</h1>
                 <p>Setujui atau tolak permintaan sewa dari pelanggan</p>
             </div>
-            <button class="btn btn-primary" onclick="exportToCSV()">
-                <i class="fas fa-file-csv"></i> Export Laporan
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-outline btn-sm" onclick="exportToCSV()" title="Export CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button class="btn btn-primary" onclick="exportToExcel()" style="background: #1D6F42; border-color: #1D6F42;">
+                    <i class="fas fa-file-excel"></i> Export Excel (Premium)
+                </button>
+            </div>
         </div>
 
         <!-- NOTIFICATION AREA -->
@@ -241,6 +246,10 @@
 
         function closeDetailModal() {
             document.getElementById('detailModal').style.display = 'none';
+        }
+
+        function exportToExcel() {
+            window.location.href = window.location.origin + '/api/export/excel';
         }
 
         function exportToCSV() {

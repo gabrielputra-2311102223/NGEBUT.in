@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const ExcelJS = require('exceljs');
 const { sql, poolPromise } = require('./db');
 
 const app = express();
@@ -213,6 +214,118 @@ app.delete('/api/motors/:id', async (req, res) => {
             .input('id', sql.Int, req.params.id)
             .query('DELETE FROM Motors WHERE id = @id');
         res.json({ message: 'Motor deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- EXPORT ROUTES ---
+
+app.get('/api/export/excel', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(`
+            SELECT b.*, u.nama as userName, u.email as userEmail, m.nama as motorNama, m.harga as motorHarga 
+            FROM Bookings b 
+            LEFT JOIN Users u ON b.user_id = u.id 
+            LEFT JOIN Motors m ON b.motor_id = m.id
+            ORDER BY b.created_at DESC
+        `);
+        
+        const allData = result.recordset;
+        const workbook = new ExcelJS.Workbook();
+        
+        const createSheet = (sheetName, data) => {
+            const sheet = workbook.addWorksheet(sheetName);
+            
+            // 1. KOP SURAT / HEADER LAPORAN
+            sheet.mergeCells('A1', 'I1');
+            const mainTitle = sheet.getCell('A1');
+            mainTitle.value = 'LAPORAN REKAPITULASI TRANSAKSI NGEBUT.IN';
+            mainTitle.font = { name: 'Arial Black', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            mainTitle.alignment = { vertical: 'middle', horizontal: 'center' };
+            mainTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } }; // Merah Ngebut.in
+
+            sheet.mergeCells('A2', 'I2');
+            const subTitle = sheet.getCell('A2');
+            subTitle.value = `Dicetak pada: ${new Date().toLocaleString('id-ID')}`;
+            subTitle.font = { italic: true, size: 10 };
+            subTitle.alignment = { horizontal: 'center' };
+
+            sheet.addRow([]); // Baris kosong
+
+            // 2. HEADER TABEL
+            const headers = ['ID Booking', 'Penyewa', 'Email', 'Motor', 'Tgl Mulai', 'Tgl Selesai', 'Total Bayar', 'Status', 'Waktu Transaksi'];
+            const headerRow = sheet.addRow(headers);
+            
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } };
+                cell.alignment = { horizontal: 'center' };
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+
+            // 3. ISI DATA
+            data.forEach((b) => {
+                const row = sheet.addRow([
+                    `#${b.id.toString().slice(-6)}`,
+                    b.userName,
+                    b.userEmail || '-',
+                    b.motorNama,
+                    b.tgl_mulai ? b.tgl_mulai.toISOString().split('T')[0] : '-',
+                    b.tgl_selesai ? b.tgl_selesai.toISOString().split('T')[0] : '-',
+                    b.total_harga,
+                    b.status.toUpperCase(),
+                    b.created_at ? b.created_at.toLocaleString('id-ID') : '-'
+                ]);
+
+                // Style Baris Data
+                row.eachCell((cell, colNumber) => {
+                    cell.border = {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        right: { style: 'thin' }
+                    };
+                    
+                    // Format Rupiah untuk kolom Total Bayar (Kolom 7)
+                    if (colNumber === 7) {
+                        cell.numFmt = '"Rp "#,##0';
+                        cell.alignment = { horizontal: 'right' };
+                    }
+                });
+            });
+
+            // 4. AUTO-FIT COLUMNS (Estimasi)
+            sheet.columns.forEach((column, i) => {
+                let maxLength = 0;
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value ? cell.value.toString().length : 10;
+                    if (columnLength > maxLength) maxLength = columnLength;
+                });
+                column.width = maxLength < 10 ? 10 : maxLength + 2;
+            });
+        };
+
+        // Sheet 1: Semua Transaksi
+        createSheet('Semua Transaksi', allData);
+        
+        // Sheet 2: Transaksi Selesai (DONE)
+        const doneData = allData.filter(b => b.status === 'done');
+        createSheet('Transaksi Selesai', doneData);
+
+        // Kirim sebagai File Download
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=Laporan_NgebutIN.xlsx');
+
+        await workbook.xlsx.write(res);
+        res.end();
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
