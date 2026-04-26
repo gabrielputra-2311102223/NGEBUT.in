@@ -234,42 +234,58 @@ function calculateDays(start, end) {
 }
 
 function downloadCSV(filename, headers, dataRows, reportTitle = "LAPORAN") {
-    // Hitung ringkasan sederhana
+    // Hitung ringkasan
     const totalTransactions = dataRows.length;
     let totalRevenue = 0;
     dataRows.forEach(row => {
-        const amount = parseFloat(String(row[6]).replace(/[^\d.-]/g, ''));
+        // Cari angka di kolom total bayar (biasanya index 6 atau 7)
+        const amountStr = String(row.find(v => String(v).includes('Rp')) || row[6] || 0);
+        const amount = parseFloat(amountStr.replace(/[^\d.-]/g, ''));
         if (!isNaN(amount)) totalRevenue += amount;
     });
 
     const now = new Date().toLocaleString('id-ID');
+    const separator = "==========================================================================";
     
-    // Header Laporan Premium
+    // Header Laporan Super Premium
     const reportHeader = [
-        [`NGEBUT.IN - SISTEM RENTAL MOTOR`],
-        [`${reportTitle.toUpperCase()}`],
-        [`Dicetak Pada: ${now}`],
+        [separator],
+        [`NGEBUT.IN - OFFICIAL TRANSACTION REPORT`],
+        [separator],
+        [`JENIS LAPORAN : ${reportTitle.toUpperCase()}`],
+        [`TANGGAL CETAK : ${now}`],
         [''],
-        ['RINGKASAN'],
-        ['Total Transaksi', totalTransactions],
-        ['Total Pendapatan', `Rp ${totalRevenue.toLocaleString('id-ID')}`],
+        ['RINGKASAN EKSEKUTIF'],
+        ['-'.repeat(30)],
+        ['Total Volume Transaksi', `${totalTransactions} Records`],
+        ['Total Omzet Bruto', `Rp ${totalRevenue.toLocaleString('id-ID')}`],
+        ['-'.repeat(30)],
         [''],
-        ['DATA DETAIL'],
+        ['TABEL DATA DETAIL'],
         headers
+    ];
+
+    // Footer Laporan
+    const reportFooter = [
+        [''],
+        [separator],
+        [`Dokumen ini dihasilkan secara otomatis oleh Sistem Ngebut.in`],
+        [`Copyright © 2026 Ngebut.in - Premium Rental Solutions`],
+        [separator]
     ];
 
     // Escape special characters and wrap in quotes
     const processRow = (row) => row.map(val => {
-        const cleanVal = (val === null || val === undefined) ? '' : String(val).replace(/"/g, '""');
+        const cleanVal = (val === null || val === undefined) ? '-' : String(val).replace(/"/g, '""');
         return `"${cleanVal}"`;
     }).join(',');
 
     const csvContent = [
         ...reportHeader.map(row => row.map(v => `"${v}"`).join(',')),
-        ...dataRows.map(processRow)
+        ...dataRows.map(processRow),
+        ...reportFooter.map(row => row.map(v => `"${v}"`).join(','))
     ].join('\r\n');
 
-    // Gunakan BOM untuk kompatibilitas Excel
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);

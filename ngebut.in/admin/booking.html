@@ -251,7 +251,7 @@
             }
 
             // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
-            const headers = ["ID Booking", "User", "Email", "Motor", "Tgl Mulai", "Tgl Selesai", "Total Bayar", "Status", "Waktu Transaksi"];
+            const headers = ["ID Transaksi", "Penyewa", "Email", "Motor", "Tgl Mulai", "Tgl Selesai", "Durasi", "Total Bayar", "Status", "Waktu Transaksi"];
             const rows = bookings.map(b => [
                 `#${b.id.toString().slice(-6)}`,
                 b.userName,
@@ -259,7 +259,8 @@
                 b.motorName,
                 b.startDate,
                 b.endDate,
-                b.totalHarga,
+                `${calculateDays(b.startDate, b.endDate)} Hari`,
+                formatRupiah(b.totalHarga),
                 b.status.toUpperCase(),
                 b.createdAt
             ]);
