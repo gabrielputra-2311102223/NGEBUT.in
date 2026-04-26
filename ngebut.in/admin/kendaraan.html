@@ -165,11 +165,18 @@
           </div>
 
           <div class="form-group">
-            <label>URL Gambar</label>
+            <label>Foto Kendaraan</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('fileInput').click()" style="white-space: nowrap;">
+                    <i class="fas fa-upload"></i> Upload Foto
+                </button>
+                <span id="fileNameDisplay" style="font-size: 0.8rem; color: var(--gray-500); overflow: hidden; text-overflow: ellipsis;">Belum ada file dipilih</span>
+            </div>
             <input
               type="text"
               id="motorGambar"
-              placeholder="https://... atau pilih file"
+              placeholder="Atau masukkan URL gambar (https://...)"
             />
             <p
               style="
@@ -178,7 +185,7 @@
                 margin-top: 4px;
               "
             >
-              <i class="fas fa-info-circle"></i> Masukkan URL gambar motor
+              <i class="fas fa-info-circle"></i> Gunakan tombol upload untuk menambahkan foto manual dari HP/Komputer.
             </p>
           </div>
 
@@ -341,6 +348,24 @@
         }
       }
 
+      function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Tampilkan nama file
+        document.getElementById("fileNameDisplay").innerText = file.name;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const base64String = e.target.result;
+          // Set value ke input teks (agar tersimpan ke backend)
+          document.getElementById("motorGambar").value = base64String;
+          // Tampilkan preview
+          document.getElementById("imagePreview").src = base64String;
+        };
+        reader.readAsDataURL(file);
+      }
+
       function openAddModal() {
         editingMotorId = null;
         document.getElementById("modalTitle").innerText = "Tambah Motor Baru";
@@ -351,6 +376,8 @@
         document.getElementById("motorStatus").value = "available";
         document.getElementById("motorGambar").value = "";
         document.getElementById("imagePreview").src = "";
+        document.getElementById("fileNameDisplay").innerText = "Belum ada file dipilih";
+        document.getElementById("fileInput").value = ""; // Reset file input
         document.getElementById("motorModal").style.display = "flex";
       }
 
@@ -368,6 +395,7 @@
         document.getElementById("motorStatus").value = motor.status;
         document.getElementById("motorGambar").value = motor.gambar || "";
         document.getElementById("imagePreview").src = motor.gambar || "";
+        document.getElementById("fileNameDisplay").innerText = motor.gambar ? "Foto tersedia (URL/Base64)" : "Belum ada file dipilih";
         document.getElementById("motorModal").style.display = "flex";
       }
 
