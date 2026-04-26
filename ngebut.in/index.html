@@ -68,7 +68,7 @@
         </div>
         <div class="hero-stats" style="display: flex; gap: clamp(2rem, 8vw, 8rem); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4rem; width: 100%; justify-content: center; background: linear-gradient(to bottom, rgba(255,255,255,0.02), transparent); border-radius: 40px 40px 0 0;">
           <div class="stat-item" style="text-align: center;">
-            <div class="stat-number" style="font-size: clamp(2.5rem, 5vw, 4rem); color: var(--primary); font-weight: 900;">500+</div>
+            <div class="stat-number" style="font-size: clamp(2.5rem, 5vw, 4rem); color: var(--primary); font-weight: 900;">5+</div>
             <div class="stat-label" style="text-transform: uppercase; letter-spacing: 3px; font-size: 0.85rem; font-weight: 700; color: var(--gray-400);">Unit Tersedia</div>
           </div>
           <div class="stat-item" style="text-align: center;">
@@ -110,13 +110,13 @@
         <p style="font-size: 1.2rem; color: var(--gray-500);">Armada terbaru, selalu servis rutin, dan siap tempur.</p>
       </div>
 
-      <div class="filter-bar" style="max-width: 800px; margin: 0 auto 3rem; box-shadow: var(--shadow-lg); padding: 1rem; border-radius: 20px; background: white;">
-        <div class="search-box">
-          <i class="fas fa-search" style="color: var(--gray-400)"></i>
-          <input type="text" id="searchInput" placeholder="Cari Vario, NMAX, atau lainnya..." onkeyup="filterMotor()" />
-          <button class="btn btn-primary" onclick="filterMotor()" style="border-radius: 12px;">Cari</button>
+      <div class="filter-bar" style="max-width: 800px; margin: 0 auto 3rem; box-shadow: var(--shadow-lg); padding: 1.5rem; border-radius: 24px; background: white; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+        <div class="search-box" style="width: 100%; max-width: 600px; margin: 0 auto;">
+          <i class="fas fa-search" style="color: var(--gray-400); margin-right: 10px;"></i>
+          <input type="text" id="searchInput" placeholder="Cari Vario, NMAX, atau lainnya..." onkeyup="filterMotor()" style="width: 100%;" />
+          <button class="btn btn-primary" onclick="filterMotor()" style="border-radius: 14px; padding: 10px 30px;">Cari</button>
         </div>
-        <div class="filter-tabs" style="margin-top: 1rem; border-top: 1px solid var(--gray-100); padding-top: 1rem;">
+        <div class="filter-tabs" style="display: flex; justify-content: center; width: 100%; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--gray-100); padding-top: 1.5rem;">
           <button class="filter-tab active" onclick="setFilter('all')">Semua Motor</button>
           <button class="filter-tab" onclick="setFilter('available')">Tersedia Sekarang</button>
           <button class="filter-tab" onclick="setFilter('booked')">Sedang Disewa</button>
@@ -152,7 +152,7 @@
                     <div style="position: absolute; top: -30px; left: -30px; width: 150px; height: 150px; background: rgba(204,0,0,0.05); border-radius: 50%; z-index: 0;"></div>
                     <img src="/assets/img/logo.png" alt="Ngebut.in Logo" style="position: relative; border-radius: var(--radius-2xl); width: 100%; box-shadow: var(--shadow-2xl); border: 12px solid white; z-index: 1;">
                     <div style="position: absolute; bottom: -20px; right: -20px; background: var(--primary); color: white; padding: 1.5rem 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); z-index: 2;">
-                        <h4 style="font-size: 1.75rem; font-weight: 800; margin: 0;">EST. 2024</h4>
+                        <h4 style="font-size: 1.75rem; font-weight: 800; margin: 0;">EST. 2026</h4>
                     </div>
                 </div>
             </div>
@@ -192,7 +192,7 @@
             <h2>Cara Sewa Motor</h2>
             <p>Proses mudah dan cepat hanya dalam hitungan menit</p>
         </div>
-        <div class="motor-grid">
+        <div class="motor-grid" style="justify-content: center;">
             <div class="stat-item" style="text-align: center;" data-aos="fade-up" data-aos-delay="100">
                 <div style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem; font-weight: 800;">01</div>
                 <h4>Pilih Motor</h4>
@@ -217,7 +217,7 @@
             <h2>Apa Kata Mereka?</h2>
             <p>Ribuan pelanggan telah mempercayakan perjalanan mereka kepada kami</p>
         </div>
-        <div class="motor-grid">
+        <div class="motor-grid" style="justify-content: center;">
             <div class="motor-card" style="padding: 2rem;" data-aos="fade-up">
                 <div style="color: var(--accent); margin-bottom: 1rem;">
                     <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
