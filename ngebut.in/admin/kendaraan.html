@@ -313,7 +313,7 @@
           .join("");
       }
 
-      function quickSetStatus(id, status) {
+      async function quickSetStatus(id, status) {
         const motors = getMotor();
         const motor = motors.find((m) => m.id === id);
         if (!motor) return;
@@ -340,7 +340,7 @@
           kategori: motor.kategori || "umum"
         };
 
-        const success = updateMotor(id, updateData);
+        const success = await updateMotor(id, updateData);
         if (success) {
             renderMotorList();
         } else {
@@ -399,9 +399,9 @@
         document.getElementById("motorModal").style.display = "flex";
       }
 
-      function deleteMotor(id) {
+      async function deleteMotor(id) {
         if (!confirm("Yakin ingin menghapus motor ini?")) return;
-        const success = window.deleteMotor(id);
+        const success = await window.deleteMotor(id);
         if (success) {
             renderMotorList();
         } else {
@@ -409,7 +409,7 @@
         }
       }
 
-      function saveMotorData() {
+      async function saveMotorData() {
         const nama = document.getElementById("motorNama").value.trim();
         const harga = parseInt(document.getElementById("motorHarga").value);
         const deskripsi = document.getElementById("motorDesc").value.trim();
@@ -430,18 +430,30 @@
           kategori: "umum"
         };
 
-        let success = false;
-        if (editingMotorId) {
-          success = updateMotor(editingMotorId, motorData);
-        } else {
-          success = addMotor(motorData);
-        }
+        const btn = document.querySelector('.modal-footer .btn-primary');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
 
-        if (success) {
-          closeModal();
-          renderMotorList();
-        } else {
-          alert("❌ Gagal menyimpan data motor.");
+        try {
+            let success = false;
+            if (editingMotorId) {
+                success = await updateMotor(editingMotorId, motorData);
+            } else {
+                success = await addMotor(motorData);
+            }
+
+            if (success) {
+                closeModal();
+                renderMotorList();
+            } else {
+                alert("❌ Gagal menyimpan data motor. Pastikan koneksi stabil.");
+            }
+        } catch (err) {
+            alert("❌ Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
       }
 

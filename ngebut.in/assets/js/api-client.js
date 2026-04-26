@@ -94,30 +94,38 @@ function getMotor() {
     return [];
 }
 
-function addMotor(data) {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', API_URL + '/api/motors', false);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
-    xhr.send(JSON.stringify(data));
-    return xhr.status === 201;
+async function addMotor(data) {
+    const res = await fetch(API_URL + '/api/motors', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify(data)
+    });
+    return res.status === 201;
 }
 
-function updateMotor(id, data) {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', API_URL + '/api/motors/' + id, false);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
-    xhr.send(JSON.stringify(data));
-    return xhr.status === 200;
+async function updateMotor(id, data) {
+    const res = await fetch(API_URL + '/api/motors/' + id, {
+        method: 'PUT',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify(data)
+    });
+    return res.status === 200;
 }
 
-function deleteMotor(id) {
-    const xhr = new XMLHttpRequest();
-    xhr.open('DELETE', API_URL + '/api/motors/' + id, false);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
-    xhr.send(null);
-    return xhr.status === 200;
+async function deleteMotor(id) {
+    const res = await fetch(API_URL + '/api/motors/' + id, {
+        method: 'DELETE',
+        headers: { 
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+    });
+    return res.status === 200;
 }
 
 function saveMotor(data) {
