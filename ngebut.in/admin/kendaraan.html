@@ -311,6 +311,19 @@
         const motor = motors.find((m) => m.id === id);
         if (!motor) return;
 
+        // Jika diset ke tersedia, cari booking aktif untuk motor ini dan selesaikan
+        if (status === "available") {
+            const bookings = getBooking();
+            const activeBooking = bookings.find(b => String(b.motorId) === String(id) && b.status === "paid");
+            if (activeBooking) {
+                const ok = updateBookingStatus(activeBooking.id, "done");
+                if (ok) {
+                    renderMotorList();
+                    return;
+                }
+            }
+        }
+
         const updateData = {
           nama: motor.nama,
           harga: motor.harga,
