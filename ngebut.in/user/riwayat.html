@@ -102,13 +102,21 @@
         );
         
         const tbody = document.getElementById('riwayatList');
+        const thead = document.querySelector('.data-table thead');
         
         if (bookings.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--gray-500);">
+            if(thead) thead.style.display = 'none';
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--gray-500); border: none;">
                 <i class="fas fa-history" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
                 <h3>Belum ada riwayat booking</h3>
             </td></tr>`;
             return;
+        }
+
+        if(thead) {
+            thead.style.display = '';
+            // For mobile compatibility, ensure headers are visible
+            thead.style.display = 'table-header-group'; 
         }
 
         tbody.innerHTML = bookings
