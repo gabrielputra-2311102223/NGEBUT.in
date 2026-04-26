@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Ngebut.in</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="dashboard-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="mobile-admin-nav">
+        <button class="sidebar-toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <img src="../assets/img/logo.png" alt="Logo" style="height: 35px; mix-blend-mode: multiply;">
+        <div style="width: 24px;"></div>
+    </div>
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../index.html" class="logo" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+            </a>
+            <div class="user-profile" id="userProfile">
+                <!-- Akan diisi oleh JS -->
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="booking.html" class="nav-item">
+                <i class="fas fa-calendar-alt"></i> Booking Saya
+            </a>
+            <a href="riwayat.html" class="nav-item">
+                <i class="fas fa-history"></i> Riwayat
+            </a>
+            <a href="#" class="nav-item logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Selamat Datang, <span id="userName"></span>! 👋</h1>
+                <p>Pilih motor favoritmu dan mulai perjalananmu sekarang</p>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION AREA -->
+        <div id="notificationArea"></div>
+
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+            <div class="search-box">
+                <i class="fas fa-search" style="color: var(--gray-400);"></i>
+                <input type="text" id="searchInput" placeholder="Cari motor..." onkeyup="filterMotor()">
+                <button onclick="filterMotor()">Cari</button>
+            </div>
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="setFilter('all')">Semua</button>
+                <button class="filter-tab" onclick="setFilter('available')">Tersedia</button>
+            </div>
+        </div>
+
+        <!-- MOTOR GRID -->
+        <div id="motorGrid" class="motor-grid"></div>
+    </main>
+
+    <!-- MODAL BOOKING -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalMotorName">Pesan Motor</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nama Penyewa</label>
+                    <input type="text" id="bookingNama" readonly style="background: var(--gray-100);">
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Mulai Sewa</label>
+                    <input type="date" id="tglMulai" onchange="hitungTotal()" min="">
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Selesai Sewa</label>
+                    <input type="date" id="tglSelesai" onchange="hitungTotal()" min="">
+                </div>
+                <div style="background: var(--gray-50); padding: 1.25rem; border-radius: var(--radius-lg); margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">Total Pembayaran</span>
+                        <span id="totalBayarText" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">Rp 0</span>
+                    </div>
+                    <p style="color: var(--gray-500); font-size: 0.875rem; margin-top: 0.5rem;">
+                        <i class="fas fa-info-circle"></i> Harga dihitung per hari
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">Batal</button>
+                <button class="btn btn-primary" onclick="prosesBooking()">Pesan Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/storage.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script>
+    // Proteksi user
+    const user = getCurrentUser();
+    if (!user) {
+        window.location.href = '../login.html';
+    }
+
+    let currentFilter = 'all';
+    let selectedMotorId = null;
+
+    // Set user profile
+    document.getElementById('userName').innerText = user.nama;
+    document.getElementById('userProfile').innerHTML = `
+        <div class="user-avatar">${user.nama.charAt(0).toUpperCase()}</div>
+        <div class="user-info">
+            <h4>${user.nama}</h4>
+            <p><i class="fas fa-user"></i> Member</p>
+        </div>
+    `;
+
+    // NOTIF 
+    function checkNotifications() {
+    const notifications = checkReturnNotifications(user.id);
+    const area = document.getElementById('notificationArea');
+    
+    if (notifications.length > 0) {
+        area.innerHTML = notifications.map(n => `
+            <div class="notification notification-${n.type}">
+                <span class="notification-icon"><i class="fas ${n.icon}"></i></span>
+                <div class="notification-content">
+                    <div class="notification-title">${n.title}</div>
+                    <div>${n.message}</div>
+                </div>
+                <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>
+            </div>
+        `).join('');
+    } else {
+        area.innerHTML = '';
+    }
+}
+    // render katalog
+    function setFilter(status) {
+        currentFilter = status;
+        document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        renderKatalog();
+    }
+
+    function filterMotor() {
+        renderKatalog();
+    }
+
+    function renderKatalog() {
+        const motors = getMotor();
+        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        const grid = document.getElementById('motorGrid');
+        
+        const filtered = motors.filter(m => {
+            const matchSearch = m.nama.toLowerCase().includes(searchTerm);
+            const matchStatus = currentFilter === 'all' || m.status === currentFilter;
+            return matchSearch && matchStatus;
+        });
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--gray-500);">
+                <i class="fas fa-motorcycle" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                <h3>Tidak ada motor ditemukan</h3>
+            </div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(m => {
+
+            // TAMBAHAN (ganti status)
+            let statusClass = '';
+            let statusText = '';
+
+            if (m.status === 'available') {
+                statusClass = 'badge-available';
+                statusText = 'TERSEDIA';
+            } else if (m.status === 'booked') {
+                statusClass = 'badge-booked';
+                statusText = 'DISEWA';
+            } else if (m.status === 'service') {
+                statusClass = 'badge-service';
+                statusText = 'SERVICE';
+            }
+
+            return `
+                <div class="motor-card">
+                    <div class="motor-image">
+                        <img src="${m.gambar && (m.gambar.startsWith('http') || m.gambar.startsWith('../') || m.gambar.startsWith('/')) ? m.gambar : '../' + m.gambar}" alt="${m.nama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${m.nama}'">
+                        
+                        <!-- ✅ SUDAH DIPERBAIKI -->
+                        <span class="motor-badge ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </div>
+
+                    <div class="motor-content">
+                        <h3 class="motor-title">${m.nama}</h3>
+                        <p class="motor-desc">${m.desc || 'Motor berkualitas, siap pakai'}</p>
+
+                        <div class="motor-price">
+                            <span class="price-amount">${formatRupiah(m.harga)}</span>
+                            <span class="price-unit">/hari</span>
+                        </div>
+
+                        <!-- ✅ tombol sudah benar -->
+                        <button class="btn btn-book" style="width: 100%;" onclick="openBookingModal(${m.id})" ${m.status !== 'available' ? 'disabled' : ''}>
+                            <i class="fas fa-bolt"></i> ${m.status === 'available' ? 'Sewa Sekarang' : 'Tidak Tersedia'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function openBookingModal(motorId) {
+        selectedMotorId = motorId;
+        const motor = getMotor().find(m => m.id === motorId);
+        if (!motor) return;
+
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('tglMulai').min = today;
+        document.getElementById('tglSelesai').min = today;
+
+        document.getElementById('modalMotorName').innerText = `Sewa ${motor.nama}`;
+        document.getElementById('bookingNama').value = user.nama;
+        document.getElementById('tglMulai').value = '';
+        document.getElementById('tglSelesai').value = '';
+        document.getElementById('totalBayarText').innerText = 'Rp 0';
+        document.getElementById('bookingModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('bookingModal').style.display = 'none';
+        selectedMotorId = null;
+    }
+
+    function hitungTotal() {
+        if (!selectedMotorId) return 0;
+        
+        const tglMulai = document.getElementById('tglMulai').value;
+        const tglSelesai = document.getElementById('tglSelesai').value;
+        
+        if (!tglMulai || !tglSelesai) return 0;
+
+        const days = calculateDays(tglMulai, tglSelesai);
+        const motor = getMotor().find(m => m.id === selectedMotorId);
+        const total = days * motor.harga;
+
+        document.getElementById('totalBayarText').innerText = formatRupiah(total);
+        return total;
+    }
+
+    function prosesBooking() {
+        if (!selectedMotorId) return;
+        
+        const tglMulai = document.getElementById('tglMulai').value;
+        const tglSelesai = document.getElementById('tglSelesai').value;
+        
+        if (!tglMulai || !tglSelesai) {
+            alert('Pilih tanggal mulai dan selesai');
+            return;
+        }
+
+        const total = hitungTotal();
+        if (total <= 0) return;
+
+        const motors = getMotor();
+        const motor = motors.find(m => m.id === selectedMotorId);
+        
+        if (motor.status !== 'available') {
+            alert('Motor tidak tersedia');
+            return;
+        }
+
+        motor.status = 'booked';
+        saveMotor(motors);
+
+        const bookings = getBooking();
+        const newBooking = {
+            id: Date.now(),
+            motorId: motor.id,
+            motorName: motor.nama,
+            userId: user.id,
+            userName: user.nama,
+            harga: motor.harga,
+            totalHarga: total,
+            startDate: tglMulai,
+            endDate: tglSelesai,
+            status: 'confirm',
+            createdAt: new Date().toISOString()
+        };
+        bookings.push(newBooking);
+        saveBooking(bookings);
+
+        alert('✅ Booking berhasil! Menunggu konfirmasi admin.');
+        closeModal();
+        renderKatalog();
+    }
+
+    document.getElementById('bookingModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // Initialize
+    checkNotifications();
+    renderKatalog();
+
+    // AUTO REFRESH NOTIF
+    setInterval(checkNotifications, 10000);
+</script>

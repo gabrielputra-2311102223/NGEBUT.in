@@ -1,0 +1,94 @@
+// =============================================
+// NGEBUT.IN - MAIN SCRIPT
+// =============================================
+
+// Format currency
+function formatRupiah(amount) {
+    return 'Rp ' + Number(amount).toLocaleString('id-ID');
+}
+
+// Format date
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const d = new Date(dateString);
+    return d.toLocaleDateString('id-ID', { 
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+function formatShortDate(dateString) {
+    if (!dateString) return '-';
+    const d = new Date(dateString);
+    return d.toLocaleDateString('id-ID');
+}
+
+// Calculate rental days
+function calculateDays(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diff = end - start;
+    let days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days === 0 ? 1 : days;
+}
+
+// Get status badge HTML
+function getStatusBadge(status) {
+    const badges = {
+        'confirm': '<span class="status-badge status-confirm"><i class="fas fa-clock"></i> Menunggu Approval</span>',
+        'booked': '<span class="status-badge status-booked"><i class="fas fa-motorcycle"></i> Sedang Disewa</span>',
+        'paid': '<span class="status-badge status-paid"><i class="fas fa-check-circle"></i> Lunas</span>',
+        'done': '<span class="status-badge status-done"><i class="fas fa-flag-checkered"></i> Selesai</span>',
+        'cancelled': '<span class="status-badge status-cancelled"><i class="fas fa-times-circle"></i> Dibatalkan</span>'
+    };
+    return badges[status] || status;
+}
+
+// Check for return notifications (setelah LUNAS)
+function checkReturnNotifications(userId) {
+    const bookings = getBooking().filter(b => 
+        b.userId === userId && 
+        b.status === 'paid' // ✅ HANYA YANG SUDAH LUNAS
+    );
+    
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const notifications = [];
+    
+    bookings.forEach(b => {
+        const endDate = new Date(b.endDate);
+        endDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = endDate - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
+            notifications.push({
+                type: 'danger',
+                title: '⚠️ Sewa Terlambat!',
+                message: `Motor ${b.motorName} sudah melewati batas waktu pengembalian.`,
+                icon: 'fa-exclamation-triangle'
+            });
+        } 
+        else if (diffDays === 0) {
+            notifications.push({
+                type: 'warning',
+                title: '⏰ Hari Terakhir!',
+                message: `Motor ${b.motorName} harus dikembalikan hari ini.`,
+                icon: 'fa-clock'
+            });
+        } 
+        else if (diffDays === 1) {
+            notifications.push({
+                type: 'warning',
+                title: '📅 Besok Pengembalian!',
+                message: `Motor ${b.motorName} harus dikembalikan besok (${formatShortDate(b.endDate)}).`,
+                icon: 'fa-calendar-alt'
+            });
+        }
+    });
+    
+    return notifications;
+}

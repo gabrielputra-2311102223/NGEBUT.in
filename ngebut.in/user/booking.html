@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Saya - Ngebut.in</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="dashboard-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="mobile-admin-nav">
+        <button class="sidebar-toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <img src="../assets/img/logo.png" alt="Logo" style="height: 35px; mix-blend-mode: multiply;">
+        <div style="width: 24px;"></div>
+    </div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../index.html" class="logo" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+            </a>
+            <div class="user-profile" id="userProfile"></div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="booking.html" class="nav-item active">
+                <i class="fas fa-calendar-alt"></i> Booking Saya
+            </a>
+            <a href="riwayat.html" class="nav-item">
+                <i class="fas fa-history"></i> Riwayat
+            </a>
+            <a href="#" class="nav-item logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Booking Saya</h1>
+                <p>Pantau status penyewaan motor Anda</p>
+            </div>
+        </div>
+
+        <div id="notificationArea"></div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Motor</th>
+                        <th>Tanggal Sewa</th>
+                        <th>Durasi</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingList">
+                    <tr><td colspan="5" style="text-align: center; padding: 2rem;">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="../assets/js/storage.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script>
+        const user = getCurrentUser();
+        if (!user) window.location.href = '../login.html';
+
+        document.getElementById('userProfile').innerHTML = `
+            <div class="user-avatar">${user.nama.charAt(0).toUpperCase()}</div>
+            <div class="user-info">
+                <h4>${user.nama}</h4>
+                <p><i class="fas fa-user"></i> Member</p>
+            </div>
+        `;
+
+        function checkNotifications() {
+            const notifications = checkReturnNotifications(user.id);
+            const area = document.getElementById('notificationArea');
+            
+            if (notifications.length > 0) {
+                area.innerHTML = notifications.map(n => `
+                    <div class="notification notification-${n.type}">
+                        <span class="notification-icon"><i class="fas ${n.icon}"></i></span>
+                        <div class="notification-content">
+                            <div class="notification-title">${n.title}</div>
+                            <div>${n.message}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderBookings() {
+            syncAutoDone();
+            const bookings = getBooking().filter(b => 
+                b.userId === user.id && 
+                ['confirm', 'booked', 'paid'].includes(b.status)
+            );
+            
+            const tbody = document.getElementById('bookingList');
+            
+            if (bookings.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 3rem; color: var(--gray-500);">
+                    <i class="fas fa-calendar" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                    <h3>Tidak ada booking aktif</h3>
+                    <a href="dashboard.html" class="btn btn-primary" style="margin-top: 1rem;">Sewa Motor Sekarang</a>
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(b => {
+                const days = calculateDays(b.startDate, b.endDate);
+                return `
+                    <tr>
+                        <td><strong>${b.motorName}</strong></td>
+                        <td>${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}</td>
+                        <td>${days} hari</td>
+                        <td>${formatRupiah(b.totalHarga)}</td>
+                        <td>${getStatusBadge(b.status)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        checkNotifications();
+        renderBookings();
+        setInterval(() => { renderBookings(); checkNotifications(); }, 10000);
+    </script>
+</body>
+</html>
