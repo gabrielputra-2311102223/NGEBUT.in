@@ -370,8 +370,7 @@
 
     <button class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i></button>
 
-    <script src="assets/js/storage.js"></script>
-    <script src="assets/js/script.js"></script>
+    <script src="assets/js/api-client.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
       AOS.init({ duration: 1000, once: true, offset: 100 });
@@ -402,8 +401,11 @@
       let currentFilter = "all";
       let selectedMotorId = null;
 
-      function renderKatalog() {
-        const motors = getMotor();
+      let motorsData = [];
+
+      async function renderKatalog() {
+        const motors = await ApiClient.getMotors();
+        motorsData = motors;
         const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || "";
         const grid = document.getElementById("motorGrid");
         const filtered = motors.filter((m) => {
@@ -418,7 +420,7 @@
         }
 
         grid.innerHTML = filtered.map((m) => {
-            const isAvailable = m.status === "available";
+            const isAvailable = m.status === 'available';
             return `
                 <div class="motor-card" data-aos="fade-up">
                     <div class="motor-image">
@@ -427,7 +429,7 @@
                     </div>
                     <div class="motor-content">
                         <h3 class="motor-title">${m.nama}</h3>
-                        <p class="motor-desc">${m.desc || "Motor berkualitas, siap pakai"}</p>
+                        <p class="motor-desc">${m.deskripsi || "Motor berkualitas, siap pakai"}</p>
                         <div class="motor-price">
                             <span class="price-amount">Rp ${m.harga.toLocaleString()}</span>
                             <span class="price-unit">/hari</span>
@@ -450,13 +452,13 @@
       function filterMotor() { renderKatalog(); }
 
       function openBookingModal(motorId) {
-        const user = getCurrentUser();
+        const user = ApiClient.getCurrentUser();
         if (!user) {
           if (confirm("Anda harus login untuk menyewa motor. Lanjut ke login?")) { window.location.href = "login.html"; }
           return;
         }
         selectedMotorId = motorId;
-        const motor = getMotor().find((m) => m.id === motorId);
+        const motor = motorsData.find((m) => m.id === motorId);
         document.getElementById("modalMotorName").innerText = `Sewa ${motor.nama}`;
         document.getElementById("bookingNama").value = user.nama;
         document.getElementById("bookingModal").style.display = "flex";
@@ -472,36 +474,28 @@
         const end = new Date(tglSelesai);
         let days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
         if (days <= 0) { document.getElementById("totalBayarText").innerText = "Tgl Tidak Valid"; return; }
-        const motor = getMotor().find((m) => m.id === selectedMotorId);
+        const motor = motorsData.find((m) => m.id === selectedMotorId);
         document.getElementById("totalBayarText").innerText = `Rp ${(days * motor.harga).toLocaleString()}`;
       }
 
-      function prosesBooking() {
+      async function prosesBooking() {
         const tglMulai = document.getElementById("tglMulai").value;
         const tglSelesai = document.getElementById("tglSelesai").value;
         if (!tglMulai || !tglSelesai) { alert("Pilih tanggal!"); return; }
         
-        const motor = getMotor().find(m => m.id === selectedMotorId);
+        const motor = motorsData.find(m => m.id === selectedMotorId);
         const days = Math.ceil((new Date(tglSelesai) - new Date(tglMulai)) / (1000 * 60 * 60 * 24)) + 1;
         
         const bookingData = {
-          id: Date.now(),
-          userId: getCurrentUser().id,
-          userName: getCurrentUser().nama,
-          motorId: selectedMotorId,
-          motorNama: motor.nama,
-          tglMulai,
-          tglSelesai,
-          totalHarga: days * motor.harga,
-          status: 'pending',
-          tglBooking: new Date().toISOString()
+          user_id: ApiClient.getCurrentUser().id,
+          motor_id: selectedMotorId,
+          tgl_mulai: tglMulai,
+          tgl_selesai: tglSelesai,
+          total_harga: days * motor.harga
         };
         
-        const bookings = getBookings();
-        bookings.push(bookingData);
-        saveBookings(bookings);
-        
-        alert("Booking berhasil! Silakan lakukan pembayaran di Dashboard.");
+        await ApiClient.createBooking(bookingData);
+        alert("Booking berhasil! Silakan cek riwayat Anda.");
         window.location.href = "user/dashboard.html";
       }
 
