@@ -179,7 +179,7 @@
             return `
                 <div class="motor-card">
                     <div class="motor-image">
-                        <img src="${motor?.gambar ? (motor.gambar.startsWith('http') || motor.gambar.startsWith('../') || motor.gambar.startsWith('/') ? motor.gambar : '../' + motor.gambar) : 'https://placehold.co/400x300'}">
+                        <img src="${getMotorImage(motor?.gambar)}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=Motor'">
                         <span class="motor-badge ${['paid', 'returning', 'done'].includes(b.status) ? 'badge-available' : 'badge-booked'}">
                             ${['paid', 'returning', 'done'].includes(b.status) ? 'LUNAS' : 'BELUM BAYAR'}
                         </span>

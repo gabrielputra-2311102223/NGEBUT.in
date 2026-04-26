@@ -280,7 +280,7 @@
             return `
                 <div class="motor-card">
                     <div class="motor-image">
-                        <img src="${m.gambar && (m.gambar.startsWith('http') || m.gambar.startsWith('../') || m.gambar.startsWith('/')) ? m.gambar : '../' + m.gambar}" alt="${m.nama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${m.nama}'">
+                        <img src="${getMotorImage(m.gambar)}" alt="${m.nama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${m.nama}'">
                         <span class="motor-badge ${status.class}">${status.text}</span>
                     </div>
                     <div class="motor-content">
@@ -294,7 +294,7 @@
                             <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="editMotor(${m.id})">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <button class="btn btn-outline btn-sm" style="flex: 1; color: var(--danger); border-color: var(--danger);" onclick="deleteMotor(${m.id})">
+                            <button class="btn btn-outline btn-sm" style="flex: 1; color: var(--danger); border-color: var(--danger);" onclick="handleDeleteMotor(${m.id})">
                                 <i class="fas fa-trash"></i> Hapus
                             </button>
                         </div>
@@ -399,9 +399,9 @@
         document.getElementById("motorModal").style.display = "flex";
       }
 
-      async function deleteMotor(id) {
+      async function handleDeleteMotor(id) {
         if (!confirm("Yakin ingin menghapus motor ini?")) return;
-        const success = await window.deleteMotor(id);
+        const success = await deleteMotor(id);
         if (success) {
             renderMotorList();
         } else {

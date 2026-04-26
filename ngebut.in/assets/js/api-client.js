@@ -233,6 +233,23 @@ function calculateDays(start, end) {
     return diffDays > 0 ? diffDays : 0;
 }
 
+function getMotorImage(gambar) {
+    if (!gambar) return 'https://placehold.co/400x300/1A1A1A/white?text=No+Image';
+    
+    // Jika Base64 (dimulai dengan data:image) atau URL luar (http)
+    if (gambar.startsWith('data:image') || gambar.startsWith('http')) {
+        return gambar;
+    }
+    
+    // Jika path lokal yang sudah benar
+    if (gambar.startsWith('../') || gambar.startsWith('/')) {
+        return gambar;
+    }
+    
+    // Jika path lokal relatif (tambahkan ../)
+    return '../' + gambar;
+}
+
 function formatRupiah(angka) {
     return 'Rp ' + Number(angka).toLocaleString('id-ID');
 }

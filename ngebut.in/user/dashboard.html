@@ -204,7 +204,7 @@
             return `
                 <div class="motor-card">
                     <div class="motor-image">
-                        <img src="${m.gambar && (m.gambar.startsWith('http') || m.gambar.startsWith('../') || m.gambar.startsWith('/')) ? m.gambar : '../' + m.gambar}" alt="${m.nama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${m.nama}'">
+                        <img src="${getMotorImage(m.gambar)}" alt="${m.nama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${m.nama}'">
                         
                         <!-- ✅ SUDAH DIPERBAIKI -->
                         <span class="motor-badge ${statusClass}">
