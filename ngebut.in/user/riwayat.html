@@ -82,12 +82,13 @@
     if (!user) window.location.href = '../login.html';
 
     document.getElementById('userProfile').innerHTML = `
-        <div class="user-avatar">${user.nama.charAt(0).toUpperCase()}</div>
+        <div class="user-avatar" id="userAvatar"></div>
         <div class="user-info">
             <h4>${user.nama}</h4>
             <p><i class="fas fa-user"></i> Member</p>
         </div>
     `;
+    renderAvatar('#userAvatar', user.nama, user.foto_profil, 50);
 
     function renderRiwayat() {
         // ✔ pastikan status auto update dulu

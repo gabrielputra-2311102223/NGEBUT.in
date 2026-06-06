@@ -103,6 +103,62 @@ function syncAutoDone() {
     // Logic to auto-complete bookings can be added here
 }
 
+// =============================================
+// PROFILE PHOTO (DP) HELPERS
+// =============================================
+
+// Get profile photo URL or null if not set
+function getProfilePhoto(foto_profil) {
+    if (!foto_profil) return null;
+    if (foto_profil.startsWith('data:image') || foto_profil.startsWith('http')) {
+        return foto_profil;
+    }
+    return foto_profil;
+}
+
+// Get initials from name (for default avatar)
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+// Generate background color for avatar based on name
+function getAvatarColor(name) {
+    if (!name) return '#cc0000';
+    const colors = [
+        '#cc0000', '#dc2626', '#ef4444', '#f59e0b', '#10b981',
+        '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+}
+
+// Render avatar (image or initials) into an element
+function renderAvatar(target, name, foto_profil, size) {
+    const photo = getProfilePhoto(foto_profil);
+    const fontSize = (size || 50) * 0.4;
+    const el = (typeof target === 'string') ? document.querySelector(target) : target;
+    if (!el) return;
+    if (photo) {
+        el.style.backgroundImage = `url('${photo}')`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.style.color = 'transparent';
+        el.innerText = '';
+    } else {
+        el.style.backgroundImage = 'none';
+        el.style.background = getAvatarColor(name);
+        el.style.color = 'white';
+        el.style.fontSize = fontSize + 'px';
+        el.innerText = getInitials(name);
+    }
+}
+
 // Sidebar toggle logic for mobile
 document.addEventListener('DOMContentLoaded', () => {
     const sidebarToggle = document.getElementById('sidebarToggle');

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - Ngebut.in</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="dashboard-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="mobile-admin-nav">
+        <button class="sidebar-toggle-btn" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <img src="../assets/img/logo.png" alt="Logo" style="height: 35px; mix-blend-mode: multiply;">
+        <div style="width: 24px;"></div> <!-- Spacer -->
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../index.html" class="logo" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+            </a>
+            <div class="user-profile" id="ownerProfile">
+                <!-- Akan diisi oleh JS -->
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </a>
+            <a href="manajemen-motor.html" class="nav-item">
+                <i class="fas fa-motorcycle"></i> Kelola Kendaraan
+            </a>
+            <a href="approval-booking.html" class="nav-item">
+                <i class="fas fa-calendar-check"></i> Approval Booking
+                <span id="pendingBadge" class="pending-badge" style="margin-left: auto; background: var(--danger); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem;">0</span>
+            </a>
+            <a href="pembayaran.html" class="nav-item">
+                <i class="fas fa-credit-card"></i> Pembayaran
+            </a>
+            <a href="manajemen-user.html" class="nav-item">
+                <i class="fas fa-users"></i> Manajemen User
+            </a>
+            <a href="laporan.html" class="nav-item">
+                <i class="fas fa-file-excel"></i> Laporan Transaksi
+            </a>
+            <a href="profil.html" class="nav-item">
+                <i class="fas fa-user-cog"></i> Profil Saya
+            </a>
+            <a href="#" class="nav-item logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Dashboard Owner</h1>
+                <p>Selamat datang kembali, <span id="ownerName">Owner</span>! Pantau seluruh operasional bisnis rental.</p>
+            </div>
+            <div>
+                <span id="currentDateTime" style="color: var(--gray-500);"></span>
+            </div>
+        </div>
+
+        <!-- STATS CARDS -->
+        <div class="stats-grid">
+            <div class="stat-card" style="border-left: 4px solid var(--primary);">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(204,0,0,0.1); color: var(--primary);">
+                        <i class="fas fa-motorcycle"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="totalMotor">0</div>
+                <div class="stat-label">Total Kendaraan</div>
+            </div>
+
+            <div class="stat-card" style="border-left: 4px solid var(--success);">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(16,185,129,0.1); color: var(--success);">
+                        <i class="fas fa-check-circle"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="availableMotor">0</div>
+                <div class="stat-label">Motor Tersedia</div>
+            </div>
+
+            <div class="stat-card" style="border-left: 4px solid var(--warning);">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);">
+                        <i class="fas fa-clock"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="pendingBooking">0</div>
+                <div class="stat-label">Menunggu Approval</div>
+            </div>
+
+            <div class="stat-card" style="border-left: 4px solid var(--info);">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(59,130,246,0.1); color: var(--info);">
+                        <i class="fas fa-key"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="activeBooking">0</div>
+                <div class="stat-label">Sedang Disewa</div>
+            </div>
+
+            <div class="stat-card" style="border-left: 4px solid #8B5CF6;">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(139,92,246,0.1); color: #8B5CF6;">
+                        <i class="fas fa-wallet"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="paidBooking">0</div>
+                <div class="stat-label">Lunas</div>
+            </div>
+
+            <div class="stat-card" style="border-left: 4px solid #EC4899;">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(236,72,153,0.1); color: #EC4899;">
+                        <i class="fas fa-undo"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="returningBooking">0</div>
+                <div class="stat-label">Menunggu Dicek</div>
+            </div>
+
+            <div class="stat-card" style="border-left: 4px solid var(--gray-500);">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(107,114,128,0.1); color: var(--gray-500);">
+                        <i class="fas fa-flag-checkered"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="completedBooking">0</div>
+                <div class="stat-label">Selesai</div>
+            </div>
+
+            <div class="stat-card" style="border-left: 4px solid #F59E0B;">
+                <div class="stat-header">
+                    <span class="stat-icon" style="background: rgba(245,158,11,0.1); color: #F59E0B;">
+                        <i class="fas fa-users"></i>
+                    </span>
+                </div>
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-label">Total Pengguna</div>
+            </div>
+        </div>
+
+        <!-- RECENT BOOKINGS TABLE -->
+        <div style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: var(--secondary);">
+                    <i class="fas fa-list" style="color: var(--primary); margin-right: 8px;"></i>
+                    Booking Terbaru
+                </h3>
+                <div>
+                    <button class="btn btn-outline btn-sm" style="margin-right: 10px;" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                    <a href="approval-booking.html" class="btn btn-outline btn-sm">
+                        Lihat Semua <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Penyewa</th>
+                            <th>Motor</th>
+                            <th>Tanggal Sewa</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentBookingsTable">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- INCOME CHART -->
+        <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="stat-card">
+                <h4 style="margin-bottom: 1rem; color: var(--secondary);">
+                    <i class="fas fa-chart-line" style="color: var(--primary); margin-right: 8px;"></i>
+                    Ringkasan Pendapatan
+                </h4>
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Hari Ini</span>
+                        <span style="font-weight: 700;" id="incomeToday">Rp 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Minggu Ini</span>
+                        <span style="font-weight: 700;" id="incomeWeek">Rp 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Bulan Ini</span>
+                        <span style="font-weight: 700;" id="incomeMonth">Rp 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--gray-200);">
+                        <span style="font-weight: 700;">Total Keseluruhan</span>
+                        <span style="font-weight: 800; color: var(--primary); font-size: 1.25rem;" id="incomeTotal">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h4 style="margin-bottom: 1rem; color: var(--secondary);">
+                    <i class="fas fa-users" style="color: var(--primary); margin-right: 8px;"></i>
+                    Statistik Pelanggan
+                </h4>
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Total Pelanggan</span>
+                        <span style="font-weight: 700;" id="totalCustomers">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Pelanggan Baru (Bulan Ini)</span>
+                        <span style="font-weight: 700;" id="newCustomers">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Total Transaksi</span>
+                        <span style="font-weight: 700;" id="totalTransactions">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--gray-200);">
+                        <span>Rata-rata Transaksi</span>
+                        <span style="font-weight: 700;" id="avgTransaction">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api-client.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script>
+        // Proteksi halaman owner
+        const user = getCurrentUser();
+        if (!user || user.role !== 'owner') {
+            window.location.href = '../login.html';
+        }
+
+        // Render profile in sidebar
+        document.getElementById('ownerName').innerText = user.nama;
+        document.getElementById('ownerProfile').innerHTML = `
+            <div class="user-avatar" id="sidebarAvatar"></div>
+            <div class="user-info">
+                <h4>${user.nama}</h4>
+                <p><i class="fas fa-crown"></i> Owner</p>
+            </div>
+        `;
+        renderAvatar(document.getElementById('sidebarAvatar'), user.nama, user.foto_profil, 50);
+
+        // Update tanggal & waktu
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('currentDateTime').innerText = now.toLocaleDateString('id-ID', options);
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // Render dashboard
+        function renderDashboard() {
+            const motors = getMotor();
+            const bookings = getBooking();
+            const users = getUsers();
+
+            // Stats motor
+            document.getElementById('totalMotor').innerText = motors.length;
+            document.getElementById('availableMotor').innerText = motors.filter(m => m.status === 'available').length;
+
+            // Stats booking
+            const pending = bookings.filter(b => b.status === 'confirm').length;
+            const active = bookings.filter(b => b.status === 'booked').length;
+            const paid = bookings.filter(b => b.status === 'paid').length;
+            const returning = bookings.filter(b => b.status === 'returning').length;
+            const completed = bookings.filter(b => b.status === 'done').length;
+
+            document.getElementById('pendingBooking').innerText = pending;
+            document.getElementById('activeBooking').innerText = active;
+            document.getElementById('paidBooking').innerText = paid;
+            document.getElementById('returningBooking').innerText = returning;
+            document.getElementById('completedBooking').innerText = completed;
+
+            // Stats users
+            document.getElementById('totalUsers').innerText = users.length;
+
+            // Update badge pending di sidebar
+            const badge = document.getElementById('pendingBadge');
+            if (badge) {
+                badge.innerText = pending;
+                badge.style.display = pending > 0 ? 'inline-block' : 'none';
+            }
+
+            // Recent bookings (5 terbaru)
+            const recentBookings = [...bookings]
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 5);
+
+            const tableBody = document.getElementById('recentBookingsTable');
+            if (recentBookings.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--gray-500);">Belum ada booking</td></tr>`;
+            } else {
+                tableBody.innerHTML = recentBookings.map(b => {
+                    const now = new Date();
+                    const endDateObj = new Date(b.endDate);
+                    now.setHours(0,0,0,0);
+                    endDateObj.setHours(0,0,0,0);
+
+                    let lateBadge = "";
+                    if (b.status === "paid" && now > endDateObj) {
+                        const lateDays = Math.ceil((now - endDateObj) / (1000 * 60 * 60 * 24));
+                        lateBadge = `<div style="color: var(--danger); font-size: 0.75rem; margin-top: 4px; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> Telat ${lateDays} hr</div>`;
+                    }
+
+                    return `
+                    <tr>
+                        <td><code>#${b.id.toString().slice(-6)}</code></td>
+                        <td><strong>${b.userName}</strong></td>
+                        <td>${b.motorName}</td>
+                        <td>${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}${lateBadge}</td>
+                        <td>${formatRupiah(b.totalHarga)}</td>
+                        <td>${getStatusBadge(b.status)}</td>
+                    </tr>
+                    `;
+                }).join('');
+            }
+
+            // Kalkulasi pendapatan
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            let incomeToday = 0, incomeWeek = 0, incomeMonth = 0, incomeTotal = 0;
+
+            bookings.filter(b => b.status === 'paid' || b.status === 'done').forEach(b => {
+                const bookingDate = new Date(b.createdAt);
+                const amount = b.totalHarga || 0;
+
+                incomeTotal += amount;
+
+                if (bookingDate >= today) incomeToday += amount;
+                if (bookingDate >= weekStart) incomeWeek += amount;
+                if (bookingDate >= monthStart) incomeMonth += amount;
+            });
+
+            document.getElementById('incomeToday').innerText = formatRupiah(incomeToday);
+            document.getElementById('incomeWeek').innerText = formatRupiah(incomeWeek);
+            document.getElementById('incomeMonth').innerText = formatRupiah(incomeMonth);
+            document.getElementById('incomeTotal').innerText = formatRupiah(incomeTotal);
+
+            // Statistik pelanggan
+            const customers = users.filter(u => u.role === 'user');
+            const newThisMonth = customers.filter(u => {
+                const created = new Date(u.createdAt);
+                return created >= monthStart;
+            }).length;
+
+            const totalTrans = bookings.filter(b => b.status === 'paid' || b.status === 'done').length;
+            const avgTrans = totalTrans > 0 ? incomeTotal / totalTrans : 0;
+
+            document.getElementById('totalCustomers').innerText = customers.length;
+            document.getElementById('newCustomers').innerText = newThisMonth;
+            document.getElementById('totalTransactions').innerText = totalTrans;
+            document.getElementById('avgTransaction').innerText = formatRupiah(avgTrans);
+        }
+
+        function exportToCSV() {
+            const bookings = getBooking();
+            if (bookings.length === 0) {
+                alert("Tidak ada data transaksi untuk diexport!");
+                return;
+            }
+
+            const exportDate = new Date().toLocaleString('id-ID');
+            let csvContent = "﻿sep=,\n";
+            csvContent += `LAPORAN TRANSAKSI NGEBUT.IN,,,Exported: ${exportDate}\n\n`;
+            csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga (Rp),Status\n";
+
+            bookings.forEach(b => {
+                const days = calculateDays(b.startDate, b.endDate);
+                const tglSewa = b.startDate ? b.startDate.split('T')[0] : '-';
+                const tglKembali = b.endDate ? b.endDate.split('T')[0] : '-';
+
+                const row = [
+                    `#${b.id.toString().slice(-6)}`,
+                    `"${b.userName}"`,
+                    `"${b.motorName}"`,
+                    tglSewa,
+                    tglKembali,
+                    `"${days} Hari"`,
+                    b.totalHarga,
+                    b.status.toUpperCase()
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Laporan_NgebutIN_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        renderDashboard();
+        setInterval(renderDashboard, 5000);
+    </script>
+</body>
+</html>

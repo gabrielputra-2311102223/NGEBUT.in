@@ -24,7 +24,7 @@
           <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
         </a>
         <div class="user-profile">
-          <div class="user-avatar">A</div>
+          <div class="user-avatar" id="adminAvatar"></div>
           <div class="user-info">
             <h4>Administrator</h4>
             <p><i class="fas fa-shield-alt"></i> Super Admin</p>
@@ -230,6 +230,12 @@
       if (!user || user.role !== "admin") {
         window.location.href = "../login.html";
       }
+
+      // Render avatar admin
+      document.getElementById('adminAvatar').style.width = '50px';
+      document.getElementById('adminAvatar').style.height = '50px';
+      document.getElementById('adminAvatar').style.fontSize = '20px';
+      renderAvatar('#adminAvatar', user.nama, user.foto_profil, 50);
 
       let currentFilter = "all";
       let editingMotorId = null;

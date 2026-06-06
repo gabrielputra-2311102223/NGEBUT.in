@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Saya - Ngebut.in</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .profile-section {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+        .profile-avatar-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary);
+            margin-bottom: 1rem;
+        }
+        .profile-avatar-large img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .avatar-upload-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.3s;
+        }
+        .avatar-upload-btn:hover {
+            background: var(--primary-dark);
+        }
+        .avatar-preview-container {
+            position: relative;
+            display: inline-block;
+        }
+        .avatar-remove-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--danger);
+            color: white;
+            border: 2px solid white;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        .avatar-remove-btn:hover {
+            background: #c53030;
+        }
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .form-actions .btn {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-left">
+            <div class="auth-left-content">
+                <a href="index.html" class="logo" style="display: flex; align-items: center; justify-content: center; background: white; padding: 15px; border-radius: 20px; box-shadow: var(--shadow-lg); margin-bottom: 2rem;">
+                    <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 80px; width: auto; object-fit: contain;">
+                </a>
+                <h2>Profil Saya</h2>
+                <p>Kelola informasi dan foto profil Anda.</p>
+            </div>
+        </div>
+        <div class="auth-right">
+            <div class="auth-box profile-section">
+                <!-- Avatar Section -->
+                <div class="profile-avatar-section">
+                    <div class="profile-avatar-large">
+                        <img id="avatarPreview" src="" alt="Avatar">
+                    </div>
+                    <div class="avatar-preview-container" id="avatarUploadContainer">
+                        <button class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()">
+                            <i class="fas fa-camera"></i> Ubah Foto
+                        </button>
+                    </div>
+                    <button class="avatar-remove-btn" id="removeAvatarBtn" onclick="removeAvatar()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
+                    <p style="color: var(--gray-500); font-size: 0.85rem; margin-top: 0.5rem;">
+                        Klik untuk mengubah foto profil
+                    </p>
+                </div>
+
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="profileNama" placeholder="Nama Lengkap" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="profileEmail" placeholder="Email" disabled style="background: var(--gray-100);">
+                    </div>
+
+                    <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 2rem 0;">
+
+                    <h4 style="margin-bottom: 1rem; color: var(--secondary);">Ubah Password (Opsional)</h4>
+
+                    <div class="form-group">
+                        <label>Password Saat Ini</label>
+                        <input type="password" id="currentPassword" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Password Baru</label>
+                        <input type="password" id="newPassword" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Konfirmasi Password Baru</label>
+                        <input type="password" id="confirmNewPassword" placeholder="••••••••">
+                    </div>
+
+                    <div id="profileMessage" class="success-message" style="display: none;"></div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left"></i> Kembali
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api-client.js"></script>
+    <script>
+        const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Ccircle cx='120' cy='80' r='50' fill='%23ccc'/%3E%3Ccircle cx='120' cy='220' r='90' fill='%23999'/%3E%3C/svg%3E";
+
+        async function loadProfile() {
+            const user = ApiClient.getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const result = await ApiClient.getUserById(user.id);
+                if (result.user) {
+                    const u = result.user;
+                    document.getElementById('profileNama').value = u.nama;
+                    document.getElementById('profileEmail').value = u.email;
+
+                    const avatarUrl = u.foto_profil || DEFAULT_AVATAR;
+                    document.getElementById('avatarPreview').src = avatarUrl;
+
+                    // Show/hide remove button if avatar exists
+                    if (u.foto_profil) {
+                        document.getElementById('removeAvatarBtn').style.display = 'flex';
+                        document.getElementById('avatarUploadContainer').style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load profile:', err);
+            }
+        }
+
+        let avatarBase64 = null;
+
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('File harus berupa gambar!');
+                return;
+            }
+
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Ukuran file terlalu besar! Maksimal 2MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                avatarBase64 = e.target.result;
+                document.getElementById('avatarPreview').src = avatarBase64;
+                document.getElementById('removeAvatarBtn').style.display = 'flex';
+                document.getElementById('avatarUploadContainer').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeAvatar() {
+            avatarBase64 = null;
+            document.getElementById('avatarPreview').src = DEFAULT_AVATAR;
+            document.getElementById('removeAvatarBtn').style.display = 'none';
+            document.getElementById('avatarUploadContainer').style.display = 'inline-block';
+            document.getElementById('avatarInput').value = '';
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const nama = document.getElementById('profileNama').value.trim();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+            const messageEl = document.getElementById('profileMessage');
+
+            if (!nama) {
+                messageEl.style.display = 'block';
+                messageEl.className = 'error-message';
+                messageEl.innerText = 'Nama harus diisi';
+                return;
+            }
+
+            if (newPassword || confirmNewPassword) {
+                if (!currentPassword) {
+                    messageEl.style.display = 'block';
+                    messageEl.className = 'error-message';
+                    messageEl.innerText = 'Masukkan password saat ini untuk mengubah password';
+                    return;
+                }
+                if (newPassword.length < 6) {
+                    messageEl.style.display = 'block';
+                    messageEl.className = 'error-message';
+                    messageEl.innerText = 'Password baru minimal 6 karakter';
+                    return;
+                }
+                if (newPassword !== confirmNewPassword) {
+                    messageEl.style.display = 'block';
+                    messageEl.className = 'error-message';
+                    messageEl.innerText = 'Konfirmasi password tidak cocok';
+                    return;
+                }
+            }
+
+            try {
+                const body = { nama };
+                if (avatarBase64 !== null) {
+                    body.foto_profil = avatarBase64;
+                }
+                if (currentPassword && newPassword) {
+                    body.current_password = currentPassword;
+                    body.new_password = newPassword;
+                }
+
+                const user = ApiClient.getCurrentUser();
+                const result = await ApiClient.updateUser(user.id, body);
+
+                if (result.success) {
+                    messageEl.style.display = 'block';
+                    messageEl.className = 'success-message';
+                    messageEl.innerText = 'Profil berhasil diperbarui!';
+
+                    // Reset password fields
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmNewPassword').value = '';
+
+                    // Reload avatar if changed
+                    if (avatarBase64 !== null) {
+                        const refreshed = await ApiClient.getUserById(user.id);
+                        if (refreshed.user) {
+                            document.getElementById('avatarPreview').src = refreshed.user.foto_profil || DEFAULT_AVATAR;
+                            document.getElementById('removeAvatarBtn').style.display = 'flex';
+                            document.getElementById('avatarUploadContainer').style.display = 'none';
+                        }
+                    }
+                } else {
+                    messageEl.style.display = 'block';
+                    messageEl.className = 'error-message';
+                    messageEl.innerText = result.error || 'Gagal memperbarui profil';
+                }
+            } catch (err) {
+                messageEl.style.display = 'block';
+                messageEl.className = 'error-message';
+                messageEl.innerText = 'Gagal memperbarui profil: ' + (err.message || 'Terjadi kesalahan');
+            }
+        });
+
+        // Load default avatar on start
+        document.getElementById('avatarPreview').src = DEFAULT_AVATAR;
+        loadProfile();
+    </script>
+</body>
+</html>

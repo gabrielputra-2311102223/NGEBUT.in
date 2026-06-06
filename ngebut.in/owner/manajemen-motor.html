@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kelola Kendaraan - Ngebut.in Admin</title>
+    <link rel="stylesheet" href="../assets/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+  <body class="dashboard-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="mobile-admin-nav">
+        <button class="sidebar-toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <img src="../assets/img/logo.png" alt="Logo" style="height: 35px; mix-blend-mode: multiply;">
+        <div style="width: 24px;"></div>
+    </div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="../index.html" class="logo" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+          <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+        </a>
+        <div class="user-profile">
+          <div class="user-avatar" id="ownerAvatar"></div>
+          <div class="user-info">
+            <h4>Owner</h4>
+            <p><i class="fas fa-shield-alt"></i> Owner</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item">
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="kendaraan.html" class="nav-item active">
+          <i class="fas fa-motorcycle"></i> Kelola Kendaraan
+        </a>
+        <a href="booking.html" class="nav-item">
+          <i class="fas fa-calendar-check"></i> Approval Booking
+        </a>
+        <a href="pembayaran.html" class="nav-item">
+          <i class="fas fa-credit-card"></i> Pembayaran
+        </a>
+        <a href="users.html" class="nav-item">
+          <i class="fas fa-users"></i> Manajemen User
+        </a>
+        <a href="#" class="nav-item logout" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Kelola Kendaraan</h1>
+          <p>Tambah, edit, dan atur status kendaraan rental</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <i class="fas fa-plus"></i> Tambah Motor
+        </button>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <div class="search-box">
+          <i class="fas fa-search" style="color: var(--gray-400)"></i>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Cari motor..."
+            onkeyup="renderMotorList()"
+          />
+          <button onclick="renderMotorList()">Cari</button>
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setFilter('all')">
+            Semua
+          </button>
+          <button class="filter-tab" onclick="setFilter('available')">
+            Tersedia
+          </button>
+          <button class="filter-tab" onclick="setFilter('booked')">
+            Disewa
+          </button>
+          <button class="filter-tab" onclick="setFilter('service')">
+            Service
+          </button>
+        </div>
+      </div>
+
+      <!-- MOTOR GRID -->
+      <div id="motorGrid" class="motor-grid"></div>
+    </main>
+
+    <!-- MODAL TAMBAH/EDIT MOTOR -->
+    <div id="motorModal" class="modal-overlay">
+      <div class="modal" style="max-width: 500px">
+        <div class="modal-header">
+          <h3 id="modalTitle">Tambah Motor Baru</h3>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="motorId" />
+
+          <div class="form-group">
+            <label
+              >Nama Motor <span style="color: var(--danger)">*</span></label
+            >
+            <input
+              type="text"
+              id="motorNama"
+              placeholder="Contoh: Honda Vario 125"
+            />
+          </div>
+
+          <div class="form-group">
+            <label
+              >Harga per Hari <span style="color: var(--danger)">*</span></label
+            >
+            <input
+              type="number"
+              id="motorHarga"
+              placeholder="Contoh: 75000"
+              min="0"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Deskripsi</label>
+            <textarea
+              id="motorDesc"
+              rows="3"
+              placeholder="Deskripsi singkat motor..."
+              style="
+                width: 100%;
+                padding: 12px;
+                border: 2px solid var(--gray-200);
+                border-radius: var(--radius-lg);
+                resize: vertical;
+              "
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select
+              id="motorStatus"
+              style="
+                width: 100%;
+                padding: 12px;
+                border: 2px solid var(--gray-200);
+                border-radius: var(--radius-lg);
+              "
+            >
+              <option value="available">Tersedia</option>
+              <option value="booked">Disewa</option>
+              <option value="service">Service</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Foto Kendaraan</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('fileInput').click()" style="white-space: nowrap;">
+                    <i class="fas fa-upload"></i> Upload Foto
+                </button>
+                <span id="fileNameDisplay" style="font-size: 0.8rem; color: var(--gray-500); overflow: hidden; text-overflow: ellipsis;">Belum ada file dipilih</span>
+            </div>
+            <input
+              type="text"
+              id="motorGambar"
+              placeholder="Atau masukkan URL gambar (https://...)"
+            />
+            <p
+              style="
+                font-size: 0.75rem;
+                color: var(--gray-500);
+                margin-top: 4px;
+              "
+            >
+              <i class="fas fa-info-circle"></i> Gunakan tombol upload untuk menambahkan foto manual dari HP/Komputer.
+            </p>
+          </div>
+
+          <div
+            style="
+              background: var(--gray-50);
+              padding: 1rem;
+              border-radius: var(--radius-lg);
+            "
+          >
+            <p style="font-weight: 600; margin-bottom: 0.5rem">
+              <i class="fas fa-image"></i> Preview Gambar
+            </p>
+            <img
+              id="imagePreview"
+              src=""
+              alt="Preview"
+              style="
+                width: 100%;
+                height: 150px;
+                object-fit: cover;
+                border-radius: var(--radius-md);
+                background: var(--gray-200);
+              "
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal()">Batal</button>
+          <button class="btn btn-primary" onclick="saveMotorData()" style="background: var(--success); border-color: var(--success);">
+            <i class="fas fa-save"></i> Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../assets/js/api-client.js?v=1.2"></script>
+    <script src="../assets/js/script.js?v=1.2"></script>
+    <script>
+      // Proteksi admin
+      const user = getCurrentUser();
+      if (!user || user.role !== "admin") {
+        window.location.href = "../login.html";
+      }
+
+      // Render avatar admin
+      document.getElementById('ownerAvatar').style.width = '50px';
+      document.getElementById('ownerAvatar').style.height = '50px';
+      document.getElementById('ownerAvatar').style.fontSize = '20px';
+      renderAvatar('#ownerAvatar', user.nama, user.foto_profil, 50);
+
+      let currentFilter = "all";
+      let editingMotorId = null;
+
+
+
+      function setFilter(status) {
+        currentFilter = status;
+        document
+          .querySelectorAll(".filter-tab")
+          .forEach((tab) => tab.classList.remove("active"));
+        event.target.classList.add("active");
+        renderMotorList();
+      }
+
+      function renderMotorList() {
+        const motors = getMotor();
+        const searchTerm =
+          document.getElementById("searchInput")?.value.toLowerCase() || "";
+        const grid = document.getElementById("motorGrid");
+
+        const filtered = motors.filter((m) => {
+          const name = m.nama || "";
+          const desc = m.deskripsi || m.desc || "";
+          const matchSearch = name.toLowerCase().includes(searchTerm) || desc.toLowerCase().includes(searchTerm);
+          const matchStatus = currentFilter === "all" || m.status === currentFilter;
+          return matchSearch && matchStatus;
+        });
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--gray-500);">
+                <i class="fas fa-motorcycle" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                <h3>Tidak ada motor ditemukan</h3>
+                <p>Coba kata kunci lain atau tambah motor baru</p>
+            </div>`;
+          return;
+        }
+
+        grid.innerHTML = filtered
+          .map((m) => {
+            const statusColors = {
+              available: { class: "badge-available", text: "TERSEDIA" },
+              booked: { class: "badge-booked", text: "DISEWA" },
+              service: { class: "badge-service", text: "SERVICE" },
+            };
+            const status = statusColors[m.status] || statusColors.available;
+
+            return `
+                <div class="motor-card">
+                    <div class="motor-image">
+                        <img src="${getMotorImage(m.gambar)}" alt="${m.nama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${m.nama}'">
+                        <span class="motor-badge ${status.class}">${status.text}</span>
+                    </div>
+                    <div class="motor-content">
+                        <h3 class="motor-title">${m.nama}</h3>
+                        <p class="motor-desc">${m.deskripsi || m.desc || "-"}</p>
+                        <div class="motor-price">
+                            <span class="price-amount">${formatRupiah(m.harga)}</span>
+                            <span class="price-unit">/hari</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 1rem;">
+                            <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="editMotor(${m.id})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-outline btn-sm" style="flex: 1; color: var(--danger); border-color: var(--danger);" onclick="handleDeleteMotor(${m.id})">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: 6px; margin-top: 8px;">
+                            <button class="btn btn-sm" style="flex: 1; background: var(--success); color: white;" onclick="quickSetStatus(${m.id}, 'available')">
+                                <i class="fas fa-check"></i> Tersedia
+                            </button>
+                            <button class="btn btn-sm" style="flex: 1; background: var(--warning); color: white;" onclick="quickSetStatus(${m.id}, 'service')">
+                                <i class="fas fa-tools"></i> Service
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function quickSetStatus(id, status) {
+        const motors = getMotor();
+        const motor = motors.find((m) => m.id === id);
+        if (!motor) return;
+
+        // Jika diset ke tersedia, cari booking aktif untuk motor ini dan selesaikan
+        if (status === "available") {
+            const bookings = getBooking();
+            const activeBooking = bookings.find(b => String(b.motorId) === String(id) && b.status === "paid");
+            if (activeBooking) {
+                const ok = updateBookingStatus(activeBooking.id, "done");
+                if (ok) {
+                    renderMotorList();
+                    return;
+                }
+            }
+        }
+
+        const updateData = {
+          nama: motor.nama,
+          harga: motor.harga,
+          deskripsi: motor.deskripsi || motor.desc || "-",
+          gambar: motor.gambar,
+          status: status,
+          kategori: motor.kategori || "umum"
+        };
+
+        const success = await updateMotor(id, updateData);
+        if (success) {
+            renderMotorList();
+        } else {
+            alert("❌ Gagal memperbarui status motor.");
+        }
+      }
+
+      function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Tampilkan nama file
+        document.getElementById("fileNameDisplay").innerText = file.name;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const base64String = e.target.result;
+          // Set value ke input teks (agar tersimpan ke backend)
+          document.getElementById("motorGambar").value = base64String;
+          // Tampilkan preview
+          document.getElementById("imagePreview").src = base64String;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function openAddModal() {
+        editingMotorId = null;
+        document.getElementById("modalTitle").innerText = "Tambah Motor Baru";
+        document.getElementById("motorId").value = "";
+        document.getElementById("motorNama").value = "";
+        document.getElementById("motorHarga").value = "";
+        document.getElementById("motorDesc").value = "";
+        document.getElementById("motorStatus").value = "available";
+        document.getElementById("motorGambar").value = "";
+        document.getElementById("imagePreview").src = "";
+        document.getElementById("fileNameDisplay").innerText = "Belum ada file dipilih";
+        document.getElementById("fileInput").value = ""; // Reset file input
+        document.getElementById("motorModal").style.display = "flex";
+      }
+
+      function editMotor(id) {
+        const motors = getMotor();
+        const motor = motors.find((m) => m.id === id);
+        if (!motor) return;
+
+        editingMotorId = id;
+        document.getElementById("modalTitle").innerText = "Edit Motor";
+        document.getElementById("motorId").value = motor.id;
+        document.getElementById("motorNama").value = motor.nama;
+        document.getElementById("motorHarga").value = motor.harga;
+        document.getElementById("motorDesc").value = motor.deskripsi || motor.desc || "";
+        document.getElementById("motorStatus").value = motor.status;
+        document.getElementById("motorGambar").value = motor.gambar || "";
+        document.getElementById("imagePreview").src = motor.gambar || "";
+        document.getElementById("fileNameDisplay").innerText = motor.gambar ? "Foto tersedia (URL/Base64)" : "Belum ada file dipilih";
+        document.getElementById("motorModal").style.display = "flex";
+      }
+
+      async function handleDeleteMotor(id) {
+        if (!confirm("Yakin ingin menghapus motor ini?")) return;
+        const success = await deleteMotor(id);
+        if (success) {
+            renderMotorList();
+        } else {
+            alert("❌ Gagal menghapus motor.");
+        }
+      }
+
+      async function saveMotorData() {
+        const nama = document.getElementById("motorNama").value.trim();
+        const harga = parseInt(document.getElementById("motorHarga").value);
+        const deskripsi = document.getElementById("motorDesc").value.trim();
+        const status = document.getElementById("motorStatus").value;
+        const gambar = document.getElementById("motorGambar").value.trim();
+
+        if (!nama || !harga || harga <= 0) {
+          alert("Nama dan harga wajib diisi dengan benar!");
+          return;
+        }
+
+        const motorData = {
+          nama,
+          harga,
+          deskripsi: deskripsi || "-",
+          status,
+          gambar: gambar || "https://placehold.co/400x300/1A1A1A/white?text=Motor",
+          kategori: "umum"
+        };
+
+        const btn = document.querySelector('.modal-footer .btn-primary');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+
+        try {
+            let success = false;
+            if (editingMotorId) {
+                success = await updateMotor(editingMotorId, motorData);
+            } else {
+                success = await addMotor(motorData);
+            }
+
+            if (success) {
+                closeModal();
+                renderMotorList();
+            } else {
+                alert("❌ Gagal menyimpan data motor. Pastikan koneksi stabil.");
+            }
+        } catch (err) {
+            alert("❌ Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+      }
+
+      function closeModal() {
+        document.getElementById("motorModal").style.display = "none";
+        editingMotorId = null;
+      }
+
+      // Preview image when URL changes
+      document
+        .getElementById("motorGambar")
+        .addEventListener("input", function () {
+          document.getElementById("imagePreview").src = this.value || "";
+        });
+
+      // Close modal when clicking outside
+      document
+        .getElementById("motorModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeModal();
+        });
+
+      // Initialize
+      renderMotorList();
+    </script>
+  </body>
+</html>

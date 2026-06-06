@@ -1,37 +1,40 @@
--- SCHEMA FOR AZURE SQL DATABASE (NGEBUT.IN)
+-- SCHEMA FOR MYSQL DATABASE (NGEBUT.IN)
 
 -- 1. Tabel Users
 CREATE TABLE Users (
-    id INT PRIMARY KEY IDENTITY(1,1),
-    nama NVARCHAR(100) NOT NULL,
-    email NVARCHAR(100) UNIQUE NOT NULL,
-    password NVARCHAR(255) NOT NULL,
-    role NVARCHAR(20) DEFAULT 'user', -- 'admin' atau 'user'
-    created_at DATETIME DEFAULT GETDATE()
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) DEFAULT 'user', -- 'admin', 'owner', atau 'user'
+    foto_profil LONGTEXT NULL, -- Base64 atau URL foto profil
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 2. Tabel Motors
 CREATE TABLE Motors (
-    id INT PRIMARY KEY IDENTITY(1,1),
-    nama NVARCHAR(100) NOT NULL,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nama VARCHAR(100) NOT NULL,
     harga INT NOT NULL,
-    deskripsi NVARCHAR(MAX),
-    gambar NVARCHAR(MAX),
-    status NVARCHAR(20) DEFAULT 'available', -- 'available' atau 'booked'
-    kategori NVARCHAR(50) -- 'sport', 'matic', 'bebek'
+    deskripsi LONGTEXT,
+    gambar LONGTEXT,
+    status VARCHAR(20) DEFAULT 'available', -- 'available' atau 'booked'
+    kategori VARCHAR(50) -- 'sport', 'matic', 'bebek'
 );
 
 -- 3. Tabel Bookings
 CREATE TABLE Bookings (
-    id INT PRIMARY KEY IDENTITY(1,1),
-    user_id INT FOREIGN KEY REFERENCES Users(id),
-    motor_id INT FOREIGN KEY REFERENCES Motors(id),
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    motor_id INT,
     tgl_mulai DATE NOT NULL,
     tgl_selesai DATE NOT NULL,
     total_harga INT NOT NULL,
-    status NVARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected', 'completed'
-    bukti_pembayaran NVARCHAR(255),
-    created_at DATETIME DEFAULT GETDATE()
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected', 'completed', 'confirm', 'booked', 'paid', 'returning', 'done', 'cancelled'
+    bukti_pembayaran VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (motor_id) REFERENCES Motors(id) ON DELETE CASCADE
 );
 
 -- 4. Initial Data (Motors)

@@ -33,8 +33,8 @@ const ApiClient = {
     logout: () => {
         localStorage.removeItem('token');
         localStorage.removeItem('ngebutin_current_user');
-        // Detect if we're in a subfolder (admin/ or user/)
-        if (window.location.pathname.includes('/admin/') || window.location.pathname.includes('/user/')) {
+        // Detect if we're in a subfolder (admin/, owner/, or user/)
+        if (window.location.pathname.includes('/admin/') || window.location.pathname.includes('/user/') || window.location.pathname.includes('/owner/')) {
             window.location.href = '../login.html';
         } else {
             window.location.href = 'login.html';
@@ -51,7 +51,7 @@ const ApiClient = {
     createBooking: async (bookingData) => {
         const res = await fetch(`${API_URL}/api/bookings`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
@@ -60,10 +60,54 @@ const ApiClient = {
         return await res.json();
     },
 
+    // Profile
+    getMyProfile: async (id) => {
+        const res = await fetch(`${API_URL}/api/users/me/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        return await res.json();
+    },
+
+    updateProfile: async (id, payload) => {
+        const res = await fetch(`${API_URL}/api/users/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+        return await res.json();
+    },
+
+    uploadProfilePhoto: async (id, photoBase64) => {
+        const res = await fetch(`${API_URL}/api/users/${id}/photo`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ photo: photoBase64 })
+        });
+        return await res.json();
+    },
+
     // Helpers
     getCurrentUser: () => {
         const user = localStorage.getItem('ngebutin_current_user');
         return user ? JSON.parse(user) : null;
+    },
+
+    // Update current user cache
+    updateCurrentUser: (user) => {
+        localStorage.setItem('ngebutin_current_user', JSON.stringify(user));
+    },
+
+    // Get dashboard URL by role
+    getDashboardUrl: (role) => {
+        if (role === 'admin') return 'admin/dashboard.html';
+        if (role === 'owner') return 'owner/dashboard.html';
+        return 'user/dashboard.html';
     }
 };
 

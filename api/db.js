@@ -1,35 +1,28 @@
-const sql = require('mssql');
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-const config = {
-    user: process.env.AZURE_SQL_USER,
-    password: process.env.AZURE_SQL_PASSWORD,
-    server: process.env.AZURE_SQL_SERVER, 
-    database: process.env.AZURE_SQL_DATABASE,
-    options: {
-        encrypt: true,
-        trustServerCertificate: false
-    },
-    connectionTimeout: 60000,  // 60 detik (default 15 detik terlalu cepat)
-    requestTimeout: 30000,     // 30 detik untuk query
-    pool: {
-        max: 10,
-        min: 0,
-        idleTimeoutMillis: 30000
-    }
-};
+// Create the connection pool
+// This uses generic environment variables that can be set in Vercel or locally
+const poolPromise = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'ngebutin',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
 
-const poolPromise = new sql.ConnectionPool(config)
-    .connect()
-    .then(pool => {
-        console.log('Connected to Azure SQL Database');
-        return pool;
+// Test the connection immediately
+poolPromise.getConnection()
+    .then(connection => {
+        console.log('Connected to MySQL Database');
+        connection.release();
     })
     .catch(err => {
         console.error('Database Connection Failed: ', err);
-        throw err;
     });
 
 module.exports = {
-    sql, poolPromise
+    poolPromise
 };

@@ -82,11 +82,7 @@
                     errorEl.innerText = result.error;
                 } else {
                     const user = ApiClient.getCurrentUser();
-                    if (user.role === 'admin') {
-                        window.location.href = 'admin/dashboard.html';
-                    } else {
-                        window.location.href = 'user/dashboard.html';
-                    }
+                    window.location.href = ApiClient.getDashboardUrl(user.role);
                 }
             } catch (err) {
                 errorEl.innerText = 'Gagal menghubungkan ke server';

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approval Booking - Ngebut.in Admin</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="dashboard-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="mobile-admin-nav">
+        <button class="sidebar-toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <img src="../assets/img/logo.png" alt="Logo" style="height: 35px; mix-blend-mode: multiply;">
+        <div style="width: 24px;"></div>
+    </div>
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../index.html" class="logo" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+            </a>
+            <div class="user-profile">
+                <div class="user-avatar" id="ownerAvatar"></div>
+                <div class="user-info">
+                    <h4>Owner</h4>
+                    <p><i class="fas fa-shield-alt"></i> Owner</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </a>
+            <a href="kendaraan.html" class="nav-item">
+                <i class="fas fa-motorcycle"></i> Kelola Kendaraan
+            </a>
+            <a href="booking.html" class="nav-item active">
+                <i class="fas fa-calendar-check"></i> Approval Booking
+            </a>
+            <a href="pembayaran.html" class="nav-item">
+                <i class="fas fa-credit-card"></i> Pembayaran
+            </a>
+            <a href="users.html" class="nav-item">
+                <i class="fas fa-users"></i> Manajemen User
+            </a>
+            <a href="#" class="nav-item logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Approval Booking</h1>
+                <p>Setujui atau tolak permintaan sewa dari pelanggan</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-outline btn-sm" onclick="exportToCSV()" title="Export CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button class="btn btn-primary" onclick="exportToExcel()" style="background: #1D6F42; border-color: #1D6F42;">
+                    <i class="fas fa-file-excel"></i> Export Excel (Premium)
+                </button>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION AREA -->
+        <div id="notificationArea"></div>
+
+        <!-- FILTER TABS -->
+        <div class="filter-tabs" style="margin-bottom: 1.5rem;">
+            <button class="filter-tab active" onclick="setFilter('confirm')">
+                <i class="fas fa-clock"></i> Menunggu Approval
+            </button>
+            <button class="filter-tab" onclick="setFilter('all')">
+                <i class="fas fa-list"></i> Semua Booking
+            </button>
+        </div>
+
+        <!-- BOOKINGS TABLE -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID Booking</th>
+                        <th>Penyewa</th>
+                        <th>Motor</th>
+                        <th>Tanggal Sewa</th>
+                        <th>Durasi</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsTable">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem;">Memuat data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- MODAL DETAIL -->
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Detail Booking</h3>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="detailContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeDetailModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api-client.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script>
+        // Proteksi admin
+        const user = getCurrentUser();
+        if (!user || user.role === 'owner') {
+            window.location.href = '../login.html';
+        }
+
+        // Render avatar admin
+        document.getElementById('ownerAvatar').style.width = '50px';
+        document.getElementById('ownerAvatar').style.height = '50px';
+        document.getElementById('ownerAvatar').style.fontSize = '20px';
+        renderAvatar('#ownerAvatar', user.nama, user.foto_profil, 50);
+
+        let currentFilter = 'confirm';
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            renderBookings();
+        }
+
+        function renderBookings() {
+            let bookings = getBooking();
+            const tableBody = document.getElementById('bookingsTable');
+            
+            // Filter
+            if (currentFilter === 'confirm') {
+                bookings = bookings.filter(b => b.status === 'confirm');
+            }
+            
+            // Sort by newest first
+            bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            if (bookings.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 3rem; color: var(--gray-500);">
+                    <i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                    <h3>Tidak ada booking</h3>
+                    <p>${currentFilter === 'confirm' ? 'Tidak ada permintaan booking yang menunggu approval.' : 'Belum ada booking.'}</p>
+                </td></tr>`;
+                return;
+            }
+            
+            tableBody.innerHTML = bookings.map(b => {
+                const days = calculateDays(b.startDate, b.endDate);
+                
+                return `
+                    <tr>
+                        <td><code>#${b.id.toString().slice(-6)}</code></td>
+                        <td>
+                            <strong>${b.userName}</strong>
+                        </td>
+                        <td>${b.motorName}</td>
+                        <td>${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}</td>
+                        <td>${days} hari</td>
+                        <td><strong>${formatRupiah(b.totalHarga)}</strong></td>
+                        <td>${getStatusBadge(b.status)}</td>
+                        <td>
+                            <div class="action-buttons">
+                                ${b.status === 'confirm' ? `
+                                    <button class="btn-action btn-approve" onclick="approveBooking(${b.id})">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button class="btn-action btn-reject" onclick="rejectBooking(${b.id})">
+                                        <i class="fas fa-times"></i> Tolak
+                                    </button>
+                                ` : `
+                                    <button class="btn-action btn-view" onclick="viewDetail(${b.id})">
+                                        <i class="fas fa-eye"></i> Detail
+                                    </button>
+                                `}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function approveBooking(bookingId) {
+            if (!confirm('Setujui permintaan sewa ini? Motor akan berstatus DISEWA.')) return;
+            
+            const success = updateBookingStatus(bookingId, 'booked');
+            if (success) {
+                showNotification('✅ Booking berhasil disetujui!', 'success');
+                renderBookings();
+            } else {
+                alert('Gagal mengupdate booking');
+            }
+        }
+
+        function rejectBooking(bookingId) {
+            if (!confirm('Tolak permintaan sewa ini? Motor akan kembali TERSEDIA.')) return;
+            
+            const success = updateBookingStatus(bookingId, 'cancelled');
+            if (success) {
+                showNotification('❌ Booking ditolak. Motor kembali tersedia.', 'danger');
+                renderBookings();
+            } else {
+                alert('Gagal mengupdate booking');
+            }
+        }
+
+        function viewDetail(bookingId) {
+            const bookings = getBooking();
+            const booking = bookings.find(b => String(b.id) === String(bookingId));
+            if (!booking) return;
+            
+            const days = calculateDays(booking.startDate, booking.endDate);
+            
+            document.getElementById('detailContent').innerHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <p><strong>ID Booking:</strong> #${booking.id.toString().slice(-6)}</p>
+                    <p><strong>Penyewa:</strong> ${booking.userName}</p>
+                    <p><strong>Motor:</strong> ${booking.motorName}</p>
+                    <p><strong>Harga/Hari:</strong> ${formatRupiah(booking.harga)}</p>
+                    <p><strong>Tanggal Sewa:</strong> ${formatDate(booking.startDate)}</p>
+                    <p><strong>Tanggal Kembali:</strong> ${formatDate(booking.endDate)}</p>
+                    <p><strong>Durasi:</strong> ${days} hari</p>
+                    <p><strong>Total:</strong> ${formatRupiah(booking.totalHarga)}</p>
+                    <p><strong>Status:</strong> ${getStatusBadge(booking.status)}</p>
+                    <p><strong>Dibuat Pada:</strong> ${formatDate(booking.createdAt)}</p>
+                </div>
+            `;
+            
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        function exportToExcel() {
+            window.location.href = window.location.origin + '/api/export/excel';
+        }
+
+        function exportToCSV() {
+            const bookings = getBooking();
+            if (bookings.length === 0) {
+                alert("Tidak ada data untuk diexport!");
+                return;
+            }
+
+            // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
+            const headers = ["ID Transaksi", "Penyewa", "Email", "Motor", "Tgl Mulai", "Tgl Selesai", "Durasi", "Total Bayar", "Status", "Waktu Transaksi"];
+            const rows = bookings.map(b => [
+                `#${b.id.toString().slice(-6)}`,
+                b.userName,
+                b.userEmail || "-",
+                b.motorName,
+                b.startDate,
+                b.endDate,
+                `${calculateDays(b.startDate, b.endDate)} Hari`,
+                formatRupiah(b.totalHarga),
+                b.status.toUpperCase(),
+                b.createdAt
+            ]);
+
+            downloadCSV("Laporan_Booking_NgebutIN.csv", headers, rows, "Laporan Approval Booking Kendaraan");
+        }
+
+        function showNotification(message, type) {
+            const area = document.getElementById('notificationArea');
+            area.innerHTML = `
+                <div class="notification notification-${type}">
+                    <span class="notification-icon"><i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'times-circle' : 'info-circle'}"></i></span>
+                    <div class="notification-content">
+                        <div class="notification-title">${message}</div>
+                    </div>
+                    <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                area.innerHTML = '';
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDetailModal();
+        });
+
+        // Initialize
+        renderBookings();
+        setInterval(renderBookings, 10000);
+    </script>
+</body>
+</html>
