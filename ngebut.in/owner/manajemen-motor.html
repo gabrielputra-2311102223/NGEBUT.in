@@ -227,7 +227,7 @@
     <script>
       // Proteksi admin
       const user = getCurrentUser();
-      if (!user || user.role !== "admin") {
+      if (!user || (user.role !== "admin" && user.role !== "owner")) {
         window.location.href = "../login.html";
       }
 

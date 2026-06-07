@@ -97,7 +97,7 @@
     <script>
         // Proteksi halaman admin
         const currentUser = getCurrentUser();
-        if (!currentUser || currentUser.role !== 'admin') {
+        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) {
             window.location.href = '../login.html';
         }
 
