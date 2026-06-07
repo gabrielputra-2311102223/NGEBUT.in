@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/motor.dart';
 import '../../providers/booking_provider.dart';
+import '../../providers/auth_provider.dart';
 import 'dp_upload_screen.dart';
 
 class MotorDetailScreen extends StatefulWidget {
@@ -93,8 +94,11 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
       final String startStr = "${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}";
       final String endStr = "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}";
 
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      final userId = user != null ? user['id'] : 0;
+
       final provider = Provider.of<BookingProvider>(context, listen: false);
-      final bookingId = await provider.createBooking(widget.motor.id, startStr, endStr);
+      final bookingId = await provider.createBooking(userId, widget.motor.id, startStr, endStr, _totalPrice);
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -167,6 +171,64 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
                         Text(
                           '${motor.formattedHarga} /hari',
                           style: const TextStyle(fontSize: 20, color: Color(0xFFCC0000), fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
+                                    const SizedBox(height: 4),
+                                    const Text('2023', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.settings, size: 20, color: Colors.grey),
+                                    const SizedBox(height: 4),
+                                    const Text('Matic', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.speed, size: 20, color: Colors.grey),
+                                    const SizedBox(height: 4),
+                                    const Text('110cc', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
                         const Text(

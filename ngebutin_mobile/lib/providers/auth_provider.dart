@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_client.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -64,5 +65,44 @@ class AuthProvider with ChangeNotifier {
     await ApiClient.clearSession();
     _user = null;
     notifyListeners();
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    if (_user == null) return;
+    final response = await ApiClient.put('/users/${_user!['id']}', data);
+    _user = response['user'];
+    // Re-save token and user
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token != null) {
+      await ApiClient.saveToken(token, _user!);
+    }
+    notifyListeners();
+  }
+
+  Future<void> uploadPhoto(String base64Image) async {
+    if (_user == null) return;
+    final response = await ApiClient.post('/users/${_user!['id']}/photo', {
+      'photo': base64Image
+    });
+    _user = response['user'];
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token != null) {
+      await ApiClient.saveToken(token, _user!);
+    }
+    notifyListeners();
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await ApiClient.post('/auth/forgot-password', {'email': email});
+  }
+
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    await ApiClient.post('/auth/reset-password', {
+      'email': email,
+      'otp': otp,
+      'newPassword': newPassword
+    });
   }
 }

@@ -22,6 +22,7 @@
         <a href="#contact" class="nav-link">Kontak</a>
       </div>
       <div class="nav-buttons" id="navAuthButtons">
+        <a href="Ngebutin.apk" download class="btn btn-outline" style="border-color: #10B981; color: #10B981;"><i class="fab fa-android"></i> APK</a>
         <a href="login.html" class="btn btn-outline">Masuk</a>
         <a href="register.html" class="btn btn-primary">Daftar</a>
       </div>
@@ -39,6 +40,7 @@
             <a href="#how-it-works" class="mobile-link">Cara Sewa</a>
             <a href="#contact" class="mobile-link">Hubungi Kami</a>
             <hr style="width: 100%; border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 1rem 0;">
+            <a href="Ngebutin.apk" download class="btn btn-outline" style="width: 100%; color: #10B981; border-color: #10B981; margin-bottom: 10px;"><i class="fab fa-android"></i> Download App</a>
             <a href="login.html" class="btn btn-outline" style="width: 100%; color: white; border-color: white;">Masuk</a>
             <a href="register.html" class="btn btn-primary" style="width: 100%;">Daftar Sekarang</a>
         </div>
@@ -64,6 +66,9 @@
           </a>
           <a href="#how-it-works" class="btn btn-outline-light btn-lg" style="padding: 1.5rem 4rem; border-radius: 60px; font-size: 1.25rem; backdrop-filter: blur(10px);">
             <i class="fas fa-play-circle" style="margin-right: 10px;"></i> Tutorial
+          </a>
+          <a href="Ngebutin.apk" download="Ngebutin.apk" class="btn btn-primary btn-lg" style="padding: 1.5rem 4rem; border-radius: 60px; font-size: 1.25rem; background: #166534; border-color: #166534; box-shadow: 0 20px 40px rgba(22,101,52,0.3);">
+            <i class="fab fa-android" style="margin-right: 10px;"></i> Download APK
           </a>
         </div>
         <div class="hero-stats" style="display: flex; gap: clamp(2rem, 8vw, 8rem); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4rem; width: 100%; justify-content: center; background: linear-gradient(to bottom, rgba(255,255,255,0.02), transparent); border-radius: 40px 40px 0 0;">
@@ -560,6 +565,7 @@
           const dashboardText = user.role === 'admin' ? 'Panel Admin' : 'Dashboard';
           
           desktopButtons.innerHTML = `
+            <a href="Ngebutin.apk" download class="btn btn-outline" style="border-color: #10B981; color: #10B981; margin-right: 10px;"><i class="fab fa-android"></i> APK</a>
             <a href="${dashboardUrl}" class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);">
                 <i class="fas fa-user-circle"></i> ${dashboardText}
             </a>

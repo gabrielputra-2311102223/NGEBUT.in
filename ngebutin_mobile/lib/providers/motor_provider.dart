@@ -24,4 +24,54 @@ class MotorProvider with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
+  Future<void> addMotor(Motor motor) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.post('/motors', {
+        'nama': motor.nama,
+        'kategori': motor.kategori,
+        'harga': motor.harga,
+        'deskripsi': motor.deskripsi,
+        'gambar': motor.gambar,
+        'status': motor.status,
+      });
+      await fetchMotors();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateMotor(Motor motor) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/motors/${motor.id}', {
+        'nama': motor.nama,
+        'kategori': motor.kategori,
+        'harga': motor.harga,
+        'deskripsi': motor.deskripsi,
+        'gambar': motor.gambar,
+        'status': motor.status,
+      });
+      await fetchMotors();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteMotor(int id) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.delete('/motors/$id');
+      await fetchMotors();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

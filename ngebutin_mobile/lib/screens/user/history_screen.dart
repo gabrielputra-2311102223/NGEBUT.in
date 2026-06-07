@@ -32,11 +32,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     Color textColor = Colors.grey.shade800;
     String text = status.toUpperCase();
 
-    if (status == 'pending' && statusPembayaran == 'menunggu_dp') {
+    if (status == 'pending' && (statusPembayaran == 'menunggu_dp' || statusPembayaran == null)) {
       bgColor = const Color(0xFFFEF08A);
       textColor = const Color(0xFF854D0E);
       text = 'MENUNGGU DP';
-    } else if (status == 'pending' && statusPembayaran == 'dp_uploaded') {
+    } else if (status == 'pending' && (statusPembayaran == 'dp_uploaded' || statusPembayaran == 'verifikasi')) {
       bgColor = const Color(0xFFBAE6FD);
       textColor = const Color(0xFF0369A1);
       text = 'VERIFIKASI DP';
@@ -68,9 +68,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Riwayat Pesanan'),
-        backgroundColor: const Color(0xFFCC0000),
-        foregroundColor: Colors.white,
+        title: const Text('Riwayat Pesanan', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
       ),
       body: Consumer<BookingProvider>(
         builder: (context, provider, child) {
@@ -122,7 +120,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Order #${b['id']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                          _buildStatusBadge(b['status'], b['statusPembayaran']),
+                          _buildStatusBadge(b['status'] ?? 'pending', b['statusPembayaran'] ?? b['status_pembayaran'] ?? 'menunggu_dp'),
                         ],
                       ),
                       const Divider(height: 24),
@@ -130,7 +128,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         children: [
                           const Icon(Icons.calendar_month, color: Color(0xFFCC0000), size: 20),
                           const SizedBox(width: 8),
-                          Text('${b['startDate'].toString().split('T')[0]} s/d ${b['endDate'].toString().split('T')[0]}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                          Text('${(b['startDate'] ?? b['tgl_mulai'] ?? '').toString().split('T')[0]} s/d ${(b['endDate'] ?? b['tgl_selesai'] ?? '').toString().split('T')[0]}', style: const TextStyle(fontWeight: FontWeight.w600)),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -138,10 +136,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Total Biaya', style: TextStyle(color: Colors.grey)),
-                          Text(_formatCurrency(b['totalHarga']), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(_formatCurrency(b['totalHarga'] ?? b['total_harga'] ?? 0), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
-                      if (b['status'] == 'pending' && b['statusPembayaran'] == 'menunggu_dp') ...[
+                      if ((b['status'] == 'pending') && (b['statusPembayaran'] == 'menunggu_dp' || b['status_pembayaran'] == 'menunggu_dp' || b['statusPembayaran'] == null)) ...[
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,

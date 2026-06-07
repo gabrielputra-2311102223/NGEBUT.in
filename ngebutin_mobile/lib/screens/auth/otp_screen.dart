@@ -50,9 +50,7 @@ class _OtpScreenState extends State<OtpScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Verifikasi Email'),
-        backgroundColor: const Color(0xFFCC0000),
-        foregroundColor: Colors.white,
+        title: const Text('Verifikasi Email', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
       ),
       body: Center(
         child: SingleChildScrollView(
