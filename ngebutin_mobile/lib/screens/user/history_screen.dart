@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
+import 'dp_upload_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -140,6 +141,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           Text(_formatCurrency(b['totalHarga']), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
+                      if (b['status'] == 'pending' && b['statusPembayaran'] == 'menunggu_dp') ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => DpUploadScreen(
+                                    bookingId: b['id'],
+                                    dpAmount: (b['totalHarga'] / 2).round(),
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.upload),
+                            label: const Text('UPLOAD BUKTI DP'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFCC0000),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 );
