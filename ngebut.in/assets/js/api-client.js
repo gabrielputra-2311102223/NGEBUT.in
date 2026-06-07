@@ -39,6 +39,24 @@ const ApiClient = {
         return await res.json();
     },
 
+    forgotPassword: async (email) => {
+        const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        return await res.json();
+    },
+
+    resetPassword: async (email, otp, newPassword) => {
+        const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp, newPassword })
+        });
+        return await res.json();
+    },
+
     logout: () => {
         localStorage.removeItem('token');
         localStorage.removeItem('ngebutin_current_user');

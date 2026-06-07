@@ -108,4 +108,33 @@ async function sendBookingNotification(toEmail, userName, motorName, totalHarga,
     return transporter.sendMail(mailOptions);
 }
 
-module.exports = { generateOTP, sendOtpEmail, sendPasswordChangeNotification, sendBookingNotification };
+// Kirim Email OTP Reset Password
+async function sendResetPasswordOtp(toEmail, otpCode, userName) {
+    const mailOptions = {
+        from: `"Ngebut.in 🏍️" <${process.env.EMAIL_USER}>`,
+        to: toEmail,
+        subject: '🔑 Reset Password - Ngebut.in',
+        html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 20px;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h1 style="color: #e63946; font-size: 28px; margin: 0;">NGEBUT.IN</h1>
+                <p style="color: #a0a0b0; font-size: 14px; margin: 5px 0;">Premium Motor Rental</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+                <h2 style="color: #e0e0e0; font-size: 18px; margin: 0 0 10px;">Halo, ${userName}!</h2>
+                <p style="color: #b0b0c0; font-size: 14px; margin: 0 0 15px;">Kami menerima permintaan untuk mereset password Anda. Berikut adalah kode OTP Anda:</p>
+                <div style="background: linear-gradient(135deg, #e63946, #ff6b6b); color: white; font-size: 36px; font-weight: bold; letter-spacing: 10px; padding: 20px; border-radius: 12px; margin: 15px 0;">
+                    ${otpCode}
+                </div>
+                <p style="color: #a0a0b0; font-size: 13px; margin: 15px 0 0;">Kode ini berlaku selama <strong style="color: #e63946;">10 menit</strong></p>
+                <p style="color: #a0a0b0; font-size: 12px;">Jika Anda tidak merasa meminta reset password, abaikan email ini.</p>
+            </div>
+            <p style="color: #555; font-size: 11px; text-align: center; margin-top: 20px;">© 2026 Ngebut.in - Purwokerto</p>
+        </div>
+        `
+    };
+
+    return transporter.sendMail(mailOptions);
+}
+
+module.exports = { generateOTP, sendOtpEmail, sendPasswordChangeNotification, sendBookingNotification, sendResetPasswordOtp };

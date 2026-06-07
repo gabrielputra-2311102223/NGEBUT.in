@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
 const { poolPromise } = require('./db');
-const { generateOTP, sendOtpEmail, sendPasswordChangeNotification, sendBookingNotification } = require('./email');
+const { generateOTP, sendOtpEmail, sendPasswordChangeNotification, sendBookingNotification, sendResetPasswordOtp } = require('./email');
 
 const app = express();
 app.use(cors());
@@ -118,6 +118,84 @@ app.post('/api/auth/login', async (req, res) => {
 
         const token = jwt.sign({ id: user.id, role: user.role, nama: user.nama }, JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, user: { id: user.id, nama: user.nama, role: user.role, foto_profil: user.foto_profil } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Lupa Password (Request OTP)
+app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        const [rows] = await poolPromise.query('SELECT * FROM Users WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Email tidak terdaftar.' });
+        }
+
+        const user = rows[0];
+        const otpCode = generateOTP();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 menit
+
+        // Update otp ke database
+        await poolPromise.query(
+            'UPDATE Users SET otp_code = ?, otp_expires = ? WHERE email = ?',
+            [otpCode, otpExpires, email]
+        );
+
+        // Kirim OTP via email
+        try {
+            await sendResetPasswordOtp(email, otpCode, user.nama);
+        } catch (emailErr) {
+            console.error('Email send error:', emailErr.message);
+            // Tetap lanjut meskipun email error
+        }
+
+        res.json({ message: 'Kode OTP untuk reset password telah dikirim ke email Anda.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Reset Password (Verify OTP & Set New Password)
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        const [rows] = await poolPromise.query('SELECT * FROM Users WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Email tidak ditemukan.' });
+        }
+
+        const user = rows[0];
+
+        // Cek apakah OTP expired
+        if (!user.otp_code || !user.otp_expires || new Date() > new Date(user.otp_expires)) {
+            return res.status(400).json({ error: 'Kode OTP sudah tidak valid atau kedaluwarsa. Silakan minta kode baru.' });
+        }
+
+        // Cek kecocokan OTP
+        if (user.otp_code !== otp) {
+            return res.status(400).json({ error: 'Kode OTP salah.' });
+        }
+
+        // Enkripsi password baru
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password dan bersihkan OTP
+        await poolPromise.query(
+            'UPDATE Users SET password = ?, otp_code = NULL, otp_expires = NULL WHERE email = ?',
+            [hashedPassword, email]
+        );
+
+        // Kirim notifikasi password berhasil diubah
+        try {
+            await sendPasswordChangeNotification(email, user.nama);
+        } catch (e) {
+            console.error('Password notification email error:', e.message);
+        }
+
+        res.json({ message: 'Password berhasil direset! Silakan login.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
