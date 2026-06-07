@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/motor_provider.dart';
 import '../auth/login_screen.dart';
 import 'motor_detail_screen.dart';
+import 'history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -14,6 +15,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -73,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
       ),
-      body: Consumer<MotorProvider>(
+      body: _currentIndex == 0 ? Consumer<MotorProvider>(
         builder: (context, motorProvider, child) {
           if (motorProvider.isLoading) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
@@ -114,45 +117,65 @@ class _HomeScreenState extends State<HomeScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     clipBehavior: Clip.antiAlias,
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          color: Colors.white,
-                          child: _buildImage(motor.gambar),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            child: _buildImage(motor.gambar),
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              motor.nama,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              motor.formattedHarga,
-                              style: const TextStyle(color: Color(0xFFCC0000), fontWeight: FontWeight.bold),
-                            ),
-                            const Text(
-                              '/hari',
-                              style: TextStyle(fontSize: 10, color: Colors.grey),
-                            ),
-                          ],
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                motor.nama,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                motor.formattedHarga,
+                                style: const TextStyle(color: Color(0xFFCC0000), fontWeight: FontWeight.bold),
+                              ),
+                              const Text(
+                                '/hari',
+                                style: TextStyle(fontSize: 10, color: Colors.grey),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           );
         },
+      ) : const HistoryScreen(), // End body condition
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        selectedItemColor: const Color(0xFFCC0000),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.motorcycle),
+            label: 'Katalog',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Riwayat',
+          ),
+        ],
       ),
     );
   }
