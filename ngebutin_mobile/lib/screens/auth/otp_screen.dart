@@ -2,30 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../user/home_screen.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class OtpScreen extends StatefulWidget {
+  final String email;
+
+  const OtpScreen({Key? key, required this.email}) : super(key: key);
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _OtpScreenState createState() => _OtpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+class _OtpScreenState extends State<OtpScreen> {
+  final _otpController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _login() async {
+  Future<void> _verifyOtp() async {
+    final otp = _otpController.text.trim();
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP harus 6 digit'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      await Provider.of<AuthProvider>(context, listen: false).login(
-        _emailController.text,
-        _passwordController.text,
-      );
+      await Provider.of<AuthProvider>(context, listen: false).verifyOtp(widget.email, otp);
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
         );
       }
     } catch (e) {
@@ -43,6 +49,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        title: const Text('Verifikasi Email'),
+        backgroundColor: const Color(0xFFCC0000),
+        foregroundColor: Colors.white,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -50,40 +61,39 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.motorcycle, size: 80, color: Color(0xFFCC0000)),
+              const Icon(Icons.mark_email_read, size: 80, color: Color(0xFFCC0000)),
               const SizedBox(height: 16),
               const Text(
-                'NGEBUT.IN',
+                'Cek Email Anda',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFCC0000),
+                  color: Color(0xFF1A1A1A),
                 ),
               ),
-              const SizedBox(height: 48),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
+              const SizedBox(height: 8),
+              Text(
+                'Kami telah mengirimkan 6 digit kode OTP ke ${widget.email}. Silakan cek kotak masuk atau folder spam.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
               TextField(
-                controller: _passwordController,
+                controller: _otpController,
+                textAlign: TextAlign.center,
+                maxLength: 6,
+                style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
                 decoration: const InputDecoration(
-                  labelText: 'Password',
+                  counterText: "",
+                  hintText: "000000",
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
                 ),
-                obscureText: true,
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _isLoading ? null : _login,
+                onPressed: _isLoading ? null : _verifyOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFCC0000),
                   foregroundColor: Colors.white,
@@ -92,19 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: _isLoading 
                     ? const CircularProgressIndicator(color: Colors.white) 
-                    : const Text('MASUK'),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  );
-                },
-                child: const Text(
-                  'Belum punya akun? Daftar Sekarang',
-                  style: TextStyle(color: Color(0xFFCC0000), fontWeight: FontWeight.bold),
-                ),
+                    : const Text('VERIFIKASI'),
               ),
             ],
           ),

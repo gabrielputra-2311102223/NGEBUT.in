@@ -37,6 +37,29 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> register(String nama, String email, String password) async {
+    await ApiClient.post('/auth/register', {
+      'nama': nama,
+      'email': email,
+      'password': password,
+    });
+    // Not returning token yet because need OTP
+  }
+
+  Future<void> verifyOtp(String email, String otp) async {
+    final response = await ApiClient.post('/auth/verify-otp', {
+      'email': email,
+      'otp': otp,
+    });
+
+    final token = response['token'];
+    final user = response['user'];
+    
+    await ApiClient.saveToken(token, user);
+    _user = user;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     await ApiClient.clearSession();
     _user = null;
