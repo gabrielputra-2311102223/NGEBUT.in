@@ -151,7 +151,7 @@
             
             // Filter
             if (currentFilter === 'confirm') {
-                bookings = bookings.filter(b => b.status === 'confirm');
+                bookings = bookings.filter(b => b.status === 'confirm' || b.statusPembayaran === 'dp_uploaded');
             }
             
             // Sort by newest first
@@ -169,6 +169,30 @@
             tableBody.innerHTML = bookings.map(b => {
                 const days = calculateDays(b.startDate, b.endDate);
                 
+                let actionBtns = '';
+                if (b.statusPembayaran === 'dp_uploaded') {
+                    actionBtns = `
+                        <button class="btn-action btn-approve" onclick="verifyDP(${b.id}, '${b.dpBukti}')" style="background: var(--info); color: white;">
+                            <i class="fas fa-search-dollar"></i> Cek DP
+                        </button>
+                    `;
+                } else if (b.status === 'confirm') {
+                    actionBtns = `
+                        <button class="btn-action btn-approve" onclick="approveBooking(${b.id})">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn-action btn-reject" onclick="rejectBooking(${b.id})">
+                            <i class="fas fa-times"></i> Tolak
+                        </button>
+                    `;
+                } else {
+                    actionBtns = `
+                        <button class="btn-action btn-view" onclick="viewDetail(${b.id})">
+                            <i class="fas fa-eye"></i> Detail
+                        </button>
+                    `;
+                }
+
                 return `
                     <tr>
                         <td><code>#${b.id.toString().slice(-6)}</code></td>
@@ -178,27 +202,52 @@
                         <td>${b.motorName}</td>
                         <td>${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}</td>
                         <td>${days} hari</td>
-                        <td><strong>${formatRupiah(b.totalHarga)}</strong></td>
-                        <td>${getStatusBadge(b.status)}</td>
+                        <td><strong>${formatRupiah(b.totalHarga)}</strong><br><small style="color:var(--gray-500)">DP: ${formatRupiah(b.dpAmount || b.totalHarga/2)}</small></td>
+                        <td>${b.statusPembayaran === 'dp_uploaded' ? '<span class="badge" style="background: var(--info); color: white;">Cek DP</span>' : getStatusBadge(b.status)}</td>
                         <td>
                             <div class="action-buttons">
-                                ${b.status === 'confirm' ? `
-                                    <button class="btn-action btn-approve" onclick="approveBooking(${b.id})">
-                                        <i class="fas fa-check"></i> Approve
-                                    </button>
-                                    <button class="btn-action btn-reject" onclick="rejectBooking(${b.id})">
-                                        <i class="fas fa-times"></i> Tolak
-                                    </button>
-                                ` : `
-                                    <button class="btn-action btn-view" onclick="viewDetail(${b.id})">
-                                        <i class="fas fa-eye"></i> Detail
-                                    </button>
-                                `}
+                                ${actionBtns}
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        async function verifyDP(bookingId, dpBukti) {
+            document.getElementById('detailContent').innerHTML = `
+                <div style="margin-bottom: 1rem; text-align: center;">
+                    <h4 style="margin-bottom: 10px;">Bukti Pembayaran DP</h4>
+                    <img src="${dpBukti}" alt="Bukti DP" style="max-width: 100%; max-height: 400px; border-radius: 8px; border: 1px solid var(--gray-200); margin-bottom: 1rem;">
+                    <br>
+                    <button class="btn btn-primary" onclick="confirmVerifyDP(${bookingId})" style="width: 100%; margin-bottom: 10px;">
+                        <i class="fas fa-check-circle"></i> Verifikasi DP & Approve Booking
+                    </button>
+                    <button class="btn btn-outline" onclick="closeDetailModal()" style="width: 100%; color: var(--danger); border-color: var(--danger);">
+                        <i class="fas fa-times"></i> Tolak DP (Batal)
+                    </button>
+                </div>
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        async function confirmVerifyDP(bookingId) {
+            try {
+                const res = await fetch(`${API_URL}/api/bookings/${bookingId}/approve-dp`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                
+                if (res.ok) {
+                    showNotification('✅ DP berhasil diverifikasi dan booking disetujui!', 'success');
+                    closeDetailModal();
+                    renderBookings();
+                } else {
+                    alert('Gagal memverifikasi DP.');
+                }
+            } catch (err) {
+                alert('Error koneksi ke server.');
+            }
         }
 
         function approveBooking(bookingId) {
@@ -242,7 +291,9 @@
                     <p><strong>Tanggal Kembali:</strong> ${formatDate(booking.endDate)}</p>
                     <p><strong>Durasi:</strong> ${days} hari</p>
                     <p><strong>Total:</strong> ${formatRupiah(booking.totalHarga)}</p>
+                    <p><strong>DP Bayar:</strong> ${formatRupiah(booking.dpAmount || booking.totalHarga/2)}</p>
                     <p><strong>Status:</strong> ${getStatusBadge(booking.status)}</p>
+                    <p><strong>Status Pembayaran:</strong> ${booking.statusPembayaran}</p>
                     <p><strong>Dibuat Pada:</strong> ${formatDate(booking.createdAt)}</p>
                 </div>
             `;

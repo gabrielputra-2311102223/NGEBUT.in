@@ -42,14 +42,15 @@ function calculateDays(startDate, endDate) {
 // Get status badge HTML
 function getStatusBadge(status) {
     const badges = {
-        'confirm': '<span class="status-badge status-confirm"><i class="fas fa-clock"></i> Menunggu Approval</span>',
-        'booked': '<span class="status-badge status-booked"><i class="fas fa-motorcycle"></i> Sedang Disewa</span>',
-        'paid': '<span class="status-badge status-paid"><i class="fas fa-check-circle"></i> Lunas</span>',
-        'returning': '<span class="status-badge status-warning"><i class="fas fa-undo"></i> Menunggu Dicek</span>',
-        'done': '<span class="status-badge status-done"><i class="fas fa-flag-checkered"></i> Selesai</span>',
-        'cancelled': '<span class="status-badge status-cancelled"><i class="fas fa-times-circle"></i> Dibatalkan</span>'
+        'pending': '<span class="badge" style="background: var(--warning); color: white;"><i class="fas fa-hourglass-half"></i> Menunggu DP</span>',
+        'confirm': '<span class="badge" style="background: var(--info); color: white;"><i class="fas fa-check-circle"></i> Verifikasi DP</span>',
+        'booked': '<span class="badge" style="background: var(--success); color: white;"><i class="fas fa-motorcycle"></i> Disewa</span>',
+        'paid': '<span class="badge" style="background: var(--success); color: white;"><i class="fas fa-check-double"></i> Lunas</span>',
+        'returning': '<span class="badge" style="background: var(--warning); color: white;"><i class="fas fa-undo"></i> Proses Kembali</span>',
+        'done': '<span class="badge" style="background: var(--gray-500); color: white;"><i class="fas fa-check"></i> Selesai</span>',
+        'cancelled': '<span class="badge" style="background: var(--danger); color: white;"><i class="fas fa-times"></i> Dibatalkan</span>'
     };
-    return badges[status] || status;
+    return badges[status] || `<span class="badge" style="background: var(--gray-500); color: white;">${status}</span>`;
 }
 
 function checkReturnNotifications(userId) {

@@ -30,6 +30,15 @@ const ApiClient = {
         return await res.json();
     },
 
+    verifyOtp: async (email, otp) => {
+        const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp })
+        });
+        return await res.json();
+    },
+
     logout: () => {
         localStorage.removeItem('token');
         localStorage.removeItem('ngebutin_current_user');

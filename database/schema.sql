@@ -8,6 +8,9 @@ CREATE TABLE Users (
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) DEFAULT 'user', -- 'admin', 'owner', atau 'user'
     foto_profil LONGTEXT NULL, -- Base64 atau URL foto profil
+    email_verified BOOLEAN DEFAULT FALSE,
+    otp_code VARCHAR(10) NULL,
+    otp_expires DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -30,8 +33,11 @@ CREATE TABLE Bookings (
     tgl_mulai DATE NOT NULL,
     tgl_selesai DATE NOT NULL,
     total_harga INT NOT NULL,
+    dp_amount INT NULL,
+    dp_bukti LONGTEXT NULL,
+    status_pembayaran VARCHAR(50) DEFAULT 'menunggu_dp', -- 'menunggu_dp', 'dp_uploaded', 'dp_lunas', 'lunas', 'dibatalkan'
     status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected', 'completed', 'confirm', 'booked', 'paid', 'returning', 'done', 'cancelled'
-    bukti_pembayaran VARCHAR(255),
+    bukti_pembayaran LONGTEXT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
     FOREIGN KEY (motor_id) REFERENCES Motors(id) ON DELETE CASCADE
