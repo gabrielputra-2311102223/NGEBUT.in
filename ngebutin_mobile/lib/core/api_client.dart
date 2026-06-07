@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
-  // Gunakan 10.0.2.2 karena ini adalah IP khusus Emulator Android untuk mengakses localhost (komputer fisik)
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  // Gunakan localhost:3000 jika menjalankan di Windows/Chrome
+  // Jika menggunakan Android Emulator, ganti menjadi 'http://10.0.2.2:3000/api'
+  static const String baseUrl = 'http://localhost:3000/api';
 
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
