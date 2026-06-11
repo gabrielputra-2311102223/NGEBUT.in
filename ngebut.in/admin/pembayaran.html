@@ -209,7 +209,7 @@
                         </div>
 
                         ${
-                          b.status === "paid"
+                          b.status === "paid" || b.status === "done"
                             ? `
                             <button class="btn btn-outline" style="width:100%;margin-top:1rem;" onclick="showInvoice(${b.id})">
                                 <i class="fas fa-receipt"></i> Lihat Kuitansi
@@ -221,9 +221,15 @@
                                 <i class="fas fa-check-double"></i> Konfirmasi Selesai Sewa
                             </button>
                             `
+                            : b.statusPembayaran === "dp_uploaded"
+                            ? `
+                            <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmDp(${b.id})">
+                                <i class="fas fa-check-circle"></i> Verifikasi DP
+                            </button>
+                            `
                             : `
                             <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmPayment(${b.id})">
-                                <i class="fas fa-check-circle"></i> Konfirmasi Pembayaran
+                                <i class="fas fa-check-circle"></i> Konfirmasi Pelunasan
                             </button>
                         `
                         }
@@ -234,9 +240,22 @@
           .join("");
       }
 
-      // ✅ KONFIRMASI PEMBAYARAN
+      // ✅ KONFIRMASI VERIFIKASI DP
+      function confirmDp(bookingId) {
+        if (!confirm("Konfirmasi verifikasi DP untuk booking ini?")) return;
+
+        const success = approveDpBooking(bookingId);
+        if (success) {
+            alert("✅ Verifikasi DP berhasil! Status motor sekarang Disewa.");
+            renderPayments();
+        } else {
+            alert("❌ Gagal memverifikasi DP.");
+        }
+      }
+
+      // ✅ KONFIRMASI PEMBAYARAN LUNAS
       function confirmPayment(bookingId) {
-        if (!confirm("Konfirmasi pembayaran untuk booking ini?")) return;
+        if (!confirm("Konfirmasi pelunasan untuk booking ini?")) return;
 
         const success = updateBookingStatus(bookingId, "paid");
         if (success) {

@@ -17,6 +17,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  String _searchQuery = '';
+  String _selectedCategory = 'Semua';
+  final List<String> _categories = ['Semua', 'Matic', 'Manual', 'Sport'];
 
   @override
   void initState() {
@@ -74,7 +77,12 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
           }
 
-          final motors = motorProvider.motors.where((m) => m.status == 'available').toList();
+          final motors = motorProvider.motors.where((m) {
+            if (m.status != 'available') return false;
+            if (_selectedCategory != 'Semua' && m.kategori.toLowerCase() != _selectedCategory.toLowerCase()) return false;
+            if (_searchQuery.isNotEmpty && !m.nama.toLowerCase().contains(_searchQuery.toLowerCase())) return false;
+            return true;
+          }).toList();
 
           return RefreshIndicator(
             onRefresh: motorProvider.fetchMotors,
@@ -114,35 +122,95 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 24),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.shield, color: Colors.white, size: 20),
-                              SizedBox(width: 8),
-                              Text('100% Aman & Terpercaya', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ],
+                          child: TextField(
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              icon: Icon(Icons.search, color: Colors.grey),
+                              hintText: 'Cari motor impianmu...',
+                              border: InputBorder.none,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                   
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
-                    child: Text(
-                      'Motor Tersedia',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+                  // Category Filter
+                  SizedBox(
+                    height: 60,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) {
+                        final category = _categories[index];
+                        final isSelected = category == _selectedCategory;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(category),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                _selectedCategory = category;
+                              });
+                            },
+                            selectedColor: const Color(0xFFCC0000),
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black87,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              side: BorderSide(
+                                color: isSelected ? const Color(0xFFCC0000) : Colors.grey.shade300,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Motor Tersedia',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+                        ),
+                        Text(
+                          '${motors.length} unit',
+                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
                     ),
                   ),
 
                   if (motors.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(24.0),
-                      child: Center(child: Text('Maaf, tidak ada motor yang tersedia saat ini.')),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.search_off, size: 64, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text('Tidak ada motor yang sesuai pencarian.', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      ),
                     )
                   else
                     GridView.builder(

@@ -185,27 +185,9 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
                                 ),
                                 child: Column(
                                   children: [
-                                    const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
-                                    const SizedBox(height: 4),
-                                    const Text('2023', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF9FAFB),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                                ),
-                                child: Column(
-                                  children: [
                                     const Icon(Icons.settings, size: 20, color: Colors.grey),
                                     const SizedBox(height: 4),
-                                    const Text('Matic', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    Text(motor.kategori.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),
@@ -221,9 +203,27 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
                                 ),
                                 child: Column(
                                   children: [
-                                    const Icon(Icons.speed, size: 20, color: Colors.grey),
+                                    const Icon(Icons.thumb_up, size: 20, color: Colors.grey),
                                     const SizedBox(height: 4),
-                                    const Text('110cc', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    const Text('Prima', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.local_gas_station, size: 20, color: Colors.grey),
+                                    const SizedBox(height: 4),
+                                    const Text('Bensin', style: TextStyle(fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),

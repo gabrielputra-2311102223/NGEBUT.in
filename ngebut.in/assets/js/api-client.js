@@ -246,6 +246,15 @@ function updateBookingStatus(id, status) {
     return xhr.status === 200;
 }
 
+function approveDpBooking(id) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', API_URL + '/api/bookings/' + id + '/approve-dp', false);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.send(null);
+    return xhr.status === 200;
+}
+
 function checkReturnNotifications(userId) {
     try {
         const bookings = getBooking().filter(b => 
