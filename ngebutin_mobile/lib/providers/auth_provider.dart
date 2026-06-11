@@ -70,7 +70,14 @@ class AuthProvider with ChangeNotifier {
   Future<void> updateProfile(Map<String, dynamic> data) async {
     if (_user == null) return;
     final response = await ApiClient.put('/users/${_user!['id']}', data);
-    _user = response['user'];
+    
+    // Update local user state properly without losing old keys
+    final updatedUser = response['user'] as Map<String, dynamic>;
+    _user = {
+      ..._user!,
+      ...updatedUser,
+    };
+    
     // Re-save token and user
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -85,7 +92,10 @@ class AuthProvider with ChangeNotifier {
     final response = await ApiClient.post('/users/${_user!['id']}/photo', {
       'photo': base64Image
     });
-    _user = response['user'];
+    
+    // Update foto_profil without losing other data
+    _user!['foto_profil'] = response['foto_profil'];
+    
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token != null) {

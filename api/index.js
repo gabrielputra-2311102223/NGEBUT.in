@@ -467,6 +467,27 @@ app.get('/api/users/me/:id', async (req, res) => {
     }
 });
 
+// Delete user
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        
+        // Cek admin role
+        const [userRow] = await poolPromise.query('SELECT role FROM Users WHERE id = ?', [userId]);
+        if (userRow.length > 0 && userRow[0].role === 'admin') {
+            return res.status(403).json({ error: 'Cannot delete admin user' });
+        }
+
+        // Hapus user (Bookings dengan foreign key mungkin harus dihapus manual atau sudah cascade di DB)
+        await poolPromise.query('DELETE FROM Bookings WHERE user_id = ?', [userId]);
+        await poolPromise.query('DELETE FROM Users WHERE id = ?', [userId]);
+        
+        res.json({ message: 'User deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- MOTOR MANAGEMENT ---
 
 app.put('/api/motors/:id', async (req, res) => {

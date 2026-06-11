@@ -163,6 +163,51 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ),
                           ),
                         ),
+                      ] else if (b['status'] == 'paid' || b['status'] == 'booked') ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Kembalikan Motor'),
+                                  content: const Text('Apakah Anda yakin sudah selesai menyewa dan ingin mengembalikan motor ini?'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Ya, Kembalikan')),
+                                  ],
+                                ),
+                              );
+                              
+                              if (confirm == true && context.mounted) {
+                                try {
+                                  await Provider.of<BookingProvider>(context, listen: false)
+                                      .updateBookingStatus(b['id'], 'returning');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permintaan pengembalian dikirim!')));
+                                    final user = Provider.of<AuthProvider>(context, listen: false).user;
+                                    if (user != null) {
+                                      Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(user['id']);
+                                    }
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal memproses pengembalian.')));
+                                  }
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.undo),
+                            label: const Text('KEMBALIKAN MOTOR'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF166534),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ),
                       ],
                     ],
                   ),

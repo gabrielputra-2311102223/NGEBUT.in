@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           final motors = motorProvider.motors.where((m) {
             if (m.status != 'available') return false;
-            if (_selectedCategory != 'Semua' && m.kategori.toLowerCase() != _selectedCategory.toLowerCase()) return false;
+            if (_selectedCategory != 'Semua' && m.kategori.trim().toLowerCase() != _selectedCategory.trim().toLowerCase()) return false;
             if (_searchQuery.isNotEmpty && !m.nama.toLowerCase().contains(_searchQuery.toLowerCase())) return false;
             return true;
           }).toList();

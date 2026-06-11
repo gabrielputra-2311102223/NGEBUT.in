@@ -64,7 +64,10 @@
                 <p>Selamat datang kembali, Admin! Pantau performa rental hari ini.</p>
             </div>
             <div>
-                <span id="currentDateTime" style="color: var(--gray-500);"></span>
+                <span id="currentDateTime" style="color: var(--gray-500); margin-right: 15px;"></span>
+                <button class="btn btn-primary btn-sm" onclick="renderDashboard()">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
             </div>
         </div>
 
@@ -414,7 +417,6 @@
         }
 
         renderDashboard();
-        setInterval(renderDashboard, 5000);
     </script>
 </body>
 </html>

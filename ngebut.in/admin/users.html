@@ -81,11 +81,12 @@
                         <th>Email</th>
                         <th>Role</th>
                         <th>Status</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody">
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 2rem;">Memuat data...</td>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">Memuat data...</td>
                     </tr>
                 </tbody>
             </table>
@@ -133,7 +134,7 @@
             );
 
             if (filtered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-500);">Tidak ada user ditemukan</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--gray-500);">Tidak ada user ditemukan</td></tr>`;
                 return;
             }
 
@@ -144,8 +145,30 @@
                     <td>${u.email}</td>
                     <td><span style="background: var(--gray-100); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase;">${u.role || 'USER'}</span></td>
                     <td><span class="status-badge status-done"><i class="fas fa-check"></i> Aktif</span></td>
+                    <td>
+                        <button class="btn btn-sm" style="background: var(--danger); color: white; padding: 4px 10px;" onclick="handleDeleteUser(${u.id})">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                    </td>
                 </tr>
             `).join('');
+        }
+
+        async function handleDeleteUser(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus user ini? Semua data booking terkait juga akan terhapus.')) return;
+            
+            try {
+                const success = await deleteUser(id);
+                if (success) {
+                    alert('User berhasil dihapus!');
+                    renderUsers();
+                } else {
+                    alert('Gagal menghapus user. Silakan coba lagi.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat menghapus user.');
+            }
         }
 
         updateBadge();

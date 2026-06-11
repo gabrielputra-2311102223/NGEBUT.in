@@ -15,8 +15,8 @@ const ApiClient = {
         });
         const data = await res.json();
         if (data.token) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('ngebutin_current_user', JSON.stringify(data.user));
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('ngebutin_current_user', JSON.stringify(data.user));
         }
         return data;
     },
@@ -58,8 +58,8 @@ const ApiClient = {
     },
 
     logout: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('ngebutin_current_user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('ngebutin_current_user');
         // Detect if we're in a subfolder (admin/, owner/, or user/)
         if (window.location.pathname.includes('/admin/') || window.location.pathname.includes('/user/') || window.location.pathname.includes('/owner/')) {
             window.location.href = '../login.html';
@@ -80,7 +80,7 @@ const ApiClient = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
             },
             body: JSON.stringify(bookingData)
         });
@@ -90,7 +90,7 @@ const ApiClient = {
     // Profile
     getMyProfile: async (id) => {
         const res = await fetch(`${API_URL}/api/users/me/${id}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
         });
         return await res.json();
     },
@@ -100,7 +100,7 @@ const ApiClient = {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
             },
             body: JSON.stringify(payload)
         });
@@ -112,7 +112,7 @@ const ApiClient = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
             },
             body: JSON.stringify({ photo: photoBase64 })
         });
@@ -121,13 +121,13 @@ const ApiClient = {
 
     // Helpers
     getCurrentUser: () => {
-        const user = localStorage.getItem('ngebutin_current_user');
+        const user = sessionStorage.getItem('ngebutin_current_user');
         return user ? JSON.parse(user) : null;
     },
 
     // Update current user cache
     updateCurrentUser: (user) => {
-        localStorage.setItem('ngebutin_current_user', JSON.stringify(user));
+        sessionStorage.setItem('ngebutin_current_user', JSON.stringify(user));
     },
 
     // Get dashboard URL by role
@@ -149,7 +149,7 @@ function getCurrentUser() {
 }
 
 function saveCurrentUser(user) {
-    localStorage.setItem('ngebutin_current_user', JSON.stringify(user));
+    sessionStorage.setItem('ngebutin_current_user', JSON.stringify(user));
 }
 
 function logout() {
@@ -170,7 +170,7 @@ async function addMotor(data) {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
+            'Authorization': 'Bearer ' + sessionStorage.getItem('token')
         },
         body: JSON.stringify(data)
     });
@@ -182,7 +182,7 @@ async function updateMotor(id, data) {
         method: 'PUT',
         headers: { 
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
+            'Authorization': 'Bearer ' + sessionStorage.getItem('token')
         },
         body: JSON.stringify(data)
     });
@@ -193,7 +193,7 @@ async function deleteMotor(id) {
     const res = await fetch(API_URL + '/api/motors/' + id, {
         method: 'DELETE',
         headers: { 
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
+            'Authorization': 'Bearer ' + sessionStorage.getItem('token')
         }
     });
     return res.status === 200;
@@ -206,7 +206,7 @@ function saveMotor(data) {
 function getBooking() {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', API_URL + '/api/bookings', false);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.setRequestHeader('Authorization', 'Bearer ' + sessionStorage.getItem('token'));
     xhr.send(null);
     if (xhr.status === 200) return JSON.parse(xhr.responseText);
     return [];
@@ -227,10 +227,20 @@ function saveBookings(data) {
 function getUsers() {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', API_URL + '/api/users', false);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.setRequestHeader('Authorization', 'Bearer ' + sessionStorage.getItem('token'));
     xhr.send(null);
     if (xhr.status === 200) return JSON.parse(xhr.responseText);
     return [];
+}
+
+async function deleteUser(id) {
+    const res = await fetch(API_URL + '/api/users/' + id, {
+        method: 'DELETE',
+        headers: { 
+            'Authorization': 'Bearer ' + sessionStorage.getItem('token')
+        }
+    });
+    return res.status === 200;
 }
 
 function saveUsers(data) {
@@ -241,7 +251,7 @@ function updateBookingStatus(id, status) {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', API_URL + '/api/bookings/' + id + '/status', false);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.setRequestHeader('Authorization', 'Bearer ' + sessionStorage.getItem('token'));
     xhr.send(JSON.stringify({ status }));
     return xhr.status === 200;
 }
@@ -250,7 +260,7 @@ function approveDpBooking(id) {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', API_URL + '/api/bookings/' + id + '/approve-dp', false);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', 'Bearer ' + localStorage.getItem('token'));
+    xhr.setRequestHeader('Authorization', 'Bearer ' + sessionStorage.getItem('token'));
     xhr.send(null);
     return xhr.status === 200;
 }

@@ -223,9 +223,14 @@
                             `
                             : b.statusPembayaran === "dp_uploaded"
                             ? `
-                            <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmDp(${b.id})">
-                                <i class="fas fa-check-circle"></i> Verifikasi DP
-                            </button>
+                            <div style="margin-top:1rem; border:1px solid #ccc; border-radius:8px; padding:8px; background:#f9f9f9; text-align:center;">
+                                <p style="font-size:12px; margin-bottom:5px; color:#555;"><b>Bukti Transfer DP</b></p>
+                                <img src="${b.dpBukti || 'https://placehold.co/400x300/1A1A1A/white?text=Tidak+Ada+Bukti'}" alt="Bukti DP" style="width:100%; max-height:200px; object-fit:contain; border-radius:4px; margin-bottom:10px;">
+                                <a href="${b.dpBukti}" target="_blank" class="btn btn-outline" style="width:100%; display:block; text-align:center; margin-bottom:5px; text-decoration:none;"><i class="fas fa-search"></i> Lihat Full</a>
+                                <button class="btn btn-primary" style="width:100%;" onclick="confirmDp(${b.id})">
+                                    <i class="fas fa-check-circle"></i> Verifikasi DP
+                                </button>
+                            </div>
                             `
                             : `
                             <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmPayment(${b.id})">
