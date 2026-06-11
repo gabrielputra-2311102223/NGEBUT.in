@@ -60,6 +60,11 @@
                 <h1>Manajemen User</h1>
                 <p>Melihat data penyewa yang terdaftar di sistem.</p>
             </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="document.getElementById('broadcastModal').style.display='flex'">
+                    <i class="fas fa-bullhorn"></i> Kirim Pengumuman
+                </button>
+            </div>
         </div>
 
         <div class="filter-bar">
@@ -90,6 +95,25 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Broadcast Modal -->
+        <div id="broadcastModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+            <div class="modal-content" style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px;">
+                <h3>Kirim Pengumuman (Email & App)</h3>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Subjek / Judul</label>
+                    <input type="text" id="broadcastSubject" class="form-control" placeholder="Contoh: Info Update Aplikasi" style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Pesan Pengumuman</label>
+                    <textarea id="broadcastMessage" class="form-control" rows="5" placeholder="Tulis pengumuman di sini..." style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+                </div>
+                <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="btn" style="background: var(--gray-200); padding: 8px 16px; border-radius: 4px;" onclick="document.getElementById('broadcastModal').style.display='none'">Batal</button>
+                    <button class="btn btn-primary" style="padding: 8px 16px;" onclick="sendBroadcast()">Kirim Sekarang</button>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -168,6 +192,37 @@
             } catch (err) {
                 console.error(err);
                 alert('Terjadi kesalahan saat menghapus user.');
+            }
+        }
+
+        async function sendBroadcast() {
+            const subject = document.getElementById('broadcastSubject').value;
+            const message = document.getElementById('broadcastMessage').value;
+            if (!subject || !message) return alert("Subjek dan pesan harus diisi!");
+
+            try {
+                // Gunakan POST request (kita akan gunakan fetch murni krn api-client blm punya khusus)
+                const token = sessionStorage.getItem('token');
+                const res = await fetch('http://localhost:3000/api/admin/broadcast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ subject, message })
+                });
+
+                if (res.ok) {
+                    alert('Pengumuman berhasil dikirim!');
+                    document.getElementById('broadcastModal').style.display = 'none';
+                    document.getElementById('broadcastSubject').value = '';
+                    document.getElementById('broadcastMessage').value = '';
+                } else {
+                    alert('Gagal mengirim pengumuman.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Terjadi kesalahan koneksi.');
             }
         }
 

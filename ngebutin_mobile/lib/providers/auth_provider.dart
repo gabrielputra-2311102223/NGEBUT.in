@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_client.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthProvider with ChangeNotifier {
   Map<String, dynamic>? _user;
@@ -22,6 +23,19 @@ class AuthProvider with ChangeNotifier {
     }
     _isLoading = false;
     notifyListeners();
+    _updateFcmToken();
+  }
+
+  Future<void> _updateFcmToken() async {
+    if (_user == null) return;
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await ApiClient.put('/users/${_user!['id']}/fcm-token', {'fcm_token': token});
+      }
+    } catch (e) {
+      debugPrint('FCM Token error: $e');
+    }
   }
 
   Future<void> login(String email, String password) async {
@@ -36,6 +50,7 @@ class AuthProvider with ChangeNotifier {
     await ApiClient.saveToken(token, user);
     _user = user;
     notifyListeners();
+    _updateFcmToken();
   }
 
   Future<void> register(String nama, String email, String password) async {
@@ -59,6 +74,7 @@ class AuthProvider with ChangeNotifier {
     await ApiClient.saveToken(token, user);
     _user = user;
     notifyListeners();
+    _updateFcmToken();
   }
 
   Future<void> logout() async {

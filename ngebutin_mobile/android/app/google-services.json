@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "786818147892",
+    "project_id": "ngebutin-723a8",
+    "storage_bucket": "ngebutin-723a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:786818147892:android:f55f0d2324de7418af4c61",
+        "android_client_info": {
+          "package_name": "com.example.ngebutin_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyYaw_5t-8EB3l62qhio-bt-XYQuUQ82Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

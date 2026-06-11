@@ -7,9 +7,18 @@ import 'providers/user_provider.dart';
 import 'screens/auth/landing_screen.dart';
 import 'screens/user/home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/owner/owner_home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init error: $e');
+  }
+
   runApp(
     MultiProvider(
       providers: [

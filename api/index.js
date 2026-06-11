@@ -14,6 +14,28 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ngebutin_super_secret_123';
 
+const admin = require('firebase-admin');
+const fs = require('fs');
+
+let fcmInitialized = false;
+try {
+    if (fs.existsSync('./firebase-service-account.json')) {
+        const serviceAccount = require('./firebase-service-account.json');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        fcmInitialized = true;
+        console.log("Firebase Admin SDK initialized successfully.");
+    } else {
+        console.warn("firebase-service-account.json not found. Push notifications will be skipped.");
+    }
+} catch (e) {
+    console.error("Error initializing Firebase Admin:", e.message);
+}
+
+// Auto-add fcm_token column
+poolPromise.query('ALTER TABLE Users ADD COLUMN fcm_token VARCHAR(255) NULL').catch(() => {});
+
 
 
 // --- AUTH ROUTES ---
@@ -434,6 +456,18 @@ app.put('/api/users/:id', async (req, res) => {
     }
 });
 
+// Update FCM Token
+app.put('/api/users/:id/fcm-token', async (req, res) => {
+    try {
+        const { fcm_token } = req.body;
+        const userId = req.params.id;
+        await poolPromise.query('UPDATE Users SET fcm_token = ? WHERE id = ?', [fcm_token, userId]);
+        res.json({ message: 'FCM Token updated' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Upload profile photo
 app.post('/api/users/:id/photo', async (req, res) => {
     try {
@@ -716,6 +750,54 @@ app.get('/api/export/excel', async (req, res) => {
         await workbook.xlsx.write(res);
         res.end();
 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Broadcast Notification
+app.post('/api/admin/broadcast', async (req, res) => {
+    try {
+        const { subject, message } = req.body;
+        
+        // Ambil semua user
+        const [users] = await poolPromise.query('SELECT email, fcm_token FROM Users WHERE role = "user"');
+        
+        // Kirim Email
+        const emails = users.map(u => u.email).filter(e => e);
+        if (emails.length > 0) {
+            const nodemailer = require('nodemailer');
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: { user: process.env.EMAIL_USER || 'ngebutin.id@gmail.com', pass: process.env.EMAIL_PASS || 'vnhz hgnt qhvy sfhm' }
+            });
+            const mailOptions = {
+                from: '"NgebutIN" <no-reply@ngebut.in>',
+                to: emails.join(','),
+                subject: subject,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+                        <h2 style="color: #CC0000;">Ngebut.in Pengumuman</h2>
+                        <p>${message}</p>
+                    </div>
+                `
+            };
+            transporter.sendMail(mailOptions).catch(e => console.error("Broadcast email error:", e));
+        }
+
+        // Kirim Push Notification
+        if (fcmInitialized) {
+            const tokens = users.map(u => u.fcm_token).filter(t => t);
+            if (tokens.length > 0) {
+                const payload = {
+                    notification: { title: subject, body: message },
+                    tokens: tokens
+                };
+                admin.messaging().sendMulticast(payload).catch(e => console.error("FCM Broadcast error:", e));
+            }
+        }
+
+        res.json({ message: 'Broadcast sent successfully!' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
