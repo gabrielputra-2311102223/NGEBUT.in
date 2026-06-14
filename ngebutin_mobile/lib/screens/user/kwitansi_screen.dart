@@ -32,11 +32,12 @@ class KwitansiScreen extends StatelessWidget {
     final motorName = (booking['motorName'] ?? booking['motor_name'] ?? 'Motor').toString();
     final startDate = (booking['startDate'] ?? booking['tgl_mulai'] ?? '-').toString();
     final endDate = (booking['endDate'] ?? booking['tgl_selesai'] ?? '-').toString();
-    final total = (booking['totalHarga'] ?? booking['total_harga'] ?? 0) as num;
-    final dp = (booking['dpAmount'] ?? booking['dp_amount'] ?? (total / 2)).toInt();
-    final pelunasan = total.toInt() - dp;
-    final days = _calcDays();
-    final harga = days > 0 ? (total / days).toInt() : total.toInt();
+    // Konversi semua angka ke int eksplisit dari awal agar tidak ada type error
+    final int total = ((booking['totalHarga'] ?? booking['total_harga'] ?? 0) as num).toInt();
+    final int days = _calcDays();
+    final int dp = ((booking['dpAmount'] ?? booking['dp_amount'] ?? (total ~/ 2)) as num).toInt();
+    final int pelunasan = total - dp;
+    final int harga = days > 0 ? total ~/ days : total;
     final now = DateTime.now();
     final tanggalCetak = '${now.day}/${now.month}/${now.year}';
     final noTransaksi = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
@@ -48,7 +49,7 @@ class KwitansiScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.share, color: Color(0xFFCC0000)),
-            onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total.toInt(), dp, pelunasan, noTransaksi, tanggalCetak),
+            onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak),
           ),
         ],
       ),
