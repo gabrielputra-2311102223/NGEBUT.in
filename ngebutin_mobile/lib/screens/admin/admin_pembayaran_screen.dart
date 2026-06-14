@@ -112,7 +112,7 @@ class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
                                 const Divider(height: 24),
                                 Text('Motor ID: ${b['motorId'] ?? b['motor_id']}'),
                                 const SizedBox(height: 8),
-                                Text('Total Harga: ${_formatCurrency(b['totalHarga'] ?? b['total_harga'] ?? 0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text('Total Harga: ${_formatCurrency((b['totalHarga'] ?? b['total_harga'] ?? 0) is num ? (b['totalHarga'] ?? b['total_harga'] ?? 0).toInt() : int.tryParse((b['totalHarga'] ?? b['total_harga'] ?? 0).toString()) ?? 0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 16),
                                 if (_currentFilter == 'booked') ...[
                                   SizedBox(
