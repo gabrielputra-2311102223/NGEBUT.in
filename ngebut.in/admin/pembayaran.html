@@ -246,42 +246,65 @@
       }
 
       // ✅ KONFIRMASI VERIFIKASI DP
-      function confirmDp(bookingId) {
+      async function confirmDp(bookingId) {
         if (!confirm("Konfirmasi verifikasi DP untuk booking ini?")) return;
-
-        const success = approveDpBooking(bookingId);
-        if (success) {
-            alert("✅ Verifikasi DP berhasil! Status motor sekarang Disewa.");
-            renderPayments();
-        } else {
-            alert("❌ Gagal memverifikasi DP.");
+        try {
+            const token = sessionStorage.getItem('token');
+            const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/approve-dp', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                showNotification('✅ Verifikasi DP berhasil! Status motor sekarang Disewa.', 'success');
+                renderPayments();
+            } else {
+                showNotification('❌ Gagal memverifikasi DP.', 'danger');
+            }
+        } catch(e) {
+            showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
         }
       }
 
       // ✅ KONFIRMASI PEMBAYARAN LUNAS
-      function confirmPayment(bookingId) {
+      async function confirmPayment(bookingId) {
         if (!confirm("Konfirmasi pelunasan untuk booking ini?")) return;
-
-        const success = updateBookingStatus(bookingId, "paid");
-        if (success) {
-            alert("✅ Pembayaran berhasil dikonfirmasi!");
-            renderPayments();
-            showInvoice(bookingId);
-        } else {
-            alert("❌ Gagal mengonfirmasi pembayaran.");
+        try {
+            const token = sessionStorage.getItem('token');
+            const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/status', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ status: 'paid' })
+            });
+            if (res.ok) {
+                showNotification('✅ Pembayaran berhasil dikonfirmasi!', 'success');
+                renderPayments();
+                showInvoice(bookingId);
+            } else {
+                showNotification('❌ Gagal mengonfirmasi pembayaran.', 'danger');
+            }
+        } catch(e) {
+            showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
         }
       }
 
       // ✅ KONFIRMASI SELESAI SEWA
-      function confirmDone(bookingId) {
+      async function confirmDone(bookingId) {
         if (!confirm("Konfirmasi bahwa motor sudah dikembalikan dan sewa selesai?")) return;
-
-        const success = updateBookingStatus(bookingId, "done");
-        if (success) {
-            alert("✅ Sewa berhasil diselesaikan! Motor kini berstatus tersedia kembali.");
-            renderPayments();
-        } else {
-            alert("❌ Gagal memproses data.");
+        try {
+            const token = sessionStorage.getItem('token');
+            const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/status', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ status: 'done' })
+            });
+            if (res.ok) {
+                showNotification('✅ Sewa berhasil diselesaikan! Motor kini tersedia kembali.', 'success');
+                renderPayments();
+            } else {
+                showNotification('❌ Gagal memproses data.', 'danger');
+            }
+        } catch(e) {
+            showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
         }
       }
 
@@ -451,7 +474,8 @@
       }
 
       renderPayments();
-      setInterval(renderPayments, 5000);
+      // Auto-refresh setiap 30 detik
+      setInterval(renderPayments, 30000);
     </script>
   </body>
 </html>

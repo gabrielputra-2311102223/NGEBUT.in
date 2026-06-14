@@ -132,12 +132,23 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
 
-            const success = updateBookingStatus(bookingId, 'returning');
-            if (success) {
-                alert('✅ Permintaan pengembalian dikirim! Silakan hubungi admin untuk pengecekan fisik motor.');
-                renderBookings();
-            } else {
-                alert('❌ Gagal memproses pengembalian.');
+            try {
+                const token = sessionStorage.getItem('token');
+                const res = await fetch(`${API_URL}/api/bookings/${bookingId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status: 'returning' })
+                });
+                if (res.ok) {
+                    showNotification('✅ Permintaan pengembalian dikirim! Silakan hubungi admin untuk pengecekan fisik motor.', 'success');
+                    renderBookings();
+                } else {
+                    showNotification('❌ Gagal memproses pengembalian.', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch(e) {
+                showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
@@ -177,7 +188,7 @@
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
                         },
                         body: JSON.stringify({ dp_bukti: base64Data })
                     });
@@ -202,7 +213,7 @@
         async function renderBookings() {
             try {
                 const res = await fetch(`${API_URL}/api/bookings`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
                 });
                 const allBookings = await res.json();
                 

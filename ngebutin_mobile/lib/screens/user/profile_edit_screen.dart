@@ -14,6 +14,7 @@ class ProfileEditScreen extends StatefulWidget {
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _namaController = TextEditingController();
   final _emailController = TextEditingController();
+  final _currentPasswordController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
@@ -55,10 +56,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     try {
       final payload = {
         'nama': _namaController.text,
-        'email': _emailController.text,
       };
-      if (_passwordController.text.isNotEmpty) {
-        payload['password'] = _passwordController.text;
+      if (_passwordController.text.isNotEmpty && _currentPasswordController.text.isNotEmpty) {
+        payload['current_password'] = _currentPasswordController.text;
+        payload['new_password'] = _passwordController.text;
       }
       
       await Provider.of<AuthProvider>(context, listen: false).updateProfile(payload);
@@ -96,8 +97,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: const Color(0xFFFFE4E6),
-                    backgroundImage: user?['foto'] != null ? NetworkImage(user!['foto']) : null,
-                    child: user?['foto'] == null ? const Icon(Icons.person, size: 50, color: Color(0xFFCC0000)) : null,
+                    backgroundImage: user?['foto_profil'] != null
+                      ? (user!['foto_profil'].startsWith('data:')
+                          ? MemoryImage(base64Decode(user['foto_profil'].split(',').last)) as ImageProvider
+                          : NetworkImage(user['foto_profil']))
+                      : null,
+                    child: user?['foto_profil'] == null ? const Icon(Icons.person, size: 50, color: Color(0xFFCC0000)) : null,
                   ),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -125,6 +130,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 prefixIcon: Icon(Icons.email),
               ),
               keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _currentPasswordController,
+              decoration: const InputDecoration(
+                labelText: 'Password Saat Ini (Untuk Ganti Password)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+              obscureText: true,
             ),
             const SizedBox(height: 16),
             TextField(

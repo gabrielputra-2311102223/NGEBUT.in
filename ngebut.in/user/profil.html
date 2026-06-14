@@ -166,22 +166,20 @@
         async function loadProfile() {
             const user = ApiClient.getCurrentUser();
             if (!user) {
-                window.location.href = 'login.html';
+                window.location.href = '../login.html';
                 return;
             }
 
             try {
-                const result = await ApiClient.getUserById(user.id);
-                if (result.user) {
-                    const u = result.user;
-                    document.getElementById('profileNama').value = u.nama;
-                    document.getElementById('profileEmail').value = u.email;
+                const data = await ApiClient.getMyProfile(user.id);
+                if (data && data.id) {
+                    document.getElementById('profileNama').value = data.nama;
+                    document.getElementById('profileEmail').value = data.email;
 
-                    const avatarUrl = u.foto_profil || DEFAULT_AVATAR;
+                    const avatarUrl = data.foto_profil || DEFAULT_AVATAR;
                     document.getElementById('avatarPreview').src = avatarUrl;
 
-                    // Show/hide remove button if avatar exists
-                    if (u.foto_profil) {
+                    if (data.foto_profil) {
                         document.getElementById('removeAvatarBtn').style.display = 'flex';
                         document.getElementById('avatarUploadContainer').style.display = 'none';
                     }
@@ -275,9 +273,17 @@
                 }
 
                 const user = ApiClient.getCurrentUser();
-                const result = await ApiClient.updateUser(user.id, body);
+                const result = await ApiClient.updateProfile(user.id, body);
 
-                if (result.success) {
+                if (result && result.message) {
+                    // Update cached user with new name
+                    const cached = ApiClient.getCurrentUser();
+                    if (cached) {
+                        cached.nama = body.nama;
+                        if (body.foto_profil) cached.foto_profil = body.foto_profil;
+                        sessionStorage.setItem('ngebutin_current_user', JSON.stringify(cached));
+                    }
+
                     messageEl.style.display = 'block';
                     messageEl.className = 'success-message';
                     messageEl.innerText = 'Profil berhasil diperbarui!';
@@ -289,17 +295,12 @@
 
                     // Reload avatar if changed
                     if (avatarBase64 !== null) {
-                        const refreshed = await ApiClient.getUserById(user.id);
-                        if (refreshed.user) {
-                            document.getElementById('avatarPreview').src = refreshed.user.foto_profil || DEFAULT_AVATAR;
-                            document.getElementById('removeAvatarBtn').style.display = 'flex';
-                            document.getElementById('avatarUploadContainer').style.display = 'none';
-                        }
+                        document.getElementById('avatarPreview').src = avatarBase64;
                     }
                 } else {
                     messageEl.style.display = 'block';
                     messageEl.className = 'error-message';
-                    messageEl.innerText = result.error || 'Gagal memperbarui profil';
+                    messageEl.innerText = (result && result.error) ? result.error : 'Gagal memperbarui profil';
                 }
             } catch (err) {
                 messageEl.style.display = 'block';

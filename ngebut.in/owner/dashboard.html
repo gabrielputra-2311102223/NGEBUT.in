@@ -172,7 +172,7 @@
 
         async function fetchOwnerReports() {
             try {
-                const token = localStorage.getItem('token');
+                const token = sessionStorage.getItem('token');
                 
                 // Fetch Financial
                 const resFin = await fetch(API_URL + '/api/reports/financial', { headers: { 'Authorization': 'Bearer ' + token }});
@@ -280,6 +280,8 @@
         }
 
         fetchOwnerReports();
+        // Auto-refresh setiap 30 detik
+        setInterval(fetchOwnerReports, 30000);
     </script>
 </body>
 </html>

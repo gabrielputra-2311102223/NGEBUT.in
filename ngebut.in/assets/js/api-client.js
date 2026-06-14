@@ -130,6 +130,38 @@ const ApiClient = {
         sessionStorage.setItem('ngebutin_current_user', JSON.stringify(user));
     },
 
+    // Get user by ID
+    getUserById: async (id) => {
+        const res = await fetch(`${API_URL}/api/users/me/${id}`, {
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        return { user: data };
+    },
+
+    // Update user profile
+    updateUser: async (id, payload) => {
+        const res = await fetch(`${API_URL}/api/users/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            // Update cached user
+            const currentUser = ApiClient.getCurrentUser();
+            if (currentUser) {
+                const updated = { ...currentUser, ...data.user };
+                sessionStorage.setItem('ngebutin_current_user', JSON.stringify(updated));
+            }
+            return { success: true, ...data };
+        }
+        return { success: false, error: data.error };
+    },
+
     // Get dashboard URL by role
     getDashboardUrl: (role) => {
         if (role === 'admin') return 'admin/dashboard.html';

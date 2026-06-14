@@ -182,28 +182,31 @@
             if (!confirm('Apakah Anda yakin ingin menghapus user ini? Semua data booking terkait juga akan terhapus.')) return;
             
             try {
-                const success = await deleteUser(id);
-                if (success) {
-                    alert('User berhasil dihapus!');
+                const token = sessionStorage.getItem('token');
+                const res = await fetch(API_URL + '/api/users/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    showNotification('User berhasil dihapus!', 'success');
                     renderUsers();
                 } else {
-                    alert('Gagal menghapus user. Silakan coba lagi.');
+                    showNotification('Gagal menghapus user. Silakan coba lagi.', 'danger');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Terjadi kesalahan saat menghapus user.');
+                showNotification('Terjadi kesalahan saat menghapus user.', 'danger');
             }
         }
 
         async function sendBroadcast() {
             const subject = document.getElementById('broadcastSubject').value;
             const message = document.getElementById('broadcastMessage').value;
-            if (!subject || !message) return alert("Subjek dan pesan harus diisi!");
+            if (!subject || !message) return showNotification('Subjek dan pesan harus diisi!', 'danger');
 
             try {
-                // Gunakan POST request (kita akan gunakan fetch murni krn api-client blm punya khusus)
                 const token = sessionStorage.getItem('token');
-                const res = await fetch('http://localhost:3000/api/admin/broadcast', {
+                const res = await fetch(API_URL + '/api/admin/broadcast', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -213,22 +216,23 @@
                 });
 
                 if (res.ok) {
-                    alert('Pengumuman berhasil dikirim!');
+                    showNotification('Pengumuman berhasil dikirim ke semua user!', 'success');
                     document.getElementById('broadcastModal').style.display = 'none';
                     document.getElementById('broadcastSubject').value = '';
                     document.getElementById('broadcastMessage').value = '';
                 } else {
-                    alert('Gagal mengirim pengumuman.');
+                    showNotification('Gagal mengirim pengumuman.', 'danger');
                 }
             } catch (e) {
                 console.error(e);
-                alert('Terjadi kesalahan koneksi.');
+                showNotification('Terjadi kesalahan koneksi.', 'danger');
             }
         }
 
         updateBadge();
         renderUsers();
         setInterval(updateBadge, 5000);
+        setInterval(renderUsers, 30000);
     </script>
 </body>
 </html>
