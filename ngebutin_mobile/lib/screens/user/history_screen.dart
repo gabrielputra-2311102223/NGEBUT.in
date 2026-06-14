@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
+import 'kwitansi_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -200,6 +201,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               SizedBox(width: 6),
                               Expanded(child: Text('Bukti DP Anda tidak valid. Silakan hubungi admin.', style: TextStyle(color: Color(0xFFCC0000), fontSize: 12))),
                             ],
+                          ),
+                        ),
+                      ],
+                      if (status == 'done') ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => KwitansiScreen(booking: b))),
+                            icon: const Icon(Icons.receipt_long, size: 16, color: Color(0xFF059669)),
+                            label: const Text('Lihat Kwitansi', style: TextStyle(color: Color(0xFF059669), fontSize: 13)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF059669)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
                           ),
                         ),
                       ],
