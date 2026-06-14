@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
 
 class KwitansiScreen extends StatelessWidget {
   final Map<String, dynamic> booking;
@@ -49,7 +48,7 @@ class KwitansiScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.share, color: Color(0xFFCC0000)),
-            onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak),
+            onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total.toInt(), dp, pelunasan, noTransaksi, tanggalCetak),
           ),
         ],
       ),
@@ -153,7 +152,7 @@ class KwitansiScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak),
+                onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total.toInt(), dp, pelunasan, noTransaksi, tanggalCetak),
                 icon: const Icon(Icons.copy),
                 label: const Text('Salin Kwitansi'),
                 style: ElevatedButton.styleFrom(
@@ -190,7 +189,7 @@ class KwitansiScreen extends StatelessWidget {
     );
   }
 
-  void _copyToClipboard(BuildContext ctx, String userName, String motorName, String startDate, String endDate, int days, int harga, num total, int dp, int pelunasan, String noTrx, String tanggal) {
+  void _copyToClipboard(BuildContext ctx, String userName, String motorName, String startDate, String endDate, int days, int harga, int total, int dp, int pelunasan, String noTrx, String tanggal) {
     final text = '''
 ==============================
 🏍️ KWITANSI NGEBUT.IN
