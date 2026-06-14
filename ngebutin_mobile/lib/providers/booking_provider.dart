@@ -8,15 +8,27 @@ class BookingProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   List<dynamic> get bookings => _bookings;
 
+  // Safe date parse helper
+  static DateTime _safeParseDate(dynamic val) {
+    try {
+      if (val == null) return DateTime.fromMillisecondsSinceEpoch(0);
+      return DateTime.parse(val.toString());
+    } catch (_) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+  }
+
   Future<void> fetchMyBookings(int userId) async {
     _isLoading = true;
     notifyListeners();
     try {
       final response = await ApiClient.get('/bookings');
-      final List<dynamic> allBookings = response;
-      _bookings = allBookings.where((b) => b['userId'] == userId || b['user_id'] == userId).toList();
-      // Sort by newest
-      _bookings.sort((a, b) => DateTime.parse(b['createdAt']).compareTo(DateTime.parse(a['createdAt'])));
+      final List<dynamic> allBookings = List<dynamic>.from(response);
+      _bookings = allBookings
+          .where((b) => b['userId'] == userId || b['user_id'] == userId)
+          .toList();
+      _bookings.sort((a, b) =>
+          _safeParseDate(b['createdAt']).compareTo(_safeParseDate(a['createdAt'])));
     } catch (e) {
       _bookings = [];
     } finally {
@@ -31,7 +43,8 @@ class BookingProvider with ChangeNotifier {
     try {
       final response = await ApiClient.get('/bookings');
       _bookings = List<dynamic>.from(response);
-      _bookings.sort((a, b) => DateTime.parse(b['createdAt']).compareTo(DateTime.parse(a['createdAt'])));
+      _bookings.sort((a, b) =>
+          _safeParseDate(b['createdAt']).compareTo(_safeParseDate(a['createdAt'])));
     } catch (e) {
       _bookings = [];
     } finally {

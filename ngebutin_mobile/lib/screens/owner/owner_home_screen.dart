@@ -379,7 +379,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                       ],
                     ),
                     const Divider(height: 20),
-                    Text('${b['startDate'].toString().split('T')[0]} s/d ${b['endDate'].toString().split('T')[0]}', style: const TextStyle(fontSize: 13)),
+                    Text('${(b['startDate'] ?? '-').toString().split('T')[0]} s/d ${(b['endDate'] ?? '-').toString().split('T')[0]}', style: const TextStyle(fontSize: 13)),
                     const SizedBox(height: 4),
                     Text('Status: ${(b['status'] ?? '').toString().toUpperCase()}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ],

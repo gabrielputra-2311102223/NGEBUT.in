@@ -329,7 +329,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       children: [
                         const Icon(Icons.calendar_month, size: 16, color: Color(0xFFCC0000)),
                         const SizedBox(width: 8),
-                        Flexible(child: Text('${b['startDate'].toString().split('T')[0]} s/d ${b['endDate'].toString().split('T')[0]}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+                        Flexible(child: Text('${(b['startDate'] ?? '-').toString().split('T')[0]} s/d ${(b['endDate'] ?? '-').toString().split('T')[0]}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
                       ],
                     ),
                     const SizedBox(height: 8),
