@@ -150,7 +150,14 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
     super.initState();
     if (widget.motor != null) {
       _namaCtrl.text = widget.motor!.nama;
-      _kategoriCtrl.text = widget.motor!.kategori;
+      // Normalize kategori ke PascalCase agar cocok dengan dropdown options
+      final rawKat = widget.motor!.kategori.trim();
+      const validCategories = ['Matic', 'Manual', 'Sport'];
+      final normalized = validCategories.firstWhere(
+        (c) => c.toLowerCase() == rawKat.toLowerCase(),
+        orElse: () => rawKat.isNotEmpty ? rawKat : '',
+      );
+      _kategoriCtrl.text = normalized;
       _hargaCtrl.text = widget.motor!.harga.toString();
       _deskripsiCtrl.text = widget.motor!.deskripsi;
       _status = widget.motor!.status;
@@ -171,8 +178,11 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_base64Image.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih gambar motor')));
+    // Saat tambah baru, wajib ada gambar. Saat edit, boleh pakai gambar lama.
+    if (_base64Image.isEmpty && widget.motor == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih gambar motor terlebih dahulu'), backgroundColor: Colors.orange),
+      );
       return;
     }
 
@@ -181,26 +191,25 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
       final provider = Provider.of<MotorProvider>(context, listen: false);
       final motorData = Motor(
         id: widget.motor?.id ?? 0,
-        nama: _namaCtrl.text,
+        nama: _namaCtrl.text.trim(),
         kategori: _kategoriCtrl.text,
-        harga: int.parse(_hargaCtrl.text),
-        deskripsi: _deskripsiCtrl.text,
+        harga: int.parse(_hargaCtrl.text.replaceAll(RegExp(r'[^\d]'), '')),
+        deskripsi: _deskripsiCtrl.text.trim(),
         gambar: _base64Image,
         status: _status,
       );
 
       if (widget.motor == null) {
         await provider.addMotor(motorData);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Kendaraan berhasil ditambahkan!'), backgroundColor: Colors.green));
       } else {
         await provider.updateMotor(motorData);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Kendaraan berhasil diperbarui!'), backgroundColor: Colors.green));
       }
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kendaraan berhasil disimpan')));
-        Navigator.pop(context);
-      }
+      if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

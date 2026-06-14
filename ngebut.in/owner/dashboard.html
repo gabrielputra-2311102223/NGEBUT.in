@@ -35,7 +35,9 @@
             <a href="dashboard.html" class="nav-item active">
                 <i class="fas fa-chart-pie"></i> Laporan Bisnis
             </a>
-
+            <a href="profil.html" class="nav-item">
+                <i class="fas fa-user-circle"></i> Profil
+            </a>
             <a href="#" class="nav-item logout" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
@@ -280,8 +282,8 @@
         }
 
         fetchOwnerReports();
-        // Auto-refresh setiap 30 detik
-        setInterval(fetchOwnerReports, 30000);
+        // CATATAN: setInterval dihapus karena menyebabkan auto-scroll yang mengganggu
+        // Gunakan tombol Refresh untuk update data
     </script>
 </body>
 </html>

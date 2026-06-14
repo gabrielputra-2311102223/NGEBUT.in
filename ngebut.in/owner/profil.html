@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Owner - Ngebut.in</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .profile-section { max-width: 600px; margin: 0 auto; }
+        .profile-card { background: white; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-md); margin-bottom: 2rem; }
+        .profile-avatar-section { text-align: center; margin-bottom: 2rem; }
+        .profile-avatar-large { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #1a1a1a; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #1a1a1a; }
+        .profile-avatar-large img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .avatar-upload-btn { background: #1a1a1a; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--secondary); font-size: 0.9rem; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        .form-group input:focus { outline: none; border-color: #1a1a1a; box-shadow: 0 0 0 3px rgba(26,26,26,0.1); }
+        .form-actions { display: flex; gap: 1rem; margin-top: 2rem; }
+        .success-message { background: #dcfce7; color: #166534; padding: 1rem; border-radius: 8px; }
+        .error-message { background: #fee2e2; color: #cc0000; padding: 1rem; border-radius: 8px; }
+    </style>
+</head>
+<body class="dashboard-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="mobile-admin-nav">
+        <button class="sidebar-toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <img src="../assets/img/logo.png" alt="Logo" style="height:35px;mix-blend-mode:multiply;">
+        <div style="width:24px;"></div>
+    </div>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../index.html" class="logo" style="display:flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+                <img src="../assets/img/logo.png" alt="Logo" style="height:70px;mix-blend-mode:multiply;">
+            </a>
+            <div class="user-profile" id="ownerProfile">
+                <div class="user-avatar" id="ownerAvatar"></div>
+                <div class="user-info">
+                    <h4 id="ownerName">Owner</h4>
+                    <p><i class="fas fa-crown"></i> Pemilik Usaha</p>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Laporan Bisnis</a>
+            <a href="profil.html" class="nav-item active"><i class="fas fa-user-circle"></i> Profil</a>
+            <a href="#" class="nav-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-title">
+                <h1><i class="fas fa-user-circle" style="color:#1a1a1a;"></i> Profil Owner</h1>
+                <p>Kelola informasi akun Anda</p>
+            </div>
+        </div>
+
+        <div class="profile-section">
+            <div class="profile-card">
+                <div class="profile-avatar-section">
+                    <div style="position:relative;display:inline-block;">
+                        <div class="profile-avatar-large">
+                            <img id="avatarPreview" src="" alt="Avatar">
+                        </div>
+                        <button id="removeAvatarBtn" onclick="removeAvatar()" style="display:none;position:absolute;top:0;right:0;width:28px;height:28px;border-radius:50%;background:#cc0000;color:#fff;border:none;cursor:pointer;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div style="margin-top:0.75rem;" id="avatarUploadContainer">
+                        <button class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()">
+                            <i class="fas fa-camera"></i> Ubah Foto
+                        </button>
+                    </div>
+                    <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
+                </div>
+
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="profileNama" placeholder="Nama Lengkap" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="profileEmail" placeholder="Email">
+                    </div>
+                    <hr style="border:none;border-top:1px solid var(--gray-200);margin:2rem 0;">
+                    <h4 style="margin-bottom:1rem;">Ubah Password (Opsional)</h4>
+                    <div class="form-group">
+                        <label>Password Saat Ini</label>
+                        <input type="password" id="currentPassword" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Password Baru</label>
+                        <input type="password" id="newPassword" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Konfirmasi Password Baru</label>
+                        <input type="password" id="confirmNewPassword" placeholder="••••••••">
+                    </div>
+                    <div id="profileMessage" style="display:none;padding:1rem;border-radius:8px;margin-bottom:1rem;"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i> Kembali</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api-client.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script>
+        const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Ccircle cx='120' cy='80' r='50' fill='%23ccc'/%3E%3Ccircle cx='120' cy='220' r='90' fill='%23999'/%3E%3C/svg%3E";
+
+        const authUser = getCurrentUser();
+        if (!authUser || authUser.role !== 'owner') window.location.href = '../login.html';
+
+        const avatarEl = document.getElementById('ownerAvatar');
+        avatarEl.style.cssText = 'width:50px;height:50px;font-size:20px;';
+        renderAvatar('#ownerAvatar', authUser.nama, authUser.foto_profil, 50);
+        document.getElementById('ownerName').textContent = authUser.nama || 'Owner';
+
+        async function loadProfile() {
+            try {
+                const data = await ApiClient.getMyProfile(authUser.id);
+                if (data && data.id) {
+                    document.getElementById('profileNama').value = data.nama || '';
+                    document.getElementById('profileEmail').value = data.email || '';
+                    document.getElementById('avatarPreview').src = data.foto_profil || DEFAULT_AVATAR;
+                    if (data.foto_profil) {
+                        document.getElementById('removeAvatarBtn').style.display = 'flex';
+                        document.getElementById('avatarUploadContainer').style.display = 'none';
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        let avatarBase64 = null;
+        function handleAvatarUpload(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            if (file.size > 2*1024*1024) { alert('Maksimal 2MB!'); return; }
+            const reader = new FileReader();
+            reader.onload = ev => {
+                avatarBase64 = ev.target.result;
+                document.getElementById('avatarPreview').src = avatarBase64;
+                document.getElementById('removeAvatarBtn').style.display = 'flex';
+                document.getElementById('avatarUploadContainer').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+        function removeAvatar() {
+            avatarBase64 = null;
+            document.getElementById('avatarPreview').src = DEFAULT_AVATAR;
+            document.getElementById('removeAvatarBtn').style.display = 'none';
+            document.getElementById('avatarUploadContainer').style.display = 'inline-block';
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const nama = document.getElementById('profileNama').value.trim();
+            const email = document.getElementById('profileEmail').value.trim();
+            const cp = document.getElementById('currentPassword').value;
+            const np = document.getElementById('newPassword').value;
+            const cnp = document.getElementById('confirmNewPassword').value;
+            const msgEl = document.getElementById('profileMessage');
+
+            if (!nama) { showMsg(msgEl, 'Nama harus diisi', false); return; }
+            if (np) {
+                if (!cp) { showMsg(msgEl, 'Masukkan password saat ini', false); return; }
+                if (np.length < 6) { showMsg(msgEl, 'Password minimal 6 karakter', false); return; }
+                if (np !== cnp) { showMsg(msgEl, 'Konfirmasi password tidak cocok', false); return; }
+            }
+            try {
+                const body = { nama, email };
+                if (avatarBase64) body.foto_profil = avatarBase64;
+                if (cp && np) { body.current_password = cp; body.new_password = np; }
+                const result = await ApiClient.updateProfile(authUser.id, body);
+                if (result && result.message) {
+                    const cached = ApiClient.getCurrentUser();
+                    if (cached) { cached.nama = nama; cached.email = email; if (body.foto_profil) cached.foto_profil = body.foto_profil; sessionStorage.setItem('ngebutin_current_user', JSON.stringify(cached)); }
+                    showMsg(msgEl, '✅ Profil berhasil diperbarui!', true);
+                } else { showMsg(msgEl, result?.error || 'Gagal', false); }
+            } catch(err) { showMsg(msgEl, 'Error: ' + err.message, false); }
+        });
+
+        function showMsg(el, msg, ok) {
+            el.textContent = msg;
+            el.style.background = ok ? '#dcfce7' : '#fee2e2';
+            el.style.color = ok ? '#166534' : '#cc0000';
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+
+        document.getElementById('avatarPreview').src = DEFAULT_AVATAR;
+        loadProfile();
+
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.toggle('open');
+            document.getElementById('sidebarOverlay')?.classList.toggle('show');
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.remove('open');
+            document.getElementById('sidebarOverlay')?.classList.remove('show');
+        });
+    </script>
+</body>
+</html>

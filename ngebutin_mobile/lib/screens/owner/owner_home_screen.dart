@@ -23,7 +23,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
-      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _refreshData());
     });
   }
 

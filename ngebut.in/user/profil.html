@@ -124,7 +124,7 @@
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" id="profileEmail" placeholder="Email" disabled style="background: var(--gray-100);">
+                        <input type="email" id="profileEmail" placeholder="Email">
                     </div>
 
                     <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 2rem 0;">
@@ -264,6 +264,8 @@
 
             try {
                 const body = { nama };
+                const emailVal = document.getElementById('profileEmail').value.trim();
+                if (emailVal) body.email = emailVal;
                 if (avatarBase64 !== null) {
                     body.foto_profil = avatarBase64;
                 }

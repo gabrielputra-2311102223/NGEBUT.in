@@ -3,9 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Approval Booking - Ngebut.in Admin</title>
+    <title>Verifikasi DP - Ngebut.in Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .dp-image-thumb { width:80px; height:60px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid #e5e7eb; }
+        .dp-preview-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; }
+        .dp-preview-overlay.show { display:flex; }
+        .dp-preview-overlay img { max-width:90vw; max-height:90vh; border-radius:12px; }
+        .badge-dp { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .badge-menunggu { background:#fef9c3; color:#854d0e; }
+        .badge-uploaded { background:#dbeafe; color:#1e40af; }
+        .badge-active { background:#dcfce7; color:#166534; }
+        .badge-returning { background:#ede9fe; color:#6b21a8; }
+        .badge-done { background:#f3f4f6; color:#374151; }
+        .badge-rejected { background:#fee2e2; color:#cc0000; }
+    </style>
 </head>
 <body class="dashboard-layout">
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -24,31 +37,20 @@
             <div class="user-profile">
                 <div class="user-avatar" id="adminAvatar"></div>
                 <div class="user-info">
-                    <h4>Administrator</h4>
+                    <h4 id="adminName">Administrator</h4>
                     <p><i class="fas fa-shield-alt"></i> Super Admin</p>
                 </div>
             </div>
         </div>
         
         <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item">
-                <i class="fas fa-chart-pie"></i> Dashboard
-            </a>
-            <a href="kendaraan.html" class="nav-item">
-                <i class="fas fa-motorcycle"></i> Kelola Kendaraan
-            </a>
-            <a href="booking.html" class="nav-item active">
-                <i class="fas fa-calendar-check"></i> Approval Booking
-            </a>
-            <a href="pembayaran.html" class="nav-item">
-                <i class="fas fa-credit-card"></i> Pembayaran
-            </a>
-            <a href="users.html" class="nav-item">
-                <i class="fas fa-users"></i> Manajemen User
-            </a>
-            <a href="#" class="nav-item logout" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+            <a href="kendaraan.html" class="nav-item"><i class="fas fa-motorcycle"></i> Kelola Kendaraan</a>
+            <a href="booking.html" class="nav-item active"><i class="fas fa-shield-check"></i> Verifikasi DP</a>
+            <a href="pembayaran.html" class="nav-item"><i class="fas fa-credit-card"></i> Pembayaran</a>
+            <a href="users.html" class="nav-item"><i class="fas fa-users"></i> Manajemen User</a>
+            <a href="profil.html" class="nav-item"><i class="fas fa-user-circle"></i> Profil</a>
+            <a href="#" class="nav-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
     </aside>
 
@@ -56,15 +58,15 @@
     <main class="main-content">
         <div class="page-header">
             <div class="page-title">
-                <h1>Approval Booking</h1>
-                <p>Setujui atau tolak permintaan sewa dari pelanggan</p>
+                <h1><i class="fas fa-shield-check" style="color:var(--primary);"></i> Verifikasi DP & Kelola Sewa</h1>
+                <p>Verifikasi bukti DP penyewa, kelola sewa aktif, dan proses pengembalian</p>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-outline btn-sm" onclick="exportToCSV()" title="Export CSV">
-                    <i class="fas fa-file-csv"></i>
+                <button class="btn btn-outline btn-sm" onclick="loadData()" title="Refresh">
+                    <i class="fas fa-sync-alt"></i> Refresh
                 </button>
-                <button class="btn btn-primary" onclick="exportToExcel()" style="background: #1D6F42; border-color: #1D6F42;">
-                    <i class="fas fa-file-excel"></i> Export Excel (Premium)
+                <button class="btn btn-outline btn-sm" onclick="exportToCSV()" title="Export CSV">
+                    <i class="fas fa-file-csv"></i> CSV
                 </button>
             </div>
         </div>
@@ -74,11 +76,17 @@
 
         <!-- FILTER TABS -->
         <div class="filter-tabs" style="margin-bottom: 1.5rem;">
-            <button class="filter-tab active" onclick="setFilter('confirm')">
-                <i class="fas fa-clock"></i> Menunggu Approval
+            <button class="filter-tab active" id="tab-verif" onclick="setFilter('verif', this)">
+                <i class="fas fa-shield-check"></i> Verifikasi DP <span id="badge-verif" class="badge" style="background:#1e40af;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:4px;"></span>
             </button>
-            <button class="filter-tab" onclick="setFilter('all')">
-                <i class="fas fa-list"></i> Semua Booking
+            <button class="filter-tab" id="tab-active" onclick="setFilter('active', this)">
+                <i class="fas fa-motorcycle"></i> Sewa Aktif <span id="badge-active" style="background:#166534;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:4px;"></span>
+            </button>
+            <button class="filter-tab" id="tab-returning" onclick="setFilter('returning', this)">
+                <i class="fas fa-undo"></i> Pengembalian <span id="badge-returning" style="background:#6b21a8;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:4px;"></span>
+            </button>
+            <button class="filter-tab" id="tab-all" onclick="setFilter('all', this)">
+                <i class="fas fa-list"></i> Semua
             </button>
         </div>
 
@@ -87,41 +95,29 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID Booking</th>
+                        <th>ID</th>
                         <th>Penyewa</th>
                         <th>Motor</th>
-                        <th>Tanggal Sewa</th>
-                        <th>Durasi</th>
-                        <th>Total</th>
+                        <th>Tanggal</th>
+                        <th>Total / DP</th>
+                        <th>Bukti DP</th>
                         <th>Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="bookingsTable">
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 2rem;">Memuat data...</td>
-                    </tr>
+                    <tr><td colspan="8" style="text-align:center;padding:2rem;">Memuat data...</td></tr>
                 </tbody>
             </table>
         </div>
     </main>
 
-    <!-- MODAL DETAIL -->
-    <div id="detailModal" class="modal-overlay">
-        <div class="modal" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3>Detail Booking</h3>
-                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="detailContent"></div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeDetailModal()">Tutup</button>
-            </div>
-        </div>
+    <!-- MODAL DETAIL DP IMAGE -->
+    <div class="dp-preview-overlay" id="dpPreview" onclick="this.classList.remove('show')">
+        <img id="dpPreviewImg" src="" alt="Bukti DP">
     </div>
 
     <script src="../assets/js/api-client.js"></script>
-    <script src="../assets/js/script.js"></script>
     <script src="../assets/js/script.js"></script>
     <script>
         // Proteksi admin
@@ -131,183 +127,229 @@
         }
 
         // Render avatar admin
-        document.getElementById('adminAvatar').style.width = '50px';
-        document.getElementById('adminAvatar').style.height = '50px';
-        document.getElementById('adminAvatar').style.fontSize = '20px';
+        const avatarEl = document.getElementById('adminAvatar');
+        avatarEl.style.width = '50px';
+        avatarEl.style.height = '50px';
+        avatarEl.style.fontSize = '20px';
         renderAvatar('#adminAvatar', user.nama, user.foto_profil, 50);
+        document.getElementById('adminName').textContent = user.nama || 'Administrator';
 
-        let currentFilter = 'confirm';
+        let currentFilter = 'verif';
+        let allBookings = [];
 
-        function setFilter(filter) {
+        function setFilter(filter, el) {
             currentFilter = filter;
-            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-            renderBookings();
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderTable();
         }
 
-        function renderBookings() {
-            let bookings = getBooking();
-            const tableBody = document.getElementById('bookingsTable');
-            
-            // Filter
-            if (currentFilter === 'confirm') {
-                bookings = bookings.filter(b => b.status === 'confirm');
+        async function loadData() {
+            try {
+                const response = await ApiClient.get('/bookings');
+                allBookings = Array.isArray(response) ? response : [];
+                allBookings.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                updateBadges();
+                renderTable();
+            } catch (e) {
+                document.getElementById('bookingsTable').innerHTML = `<tr><td colspan="8" style="text-align:center;color:red;">Gagal memuat data: ${e.message}</td></tr>`;
             }
-            
-            // Sort by newest first
-            bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            
-            if (bookings.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 3rem; color: var(--gray-500);">
-                    <i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
-                    <h3>Tidak ada booking</h3>
-                    <p>${currentFilter === 'confirm' ? 'Tidak ada permintaan booking yang menunggu approval.' : 'Belum ada booking.'}</p>
+        }
+
+        function updateBadges() {
+            const verif = allBookings.filter(b => b.status === 'confirm' && (b.statusPembayaran === 'dp_uploaded' || b.status_pembayaran === 'dp_uploaded')).length;
+            const active = allBookings.filter(b => b.status === 'booked').length;
+            const ret = allBookings.filter(b => b.status === 'returning').length;
+            document.getElementById('badge-verif').textContent = verif || '';
+            document.getElementById('badge-active').textContent = active || '';
+            document.getElementById('badge-returning').textContent = ret || '';
+        }
+
+        function getFilteredBookings() {
+            if (currentFilter === 'verif') {
+                return allBookings.filter(b => b.status === 'confirm' && (b.statusPembayaran === 'dp_uploaded' || b.status_pembayaran === 'dp_uploaded'));
+            }
+            if (currentFilter === 'active') return allBookings.filter(b => b.status === 'booked');
+            if (currentFilter === 'returning') return allBookings.filter(b => b.status === 'returning');
+            return allBookings;
+        }
+
+        function renderTable() {
+            const filtered = getFilteredBookings();
+            const tbody = document.getElementById('bookingsTable');
+
+            if (filtered.length === 0) {
+                const msgs = {
+                    verif: 'Tidak ada bukti DP yang perlu diverifikasi.',
+                    active: 'Tidak ada sewa yang sedang aktif.',
+                    returning: 'Tidak ada motor yang dikembalikan.',
+                    all: 'Belum ada data booking.'
+                };
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem;color:var(--gray-500);">
+                    <i class="fas fa-inbox" style="font-size:3rem;opacity:0.3;display:block;margin-bottom:1rem;"></i>
+                    ${msgs[currentFilter] || 'Tidak ada data.'}
                 </td></tr>`;
                 return;
             }
-            
-            tableBody.innerHTML = bookings.map(b => {
-                const days = calculateDays(b.startDate, b.endDate);
-                
+
+            tbody.innerHTML = filtered.map(b => {
+                const sp = b.statusPembayaran || b.status_pembayaran || '';
+                const dpBukti = b.dpBukti || b.dp_bukti || '';
+                const days = calculateDays(b.startDate || b.tgl_mulai, b.endDate || b.tgl_selesai);
+                const total = b.totalHarga || b.total_harga || 0;
+                const dp = b.dpAmount || b.dp_amount || Math.round(total / 2);
+                const nama = b.userName || b.user_name || `User #${b.userId || b.user_id}`;
+                const motor = b.motorName || b.motor_name || `Motor #${b.motorId || b.motor_id}`;
+
+                let badge = '';
+                let aksi = '';
+
+                if (b.status === 'confirm' && sp === 'menunggu_dp') {
+                    badge = `<span class="badge-dp badge-menunggu">⏳ MENUNGGU DP</span>`;
+                    aksi = `<span style="color:#9ca3af;font-size:12px;">Menunggu upload</span>`;
+                } else if (b.status === 'confirm' && (sp === 'dp_uploaded' || sp === 'verifikasi')) {
+                    badge = `<span class="badge-dp badge-uploaded">🔍 VERIFIKASI DP</span>`;
+                    aksi = `
+                        <div class="action-buttons">
+                            <button class="btn-action btn-approve" onclick="verifyDP(${b.id}, 'approve')"><i class="fas fa-check"></i> Terima</button>
+                            <button class="btn-action btn-reject" onclick="verifyDP(${b.id}, 'reject')"><i class="fas fa-times"></i> Tolak</button>
+                        </div>`;
+                } else if (b.status === 'booked') {
+                    badge = `<span class="badge-dp badge-active">🏍️ AKTIF SEWA</span>`;
+                    aksi = `<span style="color:#9ca3af;font-size:12px;">Menunggu kembali</span>`;
+                } else if (b.status === 'returning') {
+                    badge = `<span class="badge-dp badge-returning">↩️ DIKEMBALIKAN</span>`;
+                    aksi = `<button class="btn-action btn-approve" onclick="completeReturn(${b.id})"><i class="fas fa-flag-checkered"></i> Selesai</button>`;
+                } else if (b.status === 'done') {
+                    badge = `<span class="badge-dp badge-done">✅ SELESAI</span>`;
+                    aksi = `<button class="btn-action btn-view" onclick="viewKwitansi(${b.id})"><i class="fas fa-receipt"></i> Kwitansi</button>`;
+                } else if (b.status === 'rejected') {
+                    badge = `<span class="badge-dp badge-rejected">❌ DITOLAK</span>`;
+                    aksi = `<span style="color:#9ca3af;font-size:12px;">Ditolak</span>`;
+                } else {
+                    badge = `<span class="badge-dp" style="background:#f3f4f6;color:#374151;">${(b.status||'').toUpperCase()}</span>`;
+                    aksi = `<button class="btn-action btn-view" onclick="viewDetail(${b.id})"><i class="fas fa-eye"></i> Detail</button>`;
+                }
+
+                const dpThumb = dpBukti
+                    ? `<img src="${dpBukti}" class="dp-image-thumb" onclick="previewDP('${dpBukti}')" title="Klik untuk lihat bukti DP" onerror="this.outerHTML='<span style=color:#9ca3af;font-size:12px;>Error</span>'">`
+                    : `<span style="color:#9ca3af;font-size:12px;"><i class="fas fa-minus"></i></span>`;
+
                 return `
                     <tr>
-                        <td><code>#${b.id.toString().slice(-6)}</code></td>
-                        <td>
-                            <strong>${b.userName}</strong>
-                        </td>
-                        <td>${b.motorName}</td>
-                        <td>${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}</td>
-                        <td>${days} hari</td>
-                        <td><strong>${formatRupiah(b.totalHarga)}</strong></td>
-                        <td>${getStatusBadge(b.status)}</td>
-                        <td>
-                            <div class="action-buttons">
-                                ${b.status === 'confirm' ? `
-                                    <button class="btn-action btn-approve" onclick="approveBooking(${b.id})">
-                                        <i class="fas fa-check"></i> Approve
-                                    </button>
-                                    <button class="btn-action btn-reject" onclick="rejectBooking(${b.id})">
-                                        <i class="fas fa-times"></i> Tolak
-                                    </button>
-                                ` : `
-                                    <button class="btn-action btn-view" onclick="viewDetail(${b.id})">
-                                        <i class="fas fa-eye"></i> Detail
-                                    </button>
-                                `}
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                        <td><code>#${String(b.id).slice(-6)}</code></td>
+                        <td><strong>${nama}</strong></td>
+                        <td>${motor}</td>
+                        <td style="font-size:12px;">${formatShortDate(b.startDate||b.tgl_mulai)} →<br>${formatShortDate(b.endDate||b.tgl_selesai)}<br><small>${days} hari</small></td>
+                        <td><strong>${formatRupiah(total)}</strong><br><small style="color:var(--primary);">DP: ${formatRupiah(dp)}</small></td>
+                        <td style="text-align:center;">${dpThumb}</td>
+                        <td>${badge}</td>
+                        <td>${aksi}</td>
+                    </tr>`;
             }).join('');
         }
 
-        function approveBooking(bookingId) {
-            if (!confirm('Setujui permintaan sewa ini? Motor akan berstatus DISEWA.')) return;
-            
-            const success = updateBookingStatus(bookingId, 'booked');
-            if (success) {
-                showNotification('✅ Booking berhasil disetujui!', 'success');
-                renderBookings();
-            } else {
-                alert('Gagal mengupdate booking');
-            }
+        function previewDP(src) {
+            document.getElementById('dpPreviewImg').src = src;
+            document.getElementById('dpPreview').classList.add('show');
         }
 
-        function rejectBooking(bookingId) {
-            if (!confirm('Tolak permintaan sewa ini? Motor akan kembali TERSEDIA.')) return;
-            
-            const success = updateBookingStatus(bookingId, 'cancelled');
-            if (success) {
-                showNotification('❌ Booking ditolak. Motor kembali tersedia.', 'danger');
-                renderBookings();
-            } else {
-                alert('Gagal mengupdate booking');
-            }
+        async function verifyDP(bookingId, action) {
+            const label = action === 'approve' ? 'Terima' : 'Tolak';
+            if (!confirm(`${label} bukti DP untuk booking #${bookingId}?`)) return;
+            try {
+                if (action === 'approve') {
+                    await ApiClient.put(`/bookings/${bookingId}/approve-dp`, {});
+                    showNotif('✅ DP diverifikasi! Status sewa menjadi AKTIF.', 'success');
+                } else {
+                    await ApiClient.put(`/bookings/${bookingId}/status`, { status: 'rejected' });
+                    showNotif('❌ Bukti DP ditolak.', 'danger');
+                }
+                await loadData();
+            } catch(e) { showNotif('Gagal: ' + e.message, 'danger'); }
+        }
+
+        async function completeReturn(bookingId) {
+            if (!confirm(`Selesaikan sewa #${bookingId}? Motor sudah diterima kembali.`)) return;
+            try {
+                await ApiClient.put(`/bookings/${bookingId}/status`, { status: 'done' });
+                showNotif('✅ Sewa selesai! Motor kembali tersedia.', 'success');
+                await loadData();
+            } catch(e) { showNotif('Gagal: ' + e.message, 'danger'); }
         }
 
         function viewDetail(bookingId) {
-            const bookings = getBooking();
-            const booking = bookings.find(b => String(b.id) === String(bookingId));
-            if (!booking) return;
-            
-            const days = calculateDays(booking.startDate, booking.endDate);
-            
-            document.getElementById('detailContent').innerHTML = `
-                <div style="margin-bottom: 1rem;">
-                    <p><strong>ID Booking:</strong> #${booking.id.toString().slice(-6)}</p>
-                    <p><strong>Penyewa:</strong> ${booking.userName}</p>
-                    <p><strong>Motor:</strong> ${booking.motorName}</p>
-                    <p><strong>Harga/Hari:</strong> ${formatRupiah(booking.harga)}</p>
-                    <p><strong>Tanggal Sewa:</strong> ${formatDate(booking.startDate)}</p>
-                    <p><strong>Tanggal Kembali:</strong> ${formatDate(booking.endDate)}</p>
-                    <p><strong>Durasi:</strong> ${days} hari</p>
-                    <p><strong>Total:</strong> ${formatRupiah(booking.totalHarga)}</p>
-                    <p><strong>Status:</strong> ${getStatusBadge(booking.status)}</p>
-                    <p><strong>Dibuat Pada:</strong> ${formatDate(booking.createdAt)}</p>
-                </div>
-            `;
-            
-            document.getElementById('detailModal').style.display = 'flex';
+            const b = allBookings.find(x => String(x.id) === String(bookingId));
+            if (!b) return;
+            alert(`Booking #${b.id}\nPenyewa: ${b.userName||'?'}\nMotor: ${b.motorName||'?'}\nStatus: ${b.status}`);
         }
 
-        function closeDetailModal() {
-            document.getElementById('detailModal').style.display = 'none';
-        }
-
-        function exportToExcel() {
-            window.location.href = window.location.origin + '/api/export/excel';
+        function viewKwitansi(bookingId) {
+            const b = allBookings.find(x => String(x.id) === String(bookingId));
+            if (!b) return;
+            const total = b.totalHarga || b.total_harga || 0;
+            const dp = b.dpAmount || b.dp_amount || Math.round(total / 2);
+            const win = window.open('', '_blank');
+            win.document.write(`<!DOCTYPE html><html><head><title>Kwitansi #${b.id}</title>
+            <style>body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;}
+            .header{text-align:center;border-bottom:2px solid #cc0000;padding-bottom:15px;margin-bottom:20px;}
+            .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;}
+            .total{font-size:1.3rem;font-weight:bold;color:#cc0000;}
+            @media print{button{display:none}}</style></head>
+            <body>
+            <div class="header"><h2 style="color:#cc0000;">🏍️ NGEBUT.IN</h2><h3>KWITANSI SEWA MOTOR</h3></div>
+            <div class="row"><span>No. Transaksi</span><strong>#${b.id}</strong></div>
+            <div class="row"><span>Penyewa</span><strong>${b.userName||'-'}</strong></div>
+            <div class="row"><span>Motor</span><strong>${b.motorName||'-'}</strong></div>
+            <div class="row"><span>Tanggal Sewa</span><span>${b.startDate||b.tgl_mulai||'-'}</span></div>
+            <div class="row"><span>Tanggal Kembali</span><span>${b.endDate||b.tgl_selesai||'-'}</span></div>
+            <div class="row"><span>Total Sewa</span><span class="total">Rp ${Number(total).toLocaleString('id-ID')}</span></div>
+            <div class="row"><span>DP Dibayar</span><span>Rp ${Number(dp).toLocaleString('id-ID')}</span></div>
+            <div class="row"><span>Pelunasan</span><span>Rp ${Number(total-dp).toLocaleString('id-ID')}</span></div>
+            <div style="text-align:center;margin-top:20px;">
+                <p style="color:#166534;font-weight:bold;">✅ LUNAS</p>
+                <button onclick="window.print()" style="background:#cc0000;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">🖨️ Cetak Kwitansi</button>
+            </div></body></html>`);
         }
 
         function exportToCSV() {
-            const bookings = getBooking();
-            if (bookings.length === 0) {
-                alert("Tidak ada data untuk diexport!");
-                return;
-            }
-
-            // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
-            const headers = ["ID Transaksi", "Penyewa", "Email", "Motor", "Tgl Mulai", "Tgl Selesai", "Durasi", "Total Bayar", "Status", "Waktu Transaksi"];
-            const rows = bookings.map(b => [
-                `#${b.id.toString().slice(-6)}`,
-                b.userName,
-                b.userEmail || "-",
-                b.motorName,
-                b.startDate,
-                b.endDate,
-                `${calculateDays(b.startDate, b.endDate)} Hari`,
-                formatRupiah(b.totalHarga),
-                b.status.toUpperCase(),
-                b.createdAt
+            if (allBookings.length === 0) { alert('Tidak ada data!'); return; }
+            const headers = ['ID', 'Penyewa', 'Motor', 'Tgl Mulai', 'Tgl Selesai', 'Total', 'DP', 'Status', 'Status Bayar'];
+            const rows = allBookings.map(b => [
+                `#${String(b.id).slice(-6)}`,
+                b.userName || '', b.motorName || '',
+                b.startDate || b.tgl_mulai || '',
+                b.endDate || b.tgl_selesai || '',
+                b.totalHarga || b.total_harga || 0,
+                b.dpAmount || b.dp_amount || 0,
+                b.status || '',
+                b.statusPembayaran || b.status_pembayaran || ''
             ]);
-
-            downloadCSV("Laporan_Booking_NgebutIN.csv", headers, rows, "Laporan Approval Booking Kendaraan");
+            downloadCSV('Verifikasi_DP_NgebutIN.csv', headers, rows, 'Laporan Verifikasi DP');
         }
 
-        function showNotification(message, type) {
+        function showNotif(msg, type) {
             const area = document.getElementById('notificationArea');
-            area.innerHTML = `
-                <div class="notification notification-${type}">
-                    <span class="notification-icon"><i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'times-circle' : 'info-circle'}"></i></span>
-                    <div class="notification-content">
-                        <div class="notification-title">${message}</div>
-                    </div>
-                    <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>
-                </div>
-            `;
-            
-            setTimeout(() => {
-                area.innerHTML = '';
-            }, 5000);
+            area.innerHTML = `<div class="notification notification-${type}">
+                <span class="notification-icon"><i class="fas fa-${type==='success'?'check-circle':'times-circle'}"></i></span>
+                <div class="notification-content"><div class="notification-title">${msg}</div></div>
+                <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>
+            </div>`;
+            setTimeout(() => area.innerHTML='', 5000);
         }
 
-        // Close modal when clicking outside
-        document.getElementById('detailModal').addEventListener('click', function(e) {
-            if (e.target === this) closeDetailModal();
-        });
+        // Initialize — NO setInterval to avoid auto-scroll
+        loadData();
 
-        // Initialize
-        renderBookings();
-        setInterval(renderBookings, 10000);
+        // Sidebar toggle
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.toggle('open');
+            document.getElementById('sidebarOverlay')?.classList.toggle('show');
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.remove('open');
+            document.getElementById('sidebarOverlay')?.classList.remove('show');
+        });
     </script>
 </body>
 </html>

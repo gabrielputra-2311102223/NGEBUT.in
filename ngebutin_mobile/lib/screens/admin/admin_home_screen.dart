@@ -28,8 +28,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
-      // Auto-refresh every 30 seconds
-      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _refreshData());
     });
   }
 

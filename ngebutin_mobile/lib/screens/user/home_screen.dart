@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -22,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'Semua';
   final List<String> _categories = ['Semua', 'Matic', 'Manual', 'Sport'];
-  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -30,24 +28,16 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<MotorProvider>(context, listen: false).fetchMotors();
       _refreshUserBookings();
-      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        if (mounted) _refreshUserBookings();
-      });
     });
   }
 
   void _refreshUserBookings() {
+    if (!mounted) return;
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
       final uid = (user['id'] as num).toInt();
       Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
     }
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
   }
 
   Widget _buildImage(String? gambar) {
@@ -142,6 +132,48 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                ),
+
+                // SEWA AKTIF BANNER (seperti activeRentalArea di website)
+                Consumer<BookingProvider>(
+                  builder: (ctx, bp, _) {
+                    final active = bp.bookings.where((b) {
+                      final s = b['status']?.toString() ?? '';
+                      return s == 'confirm' || s == 'booked' || s == 'returning';
+                    }).toList();
+                    if (active.isEmpty) return const SizedBox.shrink();
+                    final b = active.first;
+                    final s = b['status']?.toString() ?? '';
+                    final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
+                    final motorName = (b['motorName'] ?? b['motor_name'] ?? 'Motor').toString();
+                    String statusText;
+                    Color cardColor;
+                    Color textColor;
+                    IconData icon;
+                    if (s == 'confirm' && sp == 'menunggu_dp') {
+                      statusText = '⏳ Upload bukti DP untuk $motorName'; cardColor = const Color(0xFFFEF9C3); textColor = const Color(0xFF854D0E); icon = Icons.upload_file;
+                    } else if (s == 'confirm') {
+                      statusText = '🔍 DP sedang diverifikasi - $motorName'; cardColor = const Color(0xFFDBEAFE); textColor = const Color(0xFF1E40AF); icon = Icons.hourglass_top;
+                    } else if (s == 'booked') {
+                      statusText = '🏍️ Kamu sedang menyewa $motorName'; cardColor = const Color(0xFFDCFCE7); textColor = const Color(0xFF166534); icon = Icons.motorcycle;
+                    } else {
+                      statusText = '↩️ $motorName dalam proses pengembalian'; cardColor = const Color(0xFFEDE9FE); textColor = const Color(0xFF6B21A8); icon = Icons.undo;
+                    }
+                    return GestureDetector(
+                      onTap: () => setState(() => _currentIndex = 1),
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: textColor.withOpacity(0.3), width: 1.5)),
+                        child: Row(children: [
+                          Icon(icon, color: textColor, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(statusText, style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 13))),
+                          Icon(Icons.arrow_forward_ios, color: textColor, size: 13),
+                        ]),
+                      ),
+                    );
+                  },
                 ),
 
                 // Category Filter
