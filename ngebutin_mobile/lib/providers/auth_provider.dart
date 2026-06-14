@@ -47,24 +47,49 @@ class AuthProvider with ChangeNotifier {
     // Not returning token yet because need OTP
   }
 
-  Future<void> verifyOtp(String email, String otp) async {
+  Future<bool> verifyOtp(String email, String otp) async {
     final response = await ApiClient.post('/auth/verify-otp', {
       'email': email,
       'otp': otp,
     });
 
-    final token = response['token'];
-    final user = response['user'];
-
-    await ApiClient.saveToken(token, user);
-    _user = Map<String, dynamic>.from(user);
-    notifyListeners();
+    // API returns { message } on success — no token.
+    // If API also returns token+user (future proof), auto-login.
+    if (response['token'] != null && response['user'] != null) {
+      await ApiClient.saveToken(response['token'], response['user']);
+      _user = Map<String, dynamic>.from(response['user']);
+      notifyListeners();
+      return true; // logged in
+    }
+    return false; // not logged in, redirect to login screen
   }
 
   Future<void> logout() async {
     await ApiClient.clearSession();
     _user = null;
     notifyListeners();
+  }
+
+  /// Fetch complete profile from server (includes email, foto_profil, etc.)
+  Future<void> fetchFullProfile() async {
+    if (_user == null) return;
+    try {
+      final id = _user!['id'];
+      final response = await ApiClient.get('/users/me/$id');
+      if (response != null && response['id'] != null) {
+        _user = {
+          ..._user!,
+          ...Map<String, dynamic>.from(response),
+        };
+        // Persist updated user
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+        if (token != null) await ApiClient.saveToken(token, _user!);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('fetchFullProfile error: $e');
+    }
   }
 
   Future<void> updateProfile(Map<String, dynamic> data) async {

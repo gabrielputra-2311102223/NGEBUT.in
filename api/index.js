@@ -309,7 +309,10 @@ app.post('/api/bookings', async (req, res) => {
             }
         } catch (e) { /* ignore email error */ }
             
-        res.status(201).json({ message: 'Booking submitted. Silakan bayar DP 50%.', dpAmount });
+        const [inserted] = await poolPromise.query('SELECT LAST_INSERT_ID() as bookingId');
+        const bookingId = inserted[0].bookingId;
+
+        res.status(201).json({ message: 'Booking submitted. Silakan bayar DP 50%.', dpAmount, bookingId });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

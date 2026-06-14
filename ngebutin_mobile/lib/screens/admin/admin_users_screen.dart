@@ -82,8 +82,14 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   children: [
                     CircleAvatar(
                       backgroundColor: const Color(0xFFFFE4E6),
-                      backgroundImage: user['foto'] != null ? NetworkImage(user['foto']) : null,
-                      child: user['foto'] == null ? const Icon(Icons.person, color: Color(0xFFCC0000)) : null,
+                      backgroundImage: (user['foto_profil'] != null && user['foto_profil'].toString().isNotEmpty)
+                          ? (user['foto_profil'].toString().startsWith('http')
+                              ? NetworkImage(user['foto_profil'].toString())
+                              : null)
+                          : null,
+                      child: (user['foto_profil'] == null || user['foto_profil'].toString().isEmpty)
+                          ? const Icon(Icons.person, color: Color(0xFFCC0000))
+                          : null,
                     ),
                     const SizedBox(width: 16),
                     Expanded(

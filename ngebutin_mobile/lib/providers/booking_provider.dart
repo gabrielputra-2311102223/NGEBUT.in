@@ -65,7 +65,9 @@ class BookingProvider with ChangeNotifier {
         'tgl_selesai': endDate,
         'total_harga': totalHarga,
       });
-      return response['bookingId'] ?? response['id'] ?? 0;
+      // API returns { bookingId, dpAmount, message }
+      final id = response['bookingId'] ?? response['id'] ?? 0;
+      return (id as num).toInt();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -101,7 +103,13 @@ class BookingProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      await ApiClient.post('/bookings/$bookingId/approve-dp', {'action': action});
+      if (action == 'approve') {
+        // Approve DP → PUT /bookings/:id/approve-dp
+        await ApiClient.put('/bookings/$bookingId/approve-dp', {});
+      } else {
+        // Reject → PUT /bookings/:id/status with status=rejected
+        await ApiClient.put('/bookings/$bookingId/status', {'status': 'rejected'});
+      }
     } finally {
       _isLoading = false;
       notifyListeners();

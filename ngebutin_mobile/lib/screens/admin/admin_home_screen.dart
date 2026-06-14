@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -19,14 +20,28 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _currentIndex = 0;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<MotorProvider>(context, listen: false).fetchMotors();
-      Provider.of<BookingProvider>(context, listen: false).fetchAllBookings();
+      _refreshData();
+      // Auto-refresh every 30 seconds
+      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _refreshData());
     });
+  }
+
+  void _refreshData() {
+    if (!mounted) return;
+    Provider.of<MotorProvider>(context, listen: false).fetchMotors();
+    Provider.of<BookingProvider>(context, listen: false).fetchAllBookings();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -52,8 +67,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               accountEmail: Text(auth.user?['email'] ?? ''),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                backgroundImage: auth.user?['foto'] != null ? NetworkImage(auth.user!['foto']) : null,
-                child: auth.user?['foto'] == null ? const Icon(Icons.shield, color: Color(0xFF1A1A1A)) : null,
+                backgroundImage: (auth.user?['foto_profil'] != null && auth.user!['foto_profil'].toString().isNotEmpty)
+                    ? NetworkImage(auth.user!['foto_profil'].toString()) as ImageProvider
+                    : null,
+                child: (auth.user?['foto_profil'] == null || auth.user!['foto_profil'].toString().isEmpty)
+                    ? const Icon(Icons.shield, color: Color(0xFF1A1A1A))
+                    : null,
               ),
             ),
             ListTile(

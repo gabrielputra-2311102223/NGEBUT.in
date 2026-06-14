@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../user/home_screen.dart';
+import 'login_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -27,12 +27,25 @@ class _OtpScreenState extends State<OtpScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await Provider.of<AuthProvider>(context, listen: false).verifyOtp(widget.email, otp);
+      final loggedIn = await Provider.of<AuthProvider>(context, listen: false).verifyOtp(widget.email, otp);
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
-        );
+        if (loggedIn) {
+          // Auto-login jika API return token (future support)
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        } else {
+          // Standar: arahkan ke login dengan pesan sukses
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email berhasil diverifikasi! Silakan login.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

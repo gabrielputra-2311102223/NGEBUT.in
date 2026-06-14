@@ -21,11 +21,23 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   void initState() {
     super.initState();
+    // Populate from cached user first
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
       _namaController.text = user['nama'] ?? '';
       _emailController.text = user['email'] ?? '';
     }
+    // Fetch full profile from server to get email if missing
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await Provider.of<AuthProvider>(context, listen: false).fetchFullProfile();
+        final freshUser = Provider.of<AuthProvider>(context, listen: false).user;
+        if (freshUser != null && mounted) {
+          if (_namaController.text.isEmpty) _namaController.text = freshUser['nama'] ?? '';
+          if (_emailController.text.isEmpty) _emailController.text = freshUser['email'] ?? '';
+        }
+      } catch (_) {}
+    });
   }
 
   Future<void> _pickImage() async {
