@@ -18,14 +18,22 @@ class Motor {
   });
 
   factory Motor.fromJson(Map<String, dynamic> json) {
+    // Safe int parse - handles int, double, or String from API
+    int safeInt(dynamic val, [int fallback = 0]) {
+      if (val == null) return fallback;
+      if (val is int) return val;
+      if (val is double) return val.toInt();
+      return int.tryParse(val.toString()) ?? fallback;
+    }
+
     return Motor(
-      id: json['id'],
-      nama: json['nama'] ?? 'Tanpa Nama',
-      harga: json['harga'] ?? 0,
-      deskripsi: json['deskripsi'] ?? '',
-      gambar: json['gambar'] ?? '',
-      status: json['status'] ?? 'available',
-      kategori: json['kategori'] ?? 'umum',
+      id: safeInt(json['id'], 0),
+      nama: (json['nama'] ?? 'Tanpa Nama').toString(),
+      harga: safeInt(json['harga'], 0),
+      deskripsi: (json['deskripsi'] ?? '').toString(),
+      gambar: (json['gambar'] ?? '').toString(),
+      status: (json['status'] ?? 'available').toString(),
+      kategori: (json['kategori'] ?? 'umum').toString(),
     );
   }
 

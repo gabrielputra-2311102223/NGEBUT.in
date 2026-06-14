@@ -136,7 +136,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Total Biaya', style: TextStyle(color: Colors.grey)),
-                          Text(_formatCurrency(b['totalHarga'] ?? b['total_harga'] ?? 0), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(_formatCurrency(((b['totalHarga'] ?? b['total_harga'] ?? 0) as num).toInt()), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
                       if ((b['status'] == 'pending') && (b['statusPembayaran'] == 'menunggu_dp' || b['status_pembayaran'] == 'menunggu_dp' || b['statusPembayaran'] == null)) ...[
@@ -149,7 +149,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 MaterialPageRoute(
                                   builder: (_) => DpUploadScreen(
                                     bookingId: b['id'],
-                                    dpAmount: (b['totalHarga'] / 2).round(),
+                                    dpAmount: (((b['totalHarga'] ?? b['total_harga'] ?? 0) as num).toInt() / 2).round(),
                                   ),
                                 ),
                               );

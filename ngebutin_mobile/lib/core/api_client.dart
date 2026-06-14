@@ -16,68 +16,116 @@ class ApiClient {
   }
 
   static Future<dynamic> get(String endpoint) async {
-    final headers = await _getHeaders();
-    final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers);
-    return _handleResponse(response);
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('Gagal terhubung ke server: $e');
+    }
   }
 
   static Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
-    final headers = await _getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-    return _handleResponse(response);
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('Gagal terhubung ke server: $e');
+    }
   }
 
   static Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
-    final headers = await _getHeaders();
-    final response = await http.put(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-    return _handleResponse(response);
+    try {
+      final headers = await _getHeaders();
+      final response = await http.put(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('Gagal terhubung ke server: $e');
+    }
   }
 
   static Future<dynamic> delete(String endpoint) async {
-    final headers = await _getHeaders();
-    final response = await http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers);
-    return _handleResponse(response);
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 15));
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('Gagal terhubung ke server: $e');
+    }
   }
 
   static dynamic _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
+      try {
+        return jsonDecode(response.body);
+      } catch (e) {
+        throw Exception('Format response tidak valid');
+      }
     } else {
       try {
         final error = jsonDecode(response.body);
-        throw Exception(error['error'] ?? 'Terjadi kesalahan pada server');
+        throw Exception(error['error'] ?? error['message'] ?? 'Terjadi kesalahan pada server');
       } catch (e) {
+        if (e is Exception) rethrow;
         throw Exception('Error HTTP: ${response.statusCode}');
       }
     }
   }
 
   static Future<void> saveToken(String token, Map<String, dynamic> user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
-    await prefs.setString('user', jsonEncode(user));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      await prefs.setString('user', jsonEncode(user));
+    } catch (e) {
+      // Ignore save errors
+    }
   }
 
   static Future<void> clearSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('user');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('token');
+      await prefs.remove('user');
+    } catch (e) {
+      // Ignore clear errors
+    }
   }
 
   static Future<Map<String, dynamic>?> getCurrentUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userStr = prefs.getString('user');
-    if (userStr != null) {
-      return jsonDecode(userStr);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userStr = prefs.getString('user');
+      if (userStr != null && userStr.isNotEmpty) {
+        final decoded = jsonDecode(userStr);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+      }
+      return null;
+    } catch (e) {
+      // If JSON is corrupt, clear it and return null
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('user');
+        await prefs.remove('token');
+      } catch (_) {}
+      return null;
     }
-    return null;
   }
 }

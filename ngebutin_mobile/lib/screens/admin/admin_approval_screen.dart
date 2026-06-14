@@ -93,7 +93,7 @@ class AdminApprovalScreen extends StatelessWidget {
                     Text('User ID: ${b['userId'] ?? b['user_id']}'),
                     Text('Motor ID: ${b['motorId'] ?? b['motor_id']}'),
                     const SizedBox(height: 8),
-                    Text('Total Harga: ${_formatCurrency(b['totalHarga'] ?? b['total_harga'] ?? 0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Total Harga: ${_formatCurrency(((b['totalHarga'] ?? b['total_harga'] ?? 0) as num).toInt())}', style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     if (b['dpBukti'] != null || b['dp_bukti'] != null)
                       OutlinedButton.icon(
