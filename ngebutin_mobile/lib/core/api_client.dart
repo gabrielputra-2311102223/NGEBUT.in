@@ -24,6 +24,9 @@ class ApiClient {
       ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      if (e.toString().startsWith('Exception: ')) {
+        throw Exception(e.toString().substring(11));
+      }
       throw Exception('Gagal terhubung ke server: $e');
     }
   }
@@ -38,6 +41,9 @@ class ApiClient {
       ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      if (e.toString().startsWith('Exception: ')) {
+        throw Exception(e.toString().substring(11));
+      }
       throw Exception('Gagal terhubung ke server: $e');
     }
   }
@@ -52,6 +58,9 @@ class ApiClient {
       ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      if (e.toString().startsWith('Exception: ')) {
+        throw Exception(e.toString().substring(11));
+      }
       throw Exception('Gagal terhubung ke server: $e');
     }
   }
@@ -65,6 +74,9 @@ class ApiClient {
       ).timeout(const Duration(seconds: 15));
       return _handleResponse(response);
     } catch (e) {
+      if (e.toString().startsWith('Exception: ')) {
+        throw Exception(e.toString().substring(11));
+      }
       throw Exception('Gagal terhubung ke server: $e');
     }
   }

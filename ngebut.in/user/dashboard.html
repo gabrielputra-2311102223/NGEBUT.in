@@ -226,8 +226,8 @@
                         </div>
 
                         <!-- ✅ tombol sudah benar -->
-                        <button class="btn btn-book" style="width: 100%;" onclick="openBookingModal(${m.id})" ${m.status !== 'available' ? 'disabled' : ''}>
-                            <i class="fas fa-bolt"></i> ${m.status === 'available' ? 'Sewa Sekarang' : 'Tidak Tersedia'}
+                        <button class="btn btn-book" style="width: 100%;" onclick="openBookingModal(${m.id})" ${m.status === 'service' ? 'disabled' : ''}>
+                            <i class="fas fa-bolt"></i> ${m.status === 'service' ? 'Sedang Diservis' : 'Sewa Sekarang'}
                         </button>
                     </div>
                 </div>

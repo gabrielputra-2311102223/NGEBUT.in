@@ -45,6 +45,10 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         const { nama, email, password } = req.body;
 
+        if (!nama || !email || !password) {
+            return res.status(400).json({ error: 'Nama, email, dan password harus diisi' });
+        }
+
         // Cek apakah email sudah terdaftar
         const [existing] = await poolPromise.query('SELECT id, email_verified FROM Users WHERE email = ?', [email]);
         
@@ -123,6 +127,10 @@ app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email dan password harus diisi' });
+        }
+
         const [rows] = await poolPromise.query(
             'SELECT * FROM Users WHERE email = ?', 
             [email]
@@ -150,6 +158,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
         
+        if (!email) {
+            return res.status(400).json({ error: 'Email harus diisi' });
+        }
+
         const [rows] = await poolPromise.query('SELECT * FROM Users WHERE email = ?', [email]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Email tidak terdaftar.' });
@@ -183,6 +195,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 app.post('/api/auth/reset-password', async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
+
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ error: 'Email, OTP, dan password baru harus diisi' });
+        }
 
         const [rows] = await poolPromise.query('SELECT * FROM Users WHERE email = ?', [email]);
         if (rows.length === 0) {
@@ -297,9 +313,6 @@ app.post('/api/bookings', async (req, res) => {
             [user_id, motor_id, tgl_mulai, tgl_selesai, total_harga, dpAmount]
         );
 
-        // Update status motor menjadi booked
-        await poolPromise.query('UPDATE Motors SET status = ? WHERE id = ?', ['booked', motor_id]);
-
         // Kirim email notifikasi booking (async, jangan block response)
         try {
             const [userRows] = await poolPromise.query('SELECT nama, email FROM Users WHERE id = ?', [user_id]);
@@ -378,19 +391,7 @@ app.put('/api/bookings/:id/status', async (req, res) => {
             [status, bookingId]
         );
             
-        // 3. Update Motor Status accordingly
-        if (motorId) {
-            let motorStatus = 'available';
-            if (status === 'booked' || status === 'paid' || status === 'returning') motorStatus = 'booked';
-            else if (status === 'done' || status === 'confirm' || status === 'cancelled') motorStatus = 'available';
-            
-            await poolPromise.query(
-                'UPDATE Motors SET status = ? WHERE id = ?',
-                [motorStatus, motorId]
-            );
-        }
-            
-        res.json({ message: 'Booking and Motor status updated' });
+        res.json({ message: `Status booking berhasil diubah menjadi ${status}` });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

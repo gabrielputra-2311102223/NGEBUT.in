@@ -11,6 +11,8 @@ import 'admin_kendaraan_screen.dart';
 import 'admin_approval_screen.dart';
 import 'admin_pembayaran_screen.dart';
 import 'admin_users_screen.dart';
+import '../../core/api_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({Key? key}) : super(key: key);
@@ -22,6 +24,10 @@ class AdminHomeScreen extends StatefulWidget {
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _currentIndex = 0;
   Timer? _refreshTimer;
+  
+  Map<String, dynamic>? _financialStats;
+  List<dynamic> _activeUsers = [];
+  bool _isLoadingStats = false;
 
   @override
   void initState() {
@@ -31,10 +37,26 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     });
   }
 
-  void _refreshData() {
+  Future<void> _refreshData() async {
     if (!mounted) return;
     Provider.of<MotorProvider>(context, listen: false).fetchMotors();
     Provider.of<BookingProvider>(context, listen: false).fetchAllBookings();
+    
+    setState(() => _isLoadingStats = true);
+    try {
+      final fin = await ApiClient.get('/reports/financial');
+      final users = await ApiClient.get('/reports/active-users');
+      if (mounted) {
+        setState(() {
+          _financialStats = fin;
+          _activeUsers = users is List ? users : [];
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching stats: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
   }
 
   @override
@@ -52,10 +74,28 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         title: Row(
           children: [
             Image.asset('assets/logo.png', height: 28),
-            const SizedBox(width: 8),
             const Text('Admin', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
           ],
         ),
+        actions: [
+          if (_currentIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.file_download),
+              tooltip: 'Ekspor CSV/Excel',
+              onPressed: () async {
+                final url = Uri.parse('${ApiClient.baseUrl}/export/excel');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Gagal membuka tautan unduhan.')),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
       ),
       drawer: Drawer(
         child: Column(
@@ -95,8 +135,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.event_available),
-              title: const Text('Approval Booking'),
+              leading: const Icon(Icons.verified),
+              title: const Text('Verifikasi DP'),
               selected: _currentIndex == 2,
               selectedColor: const Color(0xFFCC0000),
               onTap: () {
@@ -183,20 +223,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           return s == 'confirm' && sp == 'menunggu_dp';
         }).length;
 
-        // Pendapatan total dari booking selesai
-        int totalPendapatan = 0;
-        for (final b in allBookings.where((b) => b['status'] == 'done')) {
-          totalPendapatan += ((b['totalHarga'] ?? b['total_harga'] ?? 0) as num).toInt();
-        }
+        // Menggunakan data stats dari server untuk sinkronisasi dengan web
+        final totalPendapatan = _financialStats?['totalRevenue'] ?? 0;
 
         // Recent 5 bookings
         final recent = List.from(allBookings).take(5).toList();
 
         return RefreshIndicator(
-          onRefresh: () async {
-            await motorProv.fetchMotors();
-            await bookingProv.fetchAllBookings();
-          },
+          onRefresh: _refreshData,
           color: const Color(0xFFCC0000),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -342,6 +376,62 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(8)),
                             child: Text(badgeText, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeFg)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                const SizedBox(height: 24),
+
+                // ACTIVE USERS (Pelanggan Teraktif)
+                const Text('Pelanggan Teraktif', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                if (_isLoadingStats)
+                   const Center(child: CircularProgressIndicator())
+                else if (_activeUsers.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                    child: const Center(child: Text('Belum ada data pelanggan', style: TextStyle(color: Colors.grey))),
+                  )
+                else
+                  ..._activeUsers.map((u) {
+                    final nama = u['nama'] ?? 'User';
+                    final email = u['email'] ?? '';
+                    final totalB = u['total_booking'] ?? 0;
+                    final spent = (u['total_spent'] ?? 0) as num;
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: const Color(0xFFF3F4F6),
+                            child: const Icon(Icons.person, color: Color(0xFF9CA3AF)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(nama, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                const SizedBox(height: 2),
+                                Text('$totalB Transaksi', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text('Total Sewa', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                              Text('Rp ${(spent / 1000000).toStringAsFixed(1)}Jt', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                            ],
                           ),
                         ],
                       ),

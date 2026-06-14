@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../providers/booking_provider.dart';
+import '../user/kwitansi_screen.dart';
 
 class AdminPembayaranScreen extends StatefulWidget {
   const AdminPembayaranScreen({Key? key}) : super(key: key);
@@ -130,6 +132,20 @@ class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
                                       onPressed: () => _updateStatus(context, provider, b['id'], 'finished'),
                                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), foregroundColor: Colors.white),
                                       child: const Text('SELESAIKAN PENYEWAAN'),
+                                    ),
+                                  ),
+                                ] else if (_currentFilter == 'paid' || _currentFilter == 'done') ...[
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(context, MaterialPageRoute(
+                                          builder: (_) => KwitansiScreen(booking: b),
+                                        ));
+                                      },
+                                      icon: const Icon(Icons.receipt),
+                                      label: const Text('LIHAT KWITANSI'),
+                                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B7280), foregroundColor: Colors.white),
                                     ),
                                   ),
                                 ]

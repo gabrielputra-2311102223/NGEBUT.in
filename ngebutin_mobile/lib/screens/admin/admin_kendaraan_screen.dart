@@ -151,11 +151,13 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
     if (widget.motor != null) {
       _namaCtrl.text = widget.motor!.nama;
       // Normalize kategori ke PascalCase agar cocok dengan dropdown options
-      final rawKat = widget.motor!.kategori.trim();
       const validCategories = ['Matic', 'Manual', 'Sport'];
+      final rawKat = widget.motor!.kategori.trim();
+      // Jika kategori dari DB tidak valid (misal 'umum', 'metic'), default ke 'Matic'
       final normalized = validCategories.firstWhere(
-        (c) => c.toLowerCase() == rawKat.toLowerCase(),
-        orElse: () => rawKat.isNotEmpty ? rawKat : '',
+        (c) => c.toLowerCase() == rawKat.toLowerCase() ||
+               rawKat.toLowerCase().contains(c.toLowerCase().substring(0, 3)),
+        orElse: () => 'Matic',
       );
       _kategoriCtrl.text = normalized;
       _hargaCtrl.text = widget.motor!.harga.toString();
@@ -263,7 +265,7 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _kategoriCtrl.text.isNotEmpty ? _kategoriCtrl.text : null,
+                value: ['Matic','Manual','Sport'].contains(_kategoriCtrl.text) ? _kategoriCtrl.text : 'Matic',
                 decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder(), prefixIcon: Icon(Icons.category)),
                 items: const [
                   DropdownMenuItem(value: 'Matic', child: Text('Matic')),

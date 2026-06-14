@@ -35,8 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
-      final uid = (user['id'] as num).toInt();
-      Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
+      // Gunakan int.tryParse agar aman jika user['id'] tersimpan sebagai String
+      final uid = int.tryParse(user['id'].toString()) ?? 0;
+      if (uid > 0) {
+        Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
+      }
     }
   }
 

@@ -6,6 +6,8 @@ import '../../providers/motor_provider.dart';
 import '../../providers/booking_provider.dart';
 import '../auth/landing_screen.dart';
 import '../user/profile_edit_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/api_client.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({Key? key}) : super(key: key);
@@ -215,8 +217,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Laporan Excel berhasil diunduh (Simulasi)')));
+                      onPressed: () async {
+                        final url = Uri.parse('${ApiClient.baseUrl}/export/excel');
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal membuka tautan unduhan.')));
+                        }
                       },
                       icon: const Icon(Icons.download, size: 16),
                       label: const Text('Excel'),
