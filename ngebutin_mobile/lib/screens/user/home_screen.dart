@@ -80,13 +80,14 @@ class _HomeScreenState extends State<HomeScreen> {
           final k = m.kategori.toLowerCase().trim();
           if (_selectedCategory != 'Semua') {
             final s = _selectedCategory.toLowerCase();
-            if (s == 'matic') {
-              if (!k.contains('mat') && !k.contains('met') && !k.contains('atik') && k != 'automatic') return false;
-            } else if (s == 'manual') {
-              if (!k.contains('man')) return false;
-            } else if (s == 'sport') {
-              if (!k.contains('sport')) return false;
+            // Motor tanpa kategori valid (umum/kosong) tampil di semua filter
+            final isUnknown = !k.contains('mat') && !k.contains('met') && !k.contains('man') && !k.contains('sport');
+            if (!isUnknown) {
+              if (s == 'matic' && !k.contains('mat') && !k.contains('met') && !k.contains('atik') && k != 'automatic') return false;
+              if (s == 'manual' && !k.contains('man')) return false;
+              if (s == 'sport' && !k.contains('sport')) return false;
             }
+            // isUnknown = tampil di semua kategori (tidak difilter)
           }
           if (_searchQuery.isNotEmpty && !m.nama.toLowerCase().contains(_searchQuery.toLowerCase())) return false;
           return true;

@@ -157,7 +157,7 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
       const validCategories = ['Matic', 'Manual', 'Sport'];
       final normalized = validCategories.firstWhere(
         (c) => c.toLowerCase() == rawKat.toLowerCase(),
-        orElse: () => rawKat.isNotEmpty ? rawKat : 'Matic',
+        orElse: () => 'Matic', // selalu fallback ke Matic jika tidak dikenal (misal: 'umum')
       );
       _kategoriCtrl.text = normalized;
       _hargaCtrl.text = widget.motor!.harga.toString();

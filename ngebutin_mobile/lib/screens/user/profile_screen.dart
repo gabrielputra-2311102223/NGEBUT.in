@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -13,6 +14,20 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _loadingProfile = false;
+
+  ImageProvider? _buildAvatarImage(dynamic foto) {
+    if (foto == null || foto.toString().isEmpty) return null;
+    try {
+      final s = foto.toString();
+      if (s.startsWith('data:image')) {
+        final parts = s.split(',');
+        if (parts.length > 1) return MemoryImage(base64Decode(parts[1]));
+      }
+      return NetworkImage(s);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -51,11 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: const Color(0xFFFFE4E6),
-                    backgroundImage: foto != null && foto.toString().isNotEmpty
-                        ? (foto.toString().startsWith('data:image')
-                            ? MemoryImage(Uri.parse(foto.toString()).data!.contentAsBytes())
-                            : NetworkImage(foto.toString()) as ImageProvider)
-                        : null,
+                    backgroundImage: _buildAvatarImage(foto),
                     child: (foto == null || foto.toString().isEmpty)
                         ? const Icon(Icons.person, size: 50, color: Color(0xFFCC0000))
                         : null,

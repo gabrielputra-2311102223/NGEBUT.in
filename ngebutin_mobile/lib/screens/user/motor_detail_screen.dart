@@ -85,9 +85,38 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
   Future<void> _processBooking() async {
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih tanggal sewa terlebih dahulu!'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Pilih tanggal sewa terlebih dahulu!'), backgroundColor: Colors.orange),
       );
       return;
+    }
+
+    // Cek status motor — service = tidak bisa sama sekali
+    if (widget.motor.status == 'service') {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Row(children: [Icon(Icons.build, color: Colors.orange), SizedBox(width: 8), Text('Motor Dalam Perbaikan')]),
+          content: const Text('Motor ini sedang dalam perbaikan (servis) dan tidak dapat dipesan saat ini. Silakan pilih motor lain.'),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Mengerti'))],
+        ),
+      );
+      return;
+    }
+
+    // Cek status motor — booked = hanya boleh mulai besok atau lebih
+    if (widget.motor.status == 'booked') {
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      if (_startDate!.isBefore(tomorrow)) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Row(children: [Icon(Icons.motorcycle, color: Color(0xFFCC0000)), SizedBox(width: 8), Text('Motor Sedang Disewa')]),
+            content: const Text('Motor ini sedang aktif disewa. Anda bisa memesan untuk tanggal mendatang setelah motor dikembalikan.\n\nSilakan pilih tanggal mulai mulai besok atau lebih.'),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Ganti Tanggal'))],
+          ),
+        );
+        return;
+      }
     }
 
     try {
@@ -112,8 +141,17 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        // Tampilkan pesan ramah, bukan raw exception
+        final msg = e.toString().contains('Exception:')
+            ? e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '')
+            : 'Gagal memproses pemesanan. Coba lagi atau hubungi admin.';
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Row(children: [Icon(Icons.error_outline, color: Color(0xFFCC0000)), SizedBox(width: 8), Text('Pemesanan Gagal')]),
+            content: Text(msg),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
+          ),
         );
       }
     }
@@ -148,7 +186,7 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
@@ -157,16 +195,58 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
                                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFDCFCE7),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text('TERSEDIA', style: TextStyle(color: Color(0xFF166534), fontWeight: FontWeight.bold, fontSize: 12)),
-                            ),
+                            // Status badge dari status aktual motor
+                            Builder(builder: (_) {
+                              final isAvailable = motor.status == 'available';
+                              final isService = motor.status == 'service';
+                              final Color bgColor = isAvailable
+                                  ? const Color(0xFFDCFCE7)
+                                  : isService ? const Color(0xFFFFF3CD) : const Color(0xFFFEE2E2);
+                              final Color txtColor = isAvailable
+                                  ? const Color(0xFF166534)
+                                  : isService ? const Color(0xFF856404) : const Color(0xFF991B1B);
+                              final String label = isAvailable ? 'TERSEDIA' : isService ? 'SERVIS' : 'DISEWA';
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
+                                child: Text(label, style: TextStyle(color: txtColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                              );
+                            }),
                           ],
                         ),
+                        // Banner peringatan jika motor sedang disewa
+                        if (motor.status == 'booked') ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3CD),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFD97706).withOpacity(0.4)),
+                            ),
+                            child: const Row(children: [
+                              Icon(Icons.info_outline, color: Color(0xFF92400E), size: 18),
+                              SizedBox(width: 8),
+                              Expanded(child: Text('Motor sedang disewa. Anda bisa memesan untuk tanggal mendatang setelah motor kembali.', style: TextStyle(color: Color(0xFF92400E), fontSize: 12))),
+                            ]),
+                          ),
+                        ],
+                        if (motor.status == 'service') ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFCC0000).withOpacity(0.3)),
+                            ),
+                            child: const Row(children: [
+                              Icon(Icons.build, color: Color(0xFF991B1B), size: 18),
+                              SizedBox(width: 8),
+                              Expanded(child: Text('Motor sedang dalam perbaikan dan tidak dapat dipesan saat ini.', style: TextStyle(color: Color(0xFF991B1B), fontSize: 12))),
+                            ]),
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         Text(
                           '${motor.formattedHarga} /hari',
@@ -333,9 +413,12 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
               ],
             ),
             child: ElevatedButton(
-              onPressed: bookingProvider.isLoading ? null : _processBooking,
+              // Nonaktifkan tombol jika motor servis atau loading
+              onPressed: (bookingProvider.isLoading || motor.status == 'service')
+                  ? null
+                  : _processBooking,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFCC0000),
+                backgroundColor: motor.status == 'service' ? Colors.grey : const Color(0xFFCC0000),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 minimumSize: const Size(double.infinity, 50),
@@ -343,7 +426,14 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
               ),
               child: bookingProvider.isLoading
                 ? const CircularProgressIndicator(color: Colors.white)
-                : const Text('LANJUT PEMBAYARAN DP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                : Text(
+                    motor.status == 'service'
+                        ? 'TIDAK TERSEDIA - DALAM SERVIS'
+                        : motor.status == 'booked'
+                            ? 'PESAN UNTUK TANGGAL MENDATANG'
+                            : 'LANJUT PEMBAYARAN DP',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
             ),
           ),
         ],
