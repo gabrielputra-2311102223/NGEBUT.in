@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_client.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthProvider with ChangeNotifier {
   Map<String, dynamic>? _user;
@@ -23,19 +22,6 @@ class AuthProvider with ChangeNotifier {
     }
     _isLoading = false;
     notifyListeners();
-    _updateFcmToken();
-  }
-
-  Future<void> _updateFcmToken() async {
-    if (_user == null) return;
-    try {
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
-        await ApiClient.put('/users/${_user!['id']}/fcm-token', {'fcm_token': token});
-      }
-    } catch (e) {
-      debugPrint('FCM Token error: $e');
-    }
   }
 
   Future<void> login(String email, String password) async {
@@ -43,14 +29,13 @@ class AuthProvider with ChangeNotifier {
       'email': email,
       'password': password,
     });
-    
+
     final token = response['token'];
     final user = response['user'];
-    
+
     await ApiClient.saveToken(token, user);
-    _user = user;
+    _user = Map<String, dynamic>.from(user);
     notifyListeners();
-    _updateFcmToken();
   }
 
   Future<void> register(String nama, String email, String password) async {
@@ -70,11 +55,10 @@ class AuthProvider with ChangeNotifier {
 
     final token = response['token'];
     final user = response['user'];
-    
+
     await ApiClient.saveToken(token, user);
-    _user = user;
+    _user = Map<String, dynamic>.from(user);
     notifyListeners();
-    _updateFcmToken();
   }
 
   Future<void> logout() async {
@@ -85,39 +69,54 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> updateProfile(Map<String, dynamic> data) async {
     if (_user == null) return;
-    final response = await ApiClient.put('/users/${_user!['id']}', data);
-    
-    // Update local user state properly without losing old keys
-    final updatedUser = response['user'] as Map<String, dynamic>;
-    _user = {
-      ..._user!,
-      ...updatedUser,
-    };
-    
-    // Re-save token and user
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    if (token != null) {
-      await ApiClient.saveToken(token, _user!);
+    try {
+      final response = await ApiClient.put('/users/${_user!['id']}', data);
+
+      // Safe update: merge response user data if available
+      if (response != null && response['user'] != null) {
+        final updatedUser = Map<String, dynamic>.from(response['user']);
+        _user = {
+          ..._user!,
+          ...updatedUser,
+        };
+      } else {
+        // Apply changes locally even if response doesn't have 'user'
+        if (data.containsKey('nama')) _user!['nama'] = data['nama'];
+      }
+
+      // Re-save token and user
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token != null) {
+        await ApiClient.saveToken(token, _user!);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('updateProfile error: $e');
+      rethrow;
     }
-    notifyListeners();
   }
 
   Future<void> uploadPhoto(String base64Image) async {
     if (_user == null) return;
-    final response = await ApiClient.post('/users/${_user!['id']}/photo', {
-      'photo': base64Image
-    });
-    
-    // Update foto_profil without losing other data
-    _user!['foto_profil'] = response['foto_profil'];
-    
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    if (token != null) {
-      await ApiClient.saveToken(token, _user!);
+    try {
+      final response = await ApiClient.post('/users/${_user!['id']}/photo', {
+        'photo': base64Image
+      });
+
+      // Update foto_profil without losing other data
+      _user!['foto_profil'] = response['foto_profil'];
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token != null) {
+        await ApiClient.saveToken(token, _user!);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('uploadPhoto error: $e');
+      rethrow;
     }
-    notifyListeners();
   }
 
   Future<void> forgotPassword(String email) async {
