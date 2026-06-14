@@ -19,18 +19,27 @@ class BookingProvider with ChangeNotifier {
   }
 
   Future<void> fetchMyBookings(int userId) async {
+    if (_isLoading) return; // cegah race condition concurrent calls
     _isLoading = true;
     notifyListeners();
     try {
       final response = await ApiClient.get('/bookings');
       final List<dynamic> allBookings = List<dynamic>.from(response);
-      _bookings = allBookings
-          .where((b) => b['userId'] == userId || b['user_id'] == userId)
+      final uidStr = userId.toString();
+      final newBookings = allBookings
+          .where((b) {
+            final bId = (b['userId'] ?? b['user_id']);
+            return bId?.toString() == uidStr;
+          })
           .toList();
-      _bookings.sort((a, b) =>
+      newBookings.sort((a, b) =>
           _safeParseDate(b['createdAt']).compareTo(_safeParseDate(a['createdAt'])));
+      // Hanya update jika ada data, atau jika sebelumnya kosong
+      if (newBookings.isNotEmpty || _bookings.isEmpty) {
+        _bookings = newBookings;
+      }
     } catch (e) {
-      _bookings = [];
+      // Jangan kosongkan bookings saat error agar banner tetap tampil
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -123,15 +123,17 @@
           </div>
 
           <div class="form-group">
-            <label
-              >Harga per Hari <span style="color: var(--danger)">*</span></label
-            >
-            <input
-              type="number"
-              id="motorHarga"
-              placeholder="Contoh: 75000"
-              min="0"
-            />
+            <label>Harga per Hari <span style="color: var(--danger)">*</span></label>
+            <input type="number" id="motorHarga" placeholder="Contoh: 75000" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Kategori <span style="color: var(--danger)">*</span></label>
+            <select id="motorKategori" style="width:100%;padding:12px;border:2px solid var(--gray-200);border-radius:var(--radius-lg);font-size:1rem;">
+              <option value="Matic">Matic</option>
+              <option value="Manual">Manual</option>
+              <option value="Sport">Sport</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -381,12 +383,13 @@
         document.getElementById("motorId").value = "";
         document.getElementById("motorNama").value = "";
         document.getElementById("motorHarga").value = "";
+        document.getElementById("motorKategori").value = "Matic";
         document.getElementById("motorDesc").value = "";
         document.getElementById("motorStatus").value = "available";
         document.getElementById("motorGambar").value = "";
         document.getElementById("imagePreview").src = "";
         document.getElementById("fileNameDisplay").innerText = "Belum ada file dipilih";
-        document.getElementById("fileInput").value = ""; // Reset file input
+        document.getElementById("fileInput").value = "";
         document.getElementById("motorModal").style.display = "flex";
       }
 
@@ -400,11 +403,15 @@
         document.getElementById("motorId").value = motor.id;
         document.getElementById("motorNama").value = motor.nama;
         document.getElementById("motorHarga").value = motor.harga;
+        // Normalize kategori ke opsi valid
+        const kat = (motor.kategori || '').toLowerCase();
+        const katVal = kat.includes('man') ? 'Manual' : kat.includes('sport') ? 'Sport' : 'Matic';
+        document.getElementById("motorKategori").value = katVal;
         document.getElementById("motorDesc").value = motor.deskripsi || motor.desc || "";
         document.getElementById("motorStatus").value = motor.status;
         document.getElementById("motorGambar").value = motor.gambar || "";
         document.getElementById("imagePreview").src = motor.gambar || "";
-        document.getElementById("fileNameDisplay").innerText = motor.gambar ? "Foto tersedia (URL/Base64)" : "Belum ada file dipilih";
+        document.getElementById("fileNameDisplay").innerText = motor.gambar ? "Foto tersedia" : "Belum ada file dipilih";
         document.getElementById("motorModal").style.display = "flex";
       }
 
@@ -425,6 +432,8 @@
         const status = document.getElementById("motorStatus").value;
         const gambar = document.getElementById("motorGambar").value.trim();
 
+        const kategori = document.getElementById("motorKategori").value;
+
         if (!nama || !harga || harga <= 0) {
           alert("Nama dan harga wajib diisi dengan benar!");
           return;
@@ -436,7 +445,7 @@
           deskripsi: deskripsi || "-",
           status,
           gambar: gambar || "https://placehold.co/400x300/1A1A1A/white?text=Motor",
-          kategori: "umum"
+          kategori: kategori || "Matic"
         };
 
         const btn = document.querySelector('.modal-footer .btn-primary');

@@ -26,15 +26,6 @@ class Motor {
       return int.tryParse(val.toString()) ?? fallback;
     }
 
-    // Normalize kategori agar selalu sesuai dengan filter
-    String normalizeKategori(dynamic raw) {
-      final s = (raw ?? '').toString().toLowerCase().trim();
-      if (s.contains('mat') || s == 'metic') return 'Matic';
-      if (s.contains('man') || s == 'bebek') return 'Manual';
-      if (s.contains('sport') || s.contains('spor')) return 'Sport';
-      return 'Matic'; // default
-    }
-
     return Motor(
       id: safeInt(json['id'], 0),
       nama: (json['nama'] ?? 'Tanpa Nama').toString(),
@@ -42,7 +33,7 @@ class Motor {
       deskripsi: (json['deskripsi'] ?? '').toString(),
       gambar: (json['gambar'] ?? '').toString(),
       status: (json['status'] ?? 'available').toString(),
-      kategori: normalizeKategori(json['kategori']),
+      kategori: (json['kategori'] ?? 'umum').toString(),
     );
   }
 

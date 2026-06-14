@@ -35,11 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
-      // Gunakan int.tryParse agar aman jika user['id'] tersimpan sebagai String
-      final uid = int.tryParse(user['id'].toString()) ?? 0;
-      if (uid > 0) {
-        Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
-      }
+      final uid = (user['id'] as num).toInt();
+      Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
     }
   }
 
@@ -78,10 +75,19 @@ class _HomeScreenState extends State<HomeScreen> {
           return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
         }
 
-        // TAMPILKAN SEMUA MOTOR - filter hanya berdasarkan kategori & search
+        // Filter berdasarkan kategori dengan toleransi typo (metic, matic, umum, dll)
         final motors = motorProvider.motors.where((m) {
-          if (_selectedCategory != 'Semua' &&
-              !m.kategori.toLowerCase().contains(_selectedCategory.toLowerCase())) return false;
+          final k = m.kategori.toLowerCase().trim();
+          if (_selectedCategory != 'Semua') {
+            final s = _selectedCategory.toLowerCase();
+            if (s == 'matic') {
+              if (!k.contains('mat') && !k.contains('met') && !k.contains('atik') && k != 'automatic') return false;
+            } else if (s == 'manual') {
+              if (!k.contains('man')) return false;
+            } else if (s == 'sport') {
+              if (!k.contains('sport')) return false;
+            }
+          }
           if (_searchQuery.isNotEmpty && !m.nama.toLowerCase().contains(_searchQuery.toLowerCase())) return false;
           return true;
         }).toList();

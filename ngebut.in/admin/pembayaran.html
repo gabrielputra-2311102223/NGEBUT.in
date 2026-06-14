@@ -138,37 +138,26 @@
         renderPayments();
       }
 
-      // Mengambil data dari backend API
-      let allBookings = [];
-      
-      async function loadData() {
-          try {
-              const token = sessionStorage.getItem('token');
-              const res = await fetch(API_URL + '/api/bookings', {
-                  headers: { 'Authorization': 'Bearer ' + token }
-              });
-              if (!res.ok) throw new Error('Gagal memuat data');
-              const data = await res.json();
-              allBookings = Array.isArray(data) ? data : [];
-              allBookings.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-              renderPayments();
-          } catch(e) {
-              document.getElementById('paymentGrid').innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: red;">Error: ${e.message}</div>`;
-          }
-      }
-
       function renderPayments() {
+        let bookings = getBooking();
+        const motors = getMotor();
         const grid = document.getElementById("paymentGrid");
-        
-        let bookings = [...allBookings];
 
-        // FILTER
+        // 🔥 DEBUG
+        console.log("SEMUA BOOKING:", bookings);
+
+        // 🔥 FILTER DIPERBAIKI (ANTI HILANG)
         if (currentFilter === "booked") {
-          bookings = bookings.filter((b) => b.status === "booked");
+          bookings = bookings.filter(
+            (b) =>
+              b.status === "booked" ||
+              b.status === "approved" ||
+              b.status === "confirm",
+          );
         } else if (currentFilter === "returning") {
           bookings = bookings.filter((b) => b.status === "returning");
         } else {
-          bookings = bookings.filter((b) => b.status === "done" || b.status === "paid");
+          bookings = bookings.filter((b) => b.status === "paid" || b.status === "done");
         }
 
         if (bookings.length === 0) {
@@ -183,13 +172,12 @@
 
         grid.innerHTML = bookings
           .map((b) => {
-            const days = calculateDays(b.startDate || b.tgl_mulai, b.endDate || b.tgl_selesai);
-            const statusPembayaran = b.statusPembayaran || b.status_pembayaran || '';
-            const motorImg = b.motorGambar || 'https://placehold.co/400x300/1A1A1A/white?text=Motor';
+            const motor = motors.find((m) => m.id === b.motorId);
+            const days = calculateDays(b.startDate, b.endDate);
             
             // Logika Denda Keterlambatan
             const now = new Date();
-            const endDateObj = new Date(b.endDate || b.tgl_selesai);
+            const endDateObj = new Date(b.endDate);
             now.setHours(0,0,0,0);
             endDateObj.setHours(0,0,0,0);
             
@@ -203,28 +191,28 @@
             return `
                 <div class="motor-card">
                     <div class="motor-image">
-                        <img src="${motorImg}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=Motor'">
-                        <span class="motor-badge ${['paid', 'done'].includes(b.status) ? 'badge-available' : 'badge-booked'}">
-                            ${['paid', 'done'].includes(b.status) ? 'LUNAS' : 'BELUM LUNAS'}
+                        <img src="${getMotorImage(motor?.gambar)}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=Motor'">
+                        <span class="motor-badge ${['paid', 'returning', 'done'].includes(b.status) ? 'badge-available' : 'badge-booked'}">
+                            ${['paid', 'returning', 'done'].includes(b.status) ? 'LUNAS' : 'BELUM BAYAR'}
                         </span>
                     </div>
 
                     <div class="motor-content">
-                        <h3 class="motor-title">${b.motorName || b.motor_name || 'Motor'}</h3>
+                        <h3 class="motor-title">${b.motorName}</h3>
 
                         <p class="motor-desc">
-                            <i class="fas fa-user"></i> ${b.userName || b.user_name || 'User'}<br>
-                            <i class="fas fa-calendar"></i> ${formatShortDate(b.startDate || b.tgl_mulai)} - ${formatShortDate(b.endDate || b.tgl_selesai)}<br>
+                            <i class="fas fa-user"></i> ${b.userName}<br>
+                            <i class="fas fa-calendar"></i> ${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}<br>
                             <i class="fas fa-clock"></i> ${days} hari
                             ${lateBadge}
                         </p>
 
                         <div class="motor-price">
-                            <span class="price-amount">${formatRupiah(b.totalHarga || b.total_harga)}</span>
+                            <span class="price-amount">${formatRupiah(b.totalHarga)}</span>
                         </div>
 
                         ${
-                          (b.status === "paid" || b.status === "done")
+                          b.status === "paid" || b.status === "done"
                             ? `
                             <button class="btn btn-outline" style="width:100%;margin-top:1rem;" onclick="showInvoice(${b.id})">
                                 <i class="fas fa-receipt"></i> Lihat Kuitansi
@@ -232,14 +220,25 @@
                         `
                             : b.status === "returning" 
                             ? `
-                            <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmDone(${b.id})">
-                                <i class="fas fa-check-circle"></i> Konfirmasi Pelunasan & Selesai
+                            <button class="btn btn-sm" style="width:100%;margin-top:1rem; background: var(--success); color: white;" onclick="confirmDone(${b.id})">
+                                <i class="fas fa-check-double"></i> Konfirmasi Selesai Sewa
                             </button>
                             `
-                            : `
-                            <div style="margin-top:1rem; padding:8px; background:#f9f9f9; text-align:center; border-radius:8px; border:1px solid #ddd; font-size:12px; color:#666;">
-                                <i class="fas fa-info-circle"></i> Pelunasan dilakukan saat motor dikembalikan (Status: Returning).
+                            : b.statusPembayaran === "dp_uploaded"
+                            ? `
+                            <div style="margin-top:1rem; border:1px solid #ccc; border-radius:8px; padding:8px; background:#f9f9f9; text-align:center;">
+                                <p style="font-size:12px; margin-bottom:5px; color:#555;"><b>Bukti Transfer DP</b></p>
+                                <img src="${b.dpBukti || 'https://placehold.co/400x300/1A1A1A/white?text=Tidak+Ada+Bukti'}" alt="Bukti DP" style="width:100%; max-height:200px; object-fit:contain; border-radius:4px; margin-bottom:10px;">
+                                <a href="${b.dpBukti}" target="_blank" class="btn btn-outline" style="width:100%; display:block; text-align:center; margin-bottom:5px; text-decoration:none;"><i class="fas fa-search"></i> Lihat Full</a>
+                                <button class="btn btn-primary" style="width:100%;" onclick="confirmDp(${b.id})">
+                                    <i class="fas fa-check-circle"></i> Verifikasi DP
+                                </button>
                             </div>
+                            `
+                            : `
+                            <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmPayment(${b.id})">
+                                <i class="fas fa-check-circle"></i> Konfirmasi Pelunasan
+                            </button>
                         `
                         }
                     </div>
@@ -248,6 +247,9 @@
           })
           .join("");
       }
+
+      // ✅ KONFIRMASI VERIFIKASI DP
+      async function confirmDp(bookingId) {
         if (!confirm("Konfirmasi verifikasi DP untuk booking ini?")) return;
         try {
             const token = sessionStorage.getItem('token');
@@ -266,19 +268,19 @@
         }
       }
 
-      // Konfirmasi Pelunasan & Selesai (Saat returning)
-      async function confirmDone(bookingId) {
-        if (!confirm("Konfirmasi bahwa motor sudah dikembalikan dan sisa pembayaran (pelunasan) sudah diterima?")) return;
+      // ✅ KONFIRMASI PEMBAYARAN LUNAS
+      async function confirmPayment(bookingId) {
+        if (!confirm("Konfirmasi pelunasan untuk booking ini?")) return;
         try {
             const token = sessionStorage.getItem('token');
             const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/status', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status: 'done' })
+                body: JSON.stringify({ status: 'paid' })
             });
             if (res.ok) {
-                showNotification('✅ Pembayaran lunas dan sewa selesai!', 'success');
-                loadData(); // fetch data baru dari server
+                showNotification('✅ Pembayaran berhasil dikonfirmasi!', 'success');
+                renderPayments();
                 showInvoice(bookingId);
             } else {
                 showNotification('❌ Gagal mengonfirmasi pembayaran.', 'danger');
@@ -288,90 +290,113 @@
         }
       }
 
-      // ✅ KUITANSI FINAL
-      function showInvoice(bookingId) {
-        const bk = allBookings.find((b) => b.id === bookingId);
-        if (!bk) return;
-
-        const content = document.getElementById("invoiceContent");
-        
-        // Logika Denda
-        const now = new Date();
-        const endDateObj = new Date(bk.endDate || bk.tgl_selesai);
-        now.setHours(0,0,0,0);
-        endDateObj.setHours(0,0,0,0);
-        let lateDays = 0;
-        let denda = 0;
-        if (bk.status === "paid" || bk.status === "done") {
-            if (now > endDateObj) {
-                lateDays = Math.ceil((now - endDateObj) / (1000 * 60 * 60 * 24));
-                denda = lateDays * 50000;
+      // ✅ KONFIRMASI SELESAI SEWA
+      async function confirmDone(bookingId) {
+        if (!confirm("Konfirmasi bahwa motor sudah dikembalikan dan sewa selesai?")) return;
+        try {
+            const token = sessionStorage.getItem('token');
+            const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/status', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ status: 'done' })
+            });
+            if (res.ok) {
+                showNotification('✅ Sewa berhasil diselesaikan! Motor kini tersedia kembali.', 'success');
+                renderPayments();
+            } else {
+                showNotification('❌ Gagal memproses data.', 'danger');
             }
+        } catch(e) {
+            showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
         }
+      }
 
-        const dp = bk.dpAmount || bk.dp_amount || Math.round((bk.totalHarga || bk.total_harga) / 2);
-        const sisa = (bk.totalHarga || bk.total_harga) - dp + denda;
-        
-        // Cek jika status selesai (done/paid), maka sisa = 0 krn sdh dibayar
-        const isLunas = bk.status === 'done' || bk.status === 'paid';
-        const displaySisa = isLunas ? 0 : sisa;
+      // ✅ KUITANSI FINAL
+      function showInvoice(id) {
+        const booking = getBooking().find((b) => String(b.id) === String(id));
+        if (!booking) return;
 
-        content.innerHTML = `
-                <div style="text-align: center; margin-bottom: 2rem;">
-                    <img src="../assets/img/logo.png" style="height: 40px; margin-bottom: 1rem;">
-                    <h2>KUITANSI PEMBAYARAN</h2>
-                    <p style="color: var(--gray-500)">No. #${bk.id} / ${formatShortDate(
-          new Date()
-        )}</p>
-                </div>
+        const days = calculateDays(booking.startDate, booking.endDate);
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+        document.getElementById("invoiceContent").innerHTML = `
+            <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; background: white; color: #1a1a1a; max-width: 800px; margin: auto; border: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px;">
                     <div>
-                        <h4 style="color: var(--gray-500); margin-bottom: 0.5rem;">Terima Dari:</h4>
-                        <p style="font-weight: 500;">${bk.userName || bk.user_name}</p>
-                        <p style="font-size: 0.9rem; color: var(--gray-600);">${bk.userEmail || ''}</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <h4 style="color: var(--gray-500); margin-bottom: 0.5rem;">Pembayaran Sewa:</h4>
-                        <p style="font-weight: 500;">${bk.motorName || bk.motor_name}</p>
-                        <p style="font-size: 0.9rem; color: var(--gray-600);">
-                            ${formatShortDate(bk.startDate || bk.tgl_mulai)} s.d ${formatShortDate(bk.endDate || bk.tgl_selesai)}
+                        <img src="../assets/img/logo.png" alt="Ngebut.in" style="height: 60px; margin-bottom: 15px; mix-blend-mode: multiply;">
+                        <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
+                            Jl. DI Panjaitan No. 128<br>
+                            Purwokerto Selatan, Banyumas<br>
+                            Telp: (022) 123-4567<br>
+                            Halo@ngebut.in
                         </p>
                     </div>
-                </div>
-
-                <div style="border-top: 2px dashed #eee; border-bottom: 2px dashed #eee; padding: 1.5rem 0; margin-bottom: 2rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>Biaya Sewa (${calculateDays(bk.startDate || bk.tgl_mulai, bk.endDate || bk.tgl_selesai)} hari)</span>
-                        <span>${formatRupiah(bk.totalHarga || bk.total_harga)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>Uang Muka (DP)</span>
-                        <span>- ${formatRupiah(dp)}</span>
-                    </div>
-                    ${denda > 0 ? `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--danger);">
-                        <span>Denda Keterlambatan (${lateDays} hari)</span>
-                        <span>+ ${formatRupiah(denda)}</span>
-                    </div>
-                    ` : ''}
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.2rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
-                        <span>Total Sisa / Dibayar Pelunasan</span>
-                        <span style="color: var(--primary)">${formatRupiah(sisa)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 1rem; margin-top: 1rem;">
-                        <span>Status</span>
-                        <span style="font-weight: bold; color: ${isLunas ? 'var(--success)' : 'var(--danger)'}">
-                            ${isLunas ? 'LUNAS' : 'BELUM LUNAS'}
-                        </span>
+                    <div style="text-align: right;">
+                        <h1 style="margin: 0; color: #cc0000; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">KUITANSI</h1>
+                        <p style="font-size: 16px; font-weight: 600; margin: 5px 0 0;">#${booking.id.toString().slice(-6)}</p>
+                        <p style="font-size: 14px; color: #666; margin: 5px 0 0;">${formatDate(new Date())}</p>
                     </div>
                 </div>
 
-                <div style="text-align: center; color: var(--gray-500); font-size: 0.9rem;">
-                    <p>Terima kasih telah menggunakan layanan Ngebut.in!</p>
-                    <p>Simpan kuitansi ini sebagai bukti pembayaran yang sah.</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; padding: 25px; background: #f9fafb; border-radius: 12px;">
+                    <div>
+                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Ditujukan Kepada</h4>
+                        <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.userName}</p>
+                        <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Penyewa Terverifikasi</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Status Pembayaran</h4>
+                        <span style="display: inline-block; padding: 6px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-weight: 700; font-size: 12px;">LUNAS</span>
+                    </div>
                 </div>
-            `;
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #1a1a1a;">
+                            <th style="text-align: left; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Deskripsi Unit</th>
+                            <th style="text-align: center; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Durasi</th>
+                            <th style="text-align: right; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 25px 0;">
+                                <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.motorName}</p>
+                                <p style="margin: 5px 0 0; color: #666; font-size: 13px;">Sewa Motor ${formatShortDate(booking.startDate)} - ${formatShortDate(booking.endDate)}</p>
+                            </td>
+                            <td style="text-align: center; padding: 25px 0; font-weight: 600;">${days} Hari</td>
+                            <td style="text-align: right; padding: 25px 0; font-weight: 700; font-size: 16px;">${formatRupiah(booking.totalHarga)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 60px;">
+                    <div style="width: 250px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                            <span style="color: #666;">Subtotal</span>
+                            <span style="font-weight: 600;">${formatRupiah(booking.totalHarga)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-top: 15px; border-top: 2px solid #1a1a1a;">
+                            <span style="font-weight: 800; font-size: 18px;">TOTAL</span>
+                            <span style="font-weight: 800; font-size: 18px; color: #cc0000;">${formatRupiah(booking.totalHarga)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: #999;">
+                    <div>
+                        <p style="margin: 0;"><b>Catatan:</b></p>
+                        <p style="margin: 5px 0 0;">Kuitansi ini adalah bukti pembayaran yang sah dan dihasilkan secara otomatis oleh sistem.</p>
+                    </div>
+                    <div style="text-align: center; min-width: 150px;">
+                        <div style="margin-bottom: 10px; height: 40px;">
+                             <img src="../assets/img/logo.png" style="height: 30px; opacity: 0.3; filter: grayscale(1);">
+                        </div>
+                        <p style="margin: 0; font-weight: 700; color: #666;">NGEBUT.IN OFFICIAL</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
         document.getElementById("invoiceModal").style.display = "flex";
       }
 
@@ -383,6 +408,7 @@
         const { jsPDF } = window.jspdf;
         const invoiceContent = document.getElementById("invoiceContent");
         
+        // Hide scrollbar and adjust styling temporarily for better render
         const originalBg = invoiceContent.style.background;
         invoiceContent.style.background = "white";
         
@@ -397,8 +423,10 @@
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             
+            // Add image to PDF
             pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
             
+            // Generate filename based on date
             const dateStr = new Date().getTime();
             pdf.save(`Kuitansi_NgebutIN_${dateStr}.pdf`);
             
@@ -416,13 +444,18 @@
           if (e.target === this) closeInvoiceModal();
         });
 
+      function exportToExcel() {
+        window.location.href = window.location.origin + '/api/export/excel';
+      }
+
       function exportToCSV() {
-        const bookings = allBookings.filter(b => b.status === "paid" || b.status === "done");
+        const bookings = getBooking().filter(b => b.status === "paid" || b.status === "done");
         if (bookings.length === 0) {
             alert("Tidak ada data transaksi untuk diexport!");
             return;
         }
 
+        // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
         let csvContent = "\uFEFFsep=,\n"; 
         csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga,Status\n";
 
@@ -443,7 +476,8 @@
         downloadCSV("Laporan_Pembayaran_NgebutIN.csv", headers, rows, "Laporan Riwayat Transaksi & Pembayaran");
       }
 
-      loadData();
+      renderPayments();
+      // Auto-refresh setiap 30 detik
       setInterval(renderPayments, 30000);
     </script>
   </body>

@@ -22,10 +22,8 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
     if (!mounted) return;
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
-      final uid = int.tryParse(user['id'].toString()) ?? 0;
-      if (uid > 0) {
-        await Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
-      }
+      final uid = (user['id'] as num).toInt();
+      await Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
     }
   }
 

@@ -143,6 +143,8 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
   final _deskripsiCtrl = TextEditingController();
   String _status = 'available';
   String _base64Image = '';
+  String _originalImage = ''; // Simpan gambar asli saat edit
+  bool _imageChanged = false; // Track apakah gambar diubah
   bool _isLoading = false;
 
   @override
@@ -151,19 +153,19 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
     if (widget.motor != null) {
       _namaCtrl.text = widget.motor!.nama;
       // Normalize kategori ke PascalCase agar cocok dengan dropdown options
-      const validCategories = ['Matic', 'Manual', 'Sport'];
       final rawKat = widget.motor!.kategori.trim();
-      // Jika kategori dari DB tidak valid (misal 'umum', 'metic'), default ke 'Matic'
+      const validCategories = ['Matic', 'Manual', 'Sport'];
       final normalized = validCategories.firstWhere(
-        (c) => c.toLowerCase() == rawKat.toLowerCase() ||
-               rawKat.toLowerCase().contains(c.toLowerCase().substring(0, 3)),
-        orElse: () => 'Matic',
+        (c) => c.toLowerCase() == rawKat.toLowerCase(),
+        orElse: () => rawKat.isNotEmpty ? rawKat : 'Matic',
       );
       _kategoriCtrl.text = normalized;
       _hargaCtrl.text = widget.motor!.harga.toString();
       _deskripsiCtrl.text = widget.motor!.deskripsi;
       _status = widget.motor!.status;
       _base64Image = widget.motor!.gambar;
+      _originalImage = widget.motor!.gambar;
+      _imageChanged = false;
     }
   }
 
@@ -174,6 +176,7 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
         _base64Image = "data:image/jpeg;base64,${base64Encode(bytes)}";
+        _imageChanged = true;
       });
     }
   }
@@ -191,13 +194,15 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
     setState(() => _isLoading = true);
     try {
       final provider = Provider.of<MotorProvider>(context, listen: false);
+      // Saat edit, hanya kirim gambar baru jika diubah (menghindari Vercel 4.5MB limit)
+      final gambarToSend = _imageChanged ? _base64Image : (_originalImage.startsWith('http') ? _originalImage : '');
       final motorData = Motor(
         id: widget.motor?.id ?? 0,
         nama: _namaCtrl.text.trim(),
         kategori: _kategoriCtrl.text,
         harga: int.parse(_hargaCtrl.text.replaceAll(RegExp(r'[^\d]'), '')),
         deskripsi: _deskripsiCtrl.text.trim(),
-        gambar: _base64Image,
+        gambar: gambarToSend.isNotEmpty ? gambarToSend : _base64Image,
         status: _status,
       );
 
@@ -265,7 +270,7 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: ['Matic','Manual','Sport'].contains(_kategoriCtrl.text) ? _kategoriCtrl.text : 'Matic',
+                value: _kategoriCtrl.text.isNotEmpty ? _kategoriCtrl.text : null,
                 decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder(), prefixIcon: Icon(Icons.category)),
                 items: const [
                   DropdownMenuItem(value: 'Matic', child: Text('Matic')),
