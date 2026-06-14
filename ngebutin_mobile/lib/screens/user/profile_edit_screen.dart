@@ -67,7 +67,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     setState(() => _isLoading = true);
     try {
       final payload = {
-        'nama': _namaController.text,
+        'nama': _namaController.text.trim(),
+        'email': _emailController.text.trim(),
       };
       if (_passwordController.text.isNotEmpty && _currentPasswordController.text.isNotEmpty) {
         payload['current_password'] = _currentPasswordController.text;
@@ -76,12 +77,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       
       await Provider.of<AuthProvider>(context, listen: false).updateProfile(payload);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Profil berhasil diperbarui!'), backgroundColor: Colors.green),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal update profil: $e'), backgroundColor: Colors.red));
+        final errMsg = e.toString().contains('Email sudah digunakan')
+            ? 'Email sudah digunakan akun lain'
+            : 'Gagal update: $e';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errMsg), backgroundColor: Colors.red),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

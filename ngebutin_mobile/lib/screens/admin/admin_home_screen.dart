@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -156,11 +157,42 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Widget _buildDashboard() {
     return Consumer2<MotorProvider, BookingProvider>(
       builder: (context, motorProv, bookingProv, _) {
-        final totalMotor = motorProv.motors.length;
-        final available = motorProv.motors.where((m) => m.status == 'available').length;
+        final allMotors = motorProv.motors;
         final allBookings = bookingProv.bookings;
-        final pending = allBookings.where((b) => b['status'] == 'pending').length;
-        final booked = allBookings.where((b) => b['status'] == 'booked' || b['status'] == 'paid').length;
+
+        final totalMotor = allMotors.length;
+        final available = allMotors.where((m) => m.status == 'available').length;
+        final booked = allMotors.where((m) => m.status == 'booked').length;
+
+        // Status counts — menggunakan status sebenarnya dari API
+        final waiting = allBookings.where((b) {
+          final s = b['status']?.toString() ?? '';
+          final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
+          return s == 'confirm' && (sp == 'dp_uploaded' || sp == 'verifikasi');
+        }).length;
+
+        final active = allBookings.where((b) {
+          final s = b['status']?.toString() ?? '';
+          final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
+          return s == 'booked' && sp == 'dp_lunas';
+        }).length;
+
+        final returning = allBookings.where((b) => b['status']?.toString() == 'returning').length;
+        final done = allBookings.where((b) => b['status']?.toString() == 'done').length;
+        final menungguDP = allBookings.where((b) {
+          final s = b['status']?.toString() ?? '';
+          final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
+          return s == 'confirm' && sp == 'menunggu_dp';
+        }).length;
+
+        // Pendapatan total dari booking selesai
+        int totalPendapatan = 0;
+        for (final b in allBookings.where((b) => b['status'] == 'done')) {
+          totalPendapatan += ((b['totalHarga'] ?? b['total_harga'] ?? 0) as num).toInt();
+        }
+
+        // Recent 5 bookings
+        final recent = List.from(allBookings).take(5).toList();
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -170,77 +202,154 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           color: const Color(0xFFCC0000),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Dashboard Overview', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                const Text('Dashboard Overview', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
                 const SizedBox(height: 4),
-                const Text('Pantau performa rental hari ini.', style: TextStyle(color: Colors.grey)),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    _statCard('Total Kendaraan', totalMotor.toString(), Icons.motorcycle, const Color(0xFFCC0000)),
-                    const SizedBox(width: 12),
-                    _statCard('Tersedia', available.toString(), Icons.check_circle, const Color(0xFF10B981)),
-                  ],
-                ),
+                Text('${allBookings.length} total transaksi • ${allMotors.length} kendaraan', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                const SizedBox(height: 20),
+
+                // STATS ROW 1
+                Row(children: [
+                  _statCard('Total Kendaraan', totalMotor.toString(), Icons.motorcycle, const Color(0xFFCC0000)),
+                  const SizedBox(width: 12),
+                  _statCard('Tersedia', available.toString(), Icons.check_circle, const Color(0xFF10B981)),
+                ]),
                 const SizedBox(height: 12),
+                Row(children: [
+                  _statCard('Disewa', booked.toString(), Icons.directions_bike, const Color(0xFF3B82F6)),
+                  const SizedBox(width: 12),
+                  _statCard('Menunggu DP', menungguDP.toString(), Icons.hourglass_empty, const Color(0xFFF59E0B)),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  _statCard('Approval DP', waiting.toString(), Icons.fact_check, const Color(0xFF8B5CF6)),
+                  const SizedBox(width: 12),
+                  _statCard('Dikembalikan', returning.toString(), Icons.undo, const Color(0xFFEC4899)),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  _statCard('Selesai', done.toString(), Icons.flag, const Color(0xFF6B7280)),
+                  const SizedBox(width: 12),
+                  // Pendapatan card
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: const Border(left: BorderSide(color: Color(0xFF059669), width: 4)),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(color: const Color(0xFF059669).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.attach_money, color: Color(0xFF059669), size: 18),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Rp ${(totalPendapatan / 1000000).toStringAsFixed(1)}Jt',
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF059669)),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text('Total Pendapatan', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 28),
+
+                // RECENT BOOKINGS
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _statCard('Menunggu Approval', pending.toString(), Icons.access_time, const Color(0xFFF59E0B)),
-                    const SizedBox(width: 12),
-                    _statCard('Sedang Disewa', booked.toString(), Icons.directions_bike, const Color(0xFF3B82F6)),
+                    const Text('Booking Terbaru', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                    TextButton(
+                      onPressed: () => setState(() => _currentIndex = 2),
+                      child: const Text('Lihat Semua', style: TextStyle(color: Color(0xFFCC0000))),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 32),
-                const Text('Kendaraan Terdaftar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                ...motorProv.motors.map((motor) => Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44, height: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.motorcycle, color: Color(0xFFCC0000)),
+                const SizedBox(height: 10),
+
+                if (recent.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                    child: const Center(child: Text('Belum ada booking', style: TextStyle(color: Colors.grey))),
+                  )
+                else
+                  ...recent.map((b) {
+                    final s = b['status']?.toString() ?? '';
+                    final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
+                    final userName = b['userName']?.toString() ?? 'User #${b['userId'] ?? b['user_id']}';
+                    final motorName = b['motorName']?.toString() ?? 'Motor';
+
+                    Color badgeColor;
+                    Color badgeFg;
+                    String badgeText;
+
+                    if (s == 'confirm' && sp == 'menunggu_dp') {
+                      badgeColor = const Color(0xFFFEF08A); badgeFg = const Color(0xFF854D0E); badgeText = 'MENUNGGU DP';
+                    } else if (s == 'confirm' && (sp == 'dp_uploaded' || sp == 'verifikasi')) {
+                      badgeColor = const Color(0xFFBAE6FD); badgeFg = const Color(0xFF0369A1); badgeText = 'VERIFIKASI DP';
+                    } else if (s == 'booked') {
+                      badgeColor = const Color(0xFFBBF7D0); badgeFg = const Color(0xFF166534); badgeText = 'AKTIF';
+                    } else if (s == 'returning') {
+                      badgeColor = const Color(0xFFE9D5FF); badgeFg = const Color(0xFF6B21A8); badgeText = 'KEMBALI';
+                    } else if (s == 'done') {
+                      badgeColor = const Color(0xFFE5E7EB); badgeFg = const Color(0xFF374151); badgeText = 'SELESAI';
+                    } else if (s == 'rejected') {
+                      badgeColor = const Color(0xFFFEE2E2); badgeFg = const Color(0xFFCC0000); badgeText = 'DITOLAK';
+                    } else {
+                      badgeColor = Colors.grey.shade200; badgeFg = Colors.grey.shade700; badgeText = s.toUpperCase();
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(motor.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            Text(motor.formattedHarga, style: const TextStyle(color: Color(0xFFCC0000), fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: motor.status == 'available' ? const Color(0xFFDCFCE7) : const Color(0xFFFEF08A),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          motor.status == 'available' ? 'TERSEDIA' : 'DISEWA',
-                          style: TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.bold,
-                            color: motor.status == 'available' ? const Color(0xFF166534) : const Color(0xFF854D0E),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.receipt_long, color: Color(0xFFCC0000), size: 20),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('#${b['id']} · $userName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                const SizedBox(height: 2),
+                                Text(motorName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(8)),
+                            child: Text(badgeText, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeFg)),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )),
+                    );
+                  }),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -248,6 +357,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       },
     );
   }
+
+
 
   Widget _statCard(String label, String value, IconData icon, Color color) {
     return Expanded(
@@ -378,11 +489,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             alignment: Alignment.bottomRight,
             children: [
               CircleAvatar(
-                radius: 50,
-                backgroundColor: const Color(0xFF1A1A1A),
-                backgroundImage: auth.user?['foto'] != null ? NetworkImage(auth.user!['foto']) : null,
-                child: auth.user?['foto'] == null ? const Icon(Icons.shield, size: 40, color: Colors.white) : null,
-              ),
+                  radius: 50,
+                  backgroundColor: const Color(0xFF1A1A1A),
+                  backgroundImage: auth.user?['foto_profil'] != null && auth.user!['foto_profil'].toString().isNotEmpty
+                      ? (auth.user!['foto_profil'].toString().startsWith('data:')
+                          ? MemoryImage(base64Decode(auth.user!['foto_profil'].split(',').last))
+                          : NetworkImage(auth.user!['foto_profil'])) as ImageProvider
+                      : null,
+                  child: auth.user?['foto_profil'] == null || auth.user!['foto_profil'].toString().isEmpty
+                      ? const Icon(Icons.shield, size: 40, color: Colors.white)
+                      : null,
+                ),
             ],
           ),
           const SizedBox(height: 16),

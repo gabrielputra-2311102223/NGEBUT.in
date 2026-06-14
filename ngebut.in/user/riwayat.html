@@ -99,7 +99,7 @@
 
         const bookings = allBookings.filter(b => 
             String(b.userId) === String(user.id) && 
-            ['done', 'cancelled'].includes(b.status)
+            ['done', 'cancelled', 'rejected', 'returning'].includes(b.status)
         );
         
         const tbody = document.getElementById('riwayatList');

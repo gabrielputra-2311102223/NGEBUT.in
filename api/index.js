@@ -411,7 +411,7 @@ app.get('/api/users', async (req, res) => {
 // Update user profile (for own profile) + Notifikasi Email jika ganti password
 app.put('/api/users/:id', async (req, res) => {
     try {
-        const { nama, foto_profil, current_password, new_password } = req.body;
+        const { nama, email, foto_profil, current_password, new_password } = req.body;
         const userId = req.params.id;
 
         // Get current user
@@ -437,27 +437,38 @@ app.put('/api/users/:id', async (req, res) => {
             passwordChanged = true;
         }
 
+        // Email change: check uniqueness if changed
+        let finalEmail = currentUser.email;
+        if (email && email !== currentUser.email) {
+            const [emailCheck] = await poolPromise.query('SELECT id FROM Users WHERE email = ? AND id != ?', [email, userId]);
+            if (emailCheck.length > 0) {
+                return res.status(400).json({ error: 'Email sudah digunakan oleh akun lain' });
+            }
+            finalEmail = email;
+        }
+
         const foto = foto_profil !== undefined ? foto_profil : currentUser.foto_profil;
 
         await poolPromise.query(
-            'UPDATE Users SET nama=?, foto_profil=?, password=? WHERE id=?',
-            [nama || currentUser.nama, foto, hashedPassword, userId]
+            'UPDATE Users SET nama=?, email=?, foto_profil=?, password=? WHERE id=?',
+            [nama || currentUser.nama, finalEmail, foto, hashedPassword, userId]
         );
 
         // Kirim notifikasi email jika password berubah
         if (passwordChanged) {
             try {
-                await sendPasswordChangeNotification(currentUser.email, currentUser.nama);
+                await sendPasswordChangeNotification(finalEmail, nama || currentUser.nama);
             } catch (emailErr) {
                 console.error('Password notification email error:', emailErr.message);
             }
         }
 
-        res.json({ message: 'Profile updated successfully', user: { id: currentUser.id, nama: nama || currentUser.nama, foto_profil: foto } });
+        res.json({ message: 'Profile updated successfully', user: { id: currentUser.id, nama: nama || currentUser.nama, email: finalEmail, foto_profil: foto } });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // Update FCM Token
 app.put('/api/users/:id/fcm-token', async (req, res) => {

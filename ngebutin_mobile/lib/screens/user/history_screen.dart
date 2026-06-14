@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
-import 'dp_upload_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -15,19 +14,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = Provider.of<AuthProvider>(context, listen: false).user;
-      if (user != null) {
-        final userId = (user['id'] as num).toInt();
-        Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(userId);
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+  }
+
+  Future<void> _refresh() async {
+    if (!mounted) return;
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user != null) {
+      await Provider.of<BookingProvider>(context, listen: false)
+          .fetchMyBookings((user['id'] as num).toInt());
+    }
   }
 
   String _formatCurrency(dynamic amount) {
     try {
-      final int val = (amount as num).toInt();
-      return 'Rp ${val.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+      final int v = (amount as num).toInt();
+      return 'Rp ${v.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
     } catch (_) {
       return 'Rp 0';
     }
@@ -35,43 +37,48 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _formatDate(dynamic val) {
     if (val == null) return '-';
-    try {
-      return val.toString().split('T')[0];
-    } catch (_) {
-      return val.toString();
-    }
+    return val.toString().split('T')[0];
   }
 
-  Widget _buildStatusBadge(String? status, String? statusPembayaran) {
-    final s = status ?? '';
-    final sp = statusPembayaran ?? '';
-
-    Color bgColor;
-    Color textColor;
+  Widget _buildStatusBadge(String status) {
+    Color bg;
+    Color fg;
     String text;
+    IconData icon;
 
-    if (s == 'confirm' && sp == 'menunggu_dp') {
-      bgColor = const Color(0xFFFEF08A); textColor = const Color(0xFF854D0E); text = 'MENUNGGU DP';
-    } else if (s == 'confirm' && (sp == 'dp_uploaded' || sp == 'verifikasi')) {
-      bgColor = const Color(0xFFBAE6FD); textColor = const Color(0xFF0369A1); text = 'VERIFIKASI DP';
-    } else if (s == 'booked' && sp == 'dp_lunas') {
-      bgColor = const Color(0xFFBBF7D0); textColor = const Color(0xFF166534); text = 'AKTIF SEWA';
-    } else if (s == 'returning') {
-      bgColor = const Color(0xFFE9D5FF); textColor = const Color(0xFF6B21A8); text = 'DIKEMBALIKAN';
-    } else if (s == 'done') {
-      bgColor = const Color(0xFFE5E7EB); textColor = const Color(0xFF374151); text = 'SELESAI';
-    } else if (s == 'rejected') {
-      bgColor = const Color(0xFFFEE2E2); textColor = const Color(0xFFCC0000); text = 'DITOLAK';
-    } else if (s == 'cancelled') {
-      bgColor = const Color(0xFFF3F4F6); textColor = const Color(0xFF6B7280); text = 'DIBATALKAN';
-    } else {
-      bgColor = Colors.grey.shade200; textColor = Colors.grey.shade800; text = s.toUpperCase();
+    switch (status) {
+      case 'done':
+        bg = const Color(0xFFDCFCE7); fg = const Color(0xFF166534);
+        text = 'SELESAI'; icon = Icons.check_circle;
+        break;
+      case 'cancelled':
+        bg = const Color(0xFFF3F4F6); fg = const Color(0xFF6B7280);
+        text = 'DIBATALKAN'; icon = Icons.cancel;
+        break;
+      case 'rejected':
+        bg = const Color(0xFFFEE2E2); fg = const Color(0xFFCC0000);
+        text = 'DITOLAK'; icon = Icons.block;
+        break;
+      case 'returning':
+        bg = const Color(0xFFE9D5FF); fg = const Color(0xFF6B21A8);
+        text = 'DIKEMBALIKAN'; icon = Icons.undo;
+        break;
+      default:
+        bg = Colors.grey.shade200; fg = Colors.grey.shade700;
+        text = status.toUpperCase(); icon = Icons.info_outline;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
-      child: Text(text, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 12)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: fg),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 11)),
+        ],
+      ),
     );
   }
 
@@ -80,70 +87,67 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Riwayat & Sewa Aktif', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+        title: const Text('Riwayat Pesanan', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+        automaticallyImplyLeading: false,
       ),
       body: Consumer<BookingProvider>(
-        builder: (context, provider, child) {
+        builder: (context, provider, _) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
           }
 
-          if (provider.bookings.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.history, size: 80, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
-                  const Text('Belum ada riwayat pesanan', style: TextStyle(color: Colors.grey, fontSize: 16)),
-                ],
+          // Riwayat: HANYA yang sudah selesai/batal/ditolak
+          final history = provider.bookings.where((b) {
+            final s = b['status']?.toString() ?? '';
+            return ['done', 'cancelled', 'rejected', 'returning'].contains(s);
+          }).toList();
+
+          if (history.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: _refresh,
+              color: const Color(0xFFCC0000),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.65,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.history, size: 80, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        const Text('Belum ada riwayat', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                        const SizedBox(height: 8),
+                        const Text('Riwayat muncul setelah sewa selesai atau dibatalkan', style: TextStyle(color: Colors.grey, fontSize: 13), textAlign: TextAlign.center),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () async {
-              final user = Provider.of<AuthProvider>(context, listen: false).user;
-              if (user != null) {
-                final userId = (user['id'] as num).toInt();
-                await provider.fetchMyBookings(userId);
-              }
-            },
+            onRefresh: _refresh,
             color: const Color(0xFFCC0000),
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: provider.bookings.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemCount: history.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
-                final b = provider.bookings[index];
+                final b = history[index];
                 final status = b['status']?.toString() ?? '';
-                final statusPembayaran = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
                 final motorName = (b['motorName'] ?? b['motor_name'] ?? 'Motor').toString();
                 final bookingId = (b['id'] as num).toInt();
                 final totalHarga = b['totalHarga'] ?? b['total_harga'] ?? 0;
-                final dpAmount = b['dpAmount'] ?? b['dp_amount'] ?? ((totalHarga as num).toInt() ~/ 2);
-
-                // Apakah perlu upload DP
-                final needsDp = status == 'confirm' && statusPembayaran == 'menunggu_dp';
-                // Apakah bisa kembalikan motor
-                final canReturn = status == 'booked' && statusPembayaran == 'dp_lunas';
 
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: needsDp
-                          ? const Color(0xFFCC0000).withOpacity(0.3)
-                          : canReturn
-                              ? Colors.green.withOpacity(0.3)
-                              : Colors.grey.shade200,
-                      width: needsDp || canReturn ? 1.5 : 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +156,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Order #$bookingId', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 12)),
-                          _buildStatusBadge(status, statusPembayaran),
+                          _buildStatusBadge(status),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -160,124 +164,42 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         children: [
                           const Icon(Icons.motorcycle, color: Color(0xFFCC0000), size: 18),
                           const SizedBox(width: 8),
-                          Text(motorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Expanded(child: Text(motorName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
                         ],
                       ),
                       const Divider(height: 20),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_month, color: Color(0xFFCC0000), size: 18),
+                          const Icon(Icons.calendar_month, color: Colors.grey, size: 16),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${_formatDate(b['startDate'] ?? b['tgl_mulai'])} s/d ${_formatDate(b['endDate'] ?? b['tgl_selesai'])}',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
+                          Text(
+                            '${_formatDate(b['startDate'] ?? b['tgl_mulai'])} s/d ${_formatDate(b['endDate'] ?? b['tgl_selesai'])}',
+                            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Total Biaya', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                              Text(_formatCurrency(totalHarga), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const Text('DP (50%)', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                              Text(_formatCurrency(dpAmount), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFFCC0000))),
-                            ],
+                          const Text('Total Biaya', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text(
+                            _formatCurrency(totalHarga),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1A1A1A)),
                           ),
                         ],
                       ),
-                      // Tombol Upload DP
-                      if (needsDp) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => DpUploadScreen(
-                                    bookingId: bookingId,
-                                    dpAmount: (dpAmount as num).toInt(),
-                                  ),
-                                ),
-                              ).then((_) {
-                                // Refresh after returning
-                                final user = Provider.of<AuthProvider>(context, listen: false).user;
-                                if (user != null && context.mounted) {
-                                  provider.fetchMyBookings((user['id'] as num).toInt());
-                                }
-                              });
-                            },
-                            icon: const Icon(Icons.upload),
-                            label: const Text('UPLOAD BUKTI DP'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFCC0000),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
-                        ),
-                      ]
-                      // Tombol Kembalikan Motor
-                      else if (canReturn) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Kembalikan Motor'),
-                                  content: const Text('Apakah Anda yakin sudah selesai menyewa dan ingin mengembalikan motor ini?'),
-                                  actions: [
-                                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx, true),
-                                      child: const Text('Ya, Kembalikan', style: TextStyle(color: Colors.green)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true && context.mounted) {
-                                try {
-                                  await Provider.of<BookingProvider>(context, listen: false)
-                                      .updateBookingStatus(bookingId, 'returning');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('✅ Permintaan pengembalian dikirim! Admin akan memproses.'), backgroundColor: Colors.green),
-                                    );
-                                    final user = Provider.of<AuthProvider>(context, listen: false).user;
-                                    if (user != null) {
-                                      provider.fetchMyBookings((user['id'] as num).toInt());
-                                    }
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Gagal memproses: $e'), backgroundColor: Colors.red),
-                                    );
-                                  }
-                                }
-                              }
-                            },
-                            icon: const Icon(Icons.undo),
-                            label: const Text('KEMBALIKAN MOTOR'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF166534),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
+                      if (status == 'rejected') ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(8)),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline, color: Color(0xFFCC0000), size: 16),
+                              SizedBox(width: 6),
+                              Expanded(child: Text('Bukti DP Anda tidak valid. Silakan hubungi admin.', style: TextStyle(color: Color(0xFFCC0000), fontSize: 12))),
+                            ],
                           ),
                         ),
                       ],

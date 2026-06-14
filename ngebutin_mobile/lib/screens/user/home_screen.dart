@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/motor_provider.dart';
+import '../../providers/booking_provider.dart';
 import 'motor_detail_screen.dart';
+import 'booking_saya_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 
@@ -19,317 +22,374 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'Semua';
   final List<String> _categories = ['Semua', 'Matic', 'Manual', 'Sport'];
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<MotorProvider>(context, listen: false).fetchMotors();
+      _refreshUserBookings();
+      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted) _refreshUserBookings();
+      });
     });
   }
 
-  Widget _buildImage(String base64String) {
-    try {
-      if (base64String.startsWith('data:image')) {
-        final splitted = base64String.split(',');
-        return Image.memory(
-          base64Decode(splitted[1]),
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => const Icon(Icons.motorcycle, size: 50, color: Colors.grey),
-        );
-      }
-      return Image.network(
-        base64String,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.motorcycle, size: 50, color: Colors.grey),
-      );
-    } catch (e) {
-      return const Icon(Icons.motorcycle, size: 50, color: Colors.grey);
+  void _refreshUserBookings() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user != null) {
+      final uid = (user['id'] as num).toInt();
+      Provider.of<BookingProvider>(context, listen: false).fetchMyBookings(uid);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Widget _buildImage(String? gambar) {
+    if (gambar == null || gambar.isEmpty) {
+      return const Icon(Icons.motorcycle, size: 50, color: Colors.grey);
+    }
+    try {
+      if (gambar.startsWith('data:image')) {
+        final splitted = gambar.split(',');
+        if (splitted.length > 1) {
+          return Image.memory(
+            base64Decode(splitted[1]),
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Icon(Icons.motorcycle, size: 50, color: Colors.grey),
+          );
+        }
+      }
+      return Image.network(
+        gambar,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.motorcycle, size: 50, color: Colors.grey),
+      );
+    } catch (_) {
+      return const Icon(Icons.motorcycle, size: 50, color: Colors.grey);
+    }
+  }
+
+  Widget _buildKatalog() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
+
+    return Consumer<MotorProvider>(
+      builder: (context, motorProvider, child) {
+        if (motorProvider.isLoading && motorProvider.motors.isEmpty) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
+        }
+
+        // TAMPILKAN SEMUA MOTOR - filter hanya berdasarkan kategori & search
+        final motors = motorProvider.motors.where((m) {
+          if (_selectedCategory != 'Semua' &&
+              !m.kategori.toLowerCase().contains(_selectedCategory.toLowerCase())) return false;
+          if (_searchQuery.isNotEmpty && !m.nama.toLowerCase().contains(_searchQuery.toLowerCase())) return false;
+          return true;
+        }).toList();
+
+        return RefreshIndicator(
+          onRefresh: motorProvider.fetchMotors,
+          color: const Color(0xFFCC0000),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Hero Section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFCC0000),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Halo, ${user?['nama'] ?? 'User'}! 👋',
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Mau sewa motor apa hari ini?',
+                        style: TextStyle(fontSize: 13, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextField(
+                          onChanged: (value) => setState(() => _searchQuery = value),
+                          decoration: const InputDecoration(
+                            icon: Icon(Icons.search, color: Colors.grey),
+                            hintText: 'Cari motor impianmu...',
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Category Filter
+                SizedBox(
+                  height: 56,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    itemCount: _categories.length,
+                    itemBuilder: (context, index) {
+                      final category = _categories[index];
+                      final isSelected = category == _selectedCategory;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(category),
+                          selected: isSelected,
+                          onSelected: (_) => setState(() => _selectedCategory = category),
+                          selectedColor: const Color(0xFFCC0000),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(color: isSelected ? const Color(0xFFCC0000) : Colors.grey.shade300),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Semua Kendaraan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('${motors.length} unit', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                    ],
+                  ),
+                ),
+
+                if (motors.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.search_off, size: 64, color: Colors.grey.shade300),
+                          const SizedBox(height: 12),
+                          const Text('Tidak ada motor yang sesuai', style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.62,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                    ),
+                    itemCount: motors.length,
+                    itemBuilder: (context, index) {
+                      final motor = motors[index];
+                      final isAvailable = motor.status == 'available';
+                      final isService = motor.status == 'service';
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => MotorDetailScreen(motor: motor)),
+                          );
+                        },
+                        child: Card(
+                          elevation: 3,
+                          shadowColor: Colors.black12,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                flex: 5,
+                                child: Stack(
+                                  children: [
+                                    SizedBox.expand(
+                                      child: Container(
+                                        color: Colors.grey.shade100,
+                                        child: _buildImage(motor.gambar),
+                                      ),
+                                    ),
+                                    // Status Badge
+                                    Positioned(
+                                      top: 8, right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: isAvailable
+                                              ? const Color(0xFF166534)
+                                              : isService
+                                                  ? Colors.orange.shade700
+                                                  : const Color(0xFFCC0000),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          isAvailable ? 'TERSEDIA' : isService ? 'SERVIS' : 'DISEWA',
+                                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                flex: 6,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            motor.nama,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            motor.kategori,
+                                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                motor.formattedHarga,
+                                                style: const TextStyle(color: Color(0xFFCC0000), fontWeight: FontWeight.w900, fontSize: 13),
+                                              ),
+                                              const Text('/hari', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(vertical: 7),
+                                        decoration: BoxDecoration(
+                                          color: isAvailable ? const Color(0xFFCC0000) : Colors.grey.shade300,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          isAvailable ? 'Sewa Sekarang' : 'Tidak Tersedia',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: isAvailable ? Colors.white : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Active booking count badge
+    final bookingProv = Provider.of<BookingProvider>(context);
+    final activeCount = bookingProv.bookings.where((b) {
+      final s = b['status']?.toString() ?? '';
+      return s == 'confirm' || s == 'booked' || s == 'returning';
+    }).length;
+
+    final screens = [
+      _buildKatalog(),
+      const BookingSayaScreen(),
+      const HistoryScreen(),
+      const ProfileScreen(),
+    ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Image.asset('assets/logo.png', height: 28),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Halo, ${user?['nama'] ?? 'User'}!', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
-                const Text('Mau sewa motor apa hari ini?', style: TextStyle(fontSize: 11, color: Colors.grey)),
-              ],
-            ),
-          ],
-        ),
-      ),
-      body: _currentIndex == 0 ? Consumer<MotorProvider>(
-        builder: (context, motorProvider, child) {
-          if (motorProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
-          }
-
-          final motors = motorProvider.motors.where((m) {
-            if (m.status != 'available') return false;
-            if (_selectedCategory != 'Semua' && m.kategori.trim().toLowerCase() != _selectedCategory.trim().toLowerCase()) return false;
-            if (_searchQuery.isNotEmpty && !m.nama.toLowerCase().contains(_searchQuery.toLowerCase())) return false;
-            return true;
-          }).toList();
-
-          return RefreshIndicator(
-            onRefresh: motorProvider.fetchMotors,
-            color: const Color(0xFFCC0000),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: _currentIndex == 0
+          ? AppBar(
+              title: Row(
                 children: [
-                  // Hero Section
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFCC0000),
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(32),
-                        bottomRight: Radius.circular(32),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Sewa Motor Mudah & Cepat',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Pilih dari koleksi motor Honda terbaru kami untuk perjalanan Anda.',
-                          style: TextStyle(fontSize: 14, color: Colors.white70),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: TextField(
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                              });
-                            },
-                            decoration: const InputDecoration(
-                              icon: Icon(Icons.search, color: Colors.grey),
-                              hintText: 'Cari motor impianmu...',
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Category Filter
-                  SizedBox(
-                    height: 60,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      itemCount: _categories.length,
-                      itemBuilder: (context, index) {
-                        final category = _categories[index];
-                        final isSelected = category == _selectedCategory;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(category),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedCategory = category;
-                              });
-                            },
-                            selectedColor: const Color(0xFFCC0000),
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              side: BorderSide(
-                                color: isSelected ? const Color(0xFFCC0000) : Colors.grey.shade300,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Motor Tersedia',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
-                        ),
-                        Text(
-                          '${motors.length} unit',
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  if (motors.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(Icons.search_off, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text('Tidak ada motor yang sesuai pencarian.', style: TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.68,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                      itemCount: motors.length,
-                      itemBuilder: (context, index) {
-                        final motor = motors[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => MotorDetailScreen(motor: motor),
-                              ),
-                            );
-                          },
-                          child: Card(
-                            elevation: 4,
-                            shadowColor: Colors.black12,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            clipBehavior: Clip.antiAlias,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  flex: 5,
-                                  child: Container(
-                                    color: Colors.white,
-                                    child: _buildImage(motor.gambar),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 6,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              motor.nama,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1A1A1A)),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Row(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                Text(
-                                                  motor.formattedHarga,
-                                                  style: const TextStyle(color: Color(0xFFCC0000), fontWeight: FontWeight.w900, fontSize: 15),
-                                                ),
-                                                const Text('/hari', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF9FAFB),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: const Text(
-                                            'Sewa Sekarang',
-                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 32),
+                  Image.asset('assets/logo.png', height: 28),
+                  const SizedBox(width: 8),
+                  const Text('Ngebut.in', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
                 ],
               ),
-            ),
-          );
-        },
-      ) : _currentIndex == 1 ? const HistoryScreen() : const ProfileScreen(), // End body condition
+            )
+          : null,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          setState(() => _currentIndex = index);
+          if (index == 1 || index == 2) _refreshUserBookings();
         },
         selectedItemColor: const Color(0xFFCC0000),
-        items: const [
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        elevation: 12,
+        items: [
+          const BottomNavigationBarItem(icon: Icon(Icons.motorcycle), label: 'Katalog'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.motorcycle),
-            label: 'Katalog',
+            icon: activeCount > 0
+                ? Badge(
+                    label: Text('$activeCount'),
+                    child: const Icon(Icons.bookmark_outlined),
+                  )
+                : const Icon(Icons.bookmark_outlined),
+            label: 'Booking Saya',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profil',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Riwayat'),
+          const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );

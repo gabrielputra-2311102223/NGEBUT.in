@@ -253,10 +253,16 @@ class _AdminMotorFormScreenState extends State<AdminMotorFormScreen> {
                 validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _kategoriCtrl,
-                decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+              DropdownButtonFormField<String>(
+                value: _kategoriCtrl.text.isNotEmpty ? _kategoriCtrl.text : null,
+                decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder(), prefixIcon: Icon(Icons.category)),
+                items: const [
+                  DropdownMenuItem(value: 'Matic', child: Text('Matic')),
+                  DropdownMenuItem(value: 'Manual', child: Text('Manual')),
+                  DropdownMenuItem(value: 'Sport', child: Text('Sport')),
+                ],
+                onChanged: (val) => setState(() => _kategoriCtrl.text = val ?? ''),
+                validator: (v) => (v == null || v.isEmpty) ? 'Pilih kategori' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
