@@ -167,6 +167,54 @@ const ApiClient = {
         if (role === 'admin') return 'admin/dashboard.html';
         if (role === 'owner') return 'owner/dashboard.html';
         return 'user/dashboard.html';
+    },
+
+    // ---- Generic HTTP methods (digunakan oleh booking.html, pembayaran.html, dll) ----
+    get: async (path) => {
+        const res = await fetch(`${API_URL}/api${path}`, {
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || res.statusText);
+        return data;
+    },
+
+    post: async (path, body) => {
+        const res = await fetch(`${API_URL}/api${path}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || res.statusText);
+        return data;
+    },
+
+    put: async (path, body) => {
+        const res = await fetch(`${API_URL}/api${path}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || res.statusText);
+        return data;
+    },
+
+    delete: async (path) => {
+        const res = await fetch(`${API_URL}/api${path}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || res.statusText);
+        return data;
     }
 };
 
