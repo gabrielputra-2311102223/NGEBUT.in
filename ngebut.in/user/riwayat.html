@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -82,7 +82,7 @@
     <script src="../assets/js/script.js"></script>
     <script>
     const user = getCurrentUser();
-    if (!user) window.location.href = '../login.html';
+    if (!user || user.role !== 'user') window.location.href = '../login.html';
 
     document.getElementById('userProfile').innerHTML = `
         <div class="user-avatar" id="userAvatar"></div>
@@ -93,164 +93,107 @@
     `;
     renderAvatar('#userAvatar', user.nama, user.foto_profil, 50);
 
-    function renderRiwayat() {
-        // ✔ pastikan status auto update dulu
-        syncAutoDone();
+    let allBookings = [];
 
-        // ✔ ambil data terbaru setelah update
-        const allBookings = getBooking();
+    function statusBadgeHTML(status) {
+        const map = {
+            completed: { label: '✅ Selesai',    bg: '#dcfce7', color: '#166534' },
+            returning: { label: '↩️ Kembali',    bg: '#ede9fe', color: '#5b21b6' },
+            rejected:  { label: '❌ Ditolak',    bg: '#fee2e2', color: '#991b1b' },
+            cancelled: { label: '🚫 Dibatalkan', bg: '#f3f4f6', color: '#374151' },
+        };
+        const s = map[status] || { label: (status||'-').toUpperCase(), bg: '#f3f4f6', color: '#374151' };
+        return `<span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${s.bg};color:${s.color};">${s.label}</span>`;
+    }
 
-        const bookings = allBookings.filter(b => 
-            String(b.userId) === String(user.id) && 
-            ['done', 'cancelled', 'rejected', 'returning'].includes(b.status)
-        );
-        
-        const tbody = document.getElementById('riwayatList');
-        const thead = document.querySelector('.data-table thead');
-        
-        if (bookings.length === 0) {
-            if(thead) thead.style.display = 'none';
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--gray-500); border: none;">
-                <i class="fas fa-history" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
-                <h3>Belum ada riwayat booking</h3>
-            </td></tr>`;
-            return;
-        }
+    async function renderRiwayat() {
+        try {
+            const data = await ApiClient.get(`/bookings/my/${user.id}`);
+            allBookings = Array.isArray(data) ? data : [];
+            // Riwayat = semua yang bukan aktif (pending/confirmed)
+            const riwayat = allBookings
+                .filter(b => ['completed','returning','cancelled','rejected'].includes(b.status))
+                .sort((a, b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
 
-        if(thead) {
-            thead.style.display = '';
-            // For mobile compatibility, ensure headers are visible
-            thead.style.display = 'table-header-group'; 
-        }
+            const tbody = document.getElementById('riwayatList');
 
-        tbody.innerHTML = bookings
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .map(b => `
-                <tr>
-                    <td><strong>${b.motorName}</strong></td>
+            if (riwayat.length === 0) {
+                document.querySelector('.data-table thead').style.display = 'none';
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:3rem;border:none;">
+                    <i class="fas fa-history" style="font-size:3rem;opacity:0.3;display:block;margin-bottom:1rem;"></i>
+                    <h3 style="color:#9ca3af;">Belum ada riwayat transaksi</h3>
+                    <a href="booking.html" class="btn btn-primary" style="margin-top:1rem;display:inline-block;">
+                        <i class="fas fa-motorcycle"></i> Mulai Sewa
+                    </a>
+                </td></tr>`;
+                return;
+            }
+
+            document.querySelector('.data-table thead').style.display = '';
+            tbody.innerHTML = riwayat.map(b => {
+                const total = b.totalHarga || 0;
+                const dp = b.dpAmount || 0;
+                const pelunasan = b.pelunasanAmount || (total - dp);
+                return `<tr>
+                    <td><strong>${b.motorName||'-'}</strong><br><small style="color:#9ca3af;">${b.motorKategori||''}</small></td>
                     <td>${formatShortDate(b.startDate)}</td>
                     <td>${formatShortDate(b.endDate)}</td>
-                    <td>${formatRupiah(b.totalHarga)}</td>
-                    <td>${getStatusBadge(b.status)}</td>
                     <td>
-                        <button class="btn btn-outline" style="padding: 0.5rem 1rem;" onclick="downloadInvoice(${b.id})">
-                            <i class="fas fa-file-pdf"></i> Kwitansi
-                        </button>
+                        <strong>${formatRupiah(total)}</strong><br>
+                        <small style="color:#059669;font-size:11px;">DP: ${formatRupiah(dp)}</small><br>
+                        <small style="color:#cc0000;font-size:11px;">Sisa: ${formatRupiah(pelunasan)}</small>
                     </td>
-                </tr>
-            `).join('');
-    }
-
-    async function downloadInvoice(bookingId) {
-        const bookings = getBooking();
-        const booking = bookings.find(b => String(b.id) === String(bookingId));
-        if(!booking) return;
-
-        const days = calculateDays(booking.startDate, booking.endDate);
-        const tarif = booking.totalHarga / days;
-
-        document.getElementById("invoiceContent").innerHTML = `
-            <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; background: white; color: #1a1a1a; max-width: 800px; margin: auto; border: 1px solid #eee;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px;">
-                    <div>
-                        <img src="../assets/img/logo.png" alt="Ngebut.in" style="height: 60px; margin-bottom: 15px; mix-blend-mode: multiply;">
-                        <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
-                            Jl. DI Panjaitan No. 128<br>
-                            Purwokerto Selatan, Banyumas<br>
-                            Telp: (022) 123-4567<br>
-                            Halo@ngebut.in
-                        </p>
-                    </div>
-                    <div style="text-align: right;">
-                        <h1 style="margin: 0; color: #cc0000; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">KUITANSI</h1>
-                        <p style="font-size: 16px; font-weight: 600; margin: 5px 0 0;">#${booking.id.toString().slice(-6)}</p>
-                        <p style="font-size: 14px; color: #666; margin: 5px 0 0;">${formatDate(new Date())}</p>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; padding: 25px; background: #f9fafb; border-radius: 12px;">
-                    <div>
-                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Ditujukan Kepada</h4>
-                        <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.userName}</p>
-                        <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Penyewa Terverifikasi</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Status Pembayaran</h4>
-                        <span style="display: inline-block; padding: 6px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-weight: 700; font-size: 12px;">LUNAS</span>
-                    </div>
-                </div>
-
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid #1a1a1a;">
-                            <th style="text-align: left; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Deskripsi Unit</th>
-                            <th style="text-align: center; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Durasi</th>
-                            <th style="text-align: right; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 25px 0;">
-                                <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.motorName}</p>
-                                <p style="margin: 5px 0 0; color: #666; font-size: 13px;">Sewa Motor ${formatShortDate(booking.startDate)} - ${formatShortDate(booking.endDate)}</p>
-                            </td>
-                            <td style="text-align: center; padding: 25px 0; font-weight: 600;">${days} Hari</td>
-                            <td style="text-align: right; padding: 25px 0; font-weight: 700; font-size: 16px;">${formatRupiah(booking.totalHarga)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 60px;">
-                    <div style="width: 250px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                            <span style="color: #666;">Subtotal</span>
-                            <span style="font-weight: 600;">${formatRupiah(booking.totalHarga)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding-top: 15px; border-top: 2px solid #1a1a1a;">
-                            <span style="font-weight: 800; font-size: 18px;">TOTAL</span>
-                            <span style="font-weight: 800; font-size: 18px; color: #cc0000;">${formatRupiah(booking.totalHarga)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: #999;">
-                    <div>
-                        <p style="margin: 0;"><b>Catatan:</b></p>
-                        <p style="margin: 5px 0 0;">Kuitansi ini adalah bukti pembayaran yang sah dan dihasilkan secara otomatis oleh sistem.</p>
-                    </div>
-                    <div style="text-align: center; min-width: 150px;">
-                        <div style="margin-bottom: 10px; height: 40px;">
-                             <img src="../assets/img/logo.png" style="height: 30px; opacity: 0.3; filter: grayscale(1);">
-                        </div>
-                        <p style="margin: 0; font-weight: 700; color: #666;">NGEBUT.IN OFFICIAL</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const template = document.getElementById("invoiceTemplate");
-        template.style.display = "block"; // temporarily show to render
-        
-        try {
-            const { jsPDF } = window.jspdf;
-            const canvas = await html2canvas(document.getElementById("invoiceContent"), {
-                scale: 2,
-                useCORS: true
-            });
-            const imgData = canvas.toDataURL("image/png");
-            const pdf = new jsPDF("p", "mm", "a4");
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Kuitansi_NgebutIN_${booking.id}.pdf`);
-        } catch (error) {
-            console.error("PDF Error", error);
-            alert("Gagal mengunduh kwitansi");
-        } finally {
-            template.style.display = "none";
+                    <td>${statusBadgeHTML(b.status)}</td>
+                    <td>
+                        ${b.status === 'completed'
+                            ? `<button class="btn btn-outline" style="padding:0.4rem 0.8rem;font-size:12px;" onclick="viewKwitansi(${b.id})">
+                                <i class="fas fa-receipt"></i> Kwitansi
+                              </button>`
+                            : '<span style="color:#9ca3af;font-size:12px;">—</span>'
+                        }
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (e) {
+            document.getElementById('riwayatList').innerHTML = `<tr><td colspan="6" style="text-align:center;color:red;">Gagal memuat: ${e.message}</td></tr>`;
         }
     }
 
-    renderRiwayat();
-    setInterval(renderRiwayat, 30000);
-</script>
+    function viewKwitansi(bookingId) {
+        const b = allBookings.find(x => String(x.id) === String(bookingId));
+        if (!b) return;
+        const total = b.totalHarga || 0;
+        const dp = b.dpAmount || 0;
+        const pelunasan = b.pelunasanAmount || (total - dp);
+        const days = calculateDays(b.startDate, b.endDate);
+        const win = window.open('', '_blank');
+        win.document.write(`<!DOCTYPE html><html><head><title>Kwitansi #${String(b.id).slice(-6)}</title>
+        <style>
+            body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;}
+            .header{text-align:center;border-bottom:3px solid #cc0000;padding-bottom:15px;margin-bottom:20px;}
+            .logo{font-size:28px;font-weight:900;color:#cc0000;}
+            .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+            .label{color:#666;font-size:14px;} .value{font-weight:600;font-size:14px;}
+            .total-box{background:#fff5f5;padding:14px;border-radius:8px;margin-top:16px;}
+            .lunas{text-align:center;margin:20px 0;padding:12px;background:#dcfce7;border-radius:8px;color:#166534;font-weight:700;font-size:20px;}
+            @media print{button{display:none}}
+        </style></head><body>
+        <div class="header"><div class="logo">🏍️ NGEBUT.IN</div>
+        <h3 style="margin:8px 0;color:#333;">KWITANSI SEWA MOTOR</h3>
+        <small style="color:#666;">No. Transaksi: <strong>#${String(b.id).slice(-6)}</strong></small></div>
+        <div class="row"><span class="label">Tanggal</span><span class="value">${new Date(b.createdAt).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</span></div>
+        <div class="row"><span class="label">Penyewa</span><span class="value">${b.userName||user.nama}</span></div>
+        <div class="row"><span class="label">Motor</span><span class="value">${b.motorName||'-'} (${b.motorKategori||'-'})</span></div>
+        <div class="row"><span class="label">Tanggal Mulai</span><span class="value">${b.startDate||'-'}</span></div>
+        <div class="row"><span class="label">Tanggal Kembali</span><span class="value">${b.endDate||'-'}</span></div>
+        <div class="row"><span class="label">Durasi</span><span class="value">${days} hari</span></div>
+        <div class="total-box">
+            <div class="row" style="border:none;padding:4px 0;"><span class="label">Total Sewa</span><span class="value">Rp ${Number(total).toLocaleString('id-ID')}</span></div>
+            <div class="row" style="border:none;padding:4px 0;"><span class="label">DP (50%)</span><span class="value" style="color:#059669;">Rp ${Number(dp).toLocaleString('id-ID')}</span></div>
+            <div class="row" style="border:none;padding:4px 0;"><span class="label">Pelunasan (50%)</span><span class="value" style="color:#cc0000;">Rp ${Number(pelunasan).toLocaleString('id-ID')}</span></div>
+        </div>
+        <div class="lunas">✅ LUNAS</div>
+        <p style="text-align:center;color:#9ca3af;font-size:12px;">Terima kasih telah menggunakan layanan NGEBUT.IN</p>
+        <div style="text-align:center;margin-top:16px;">
+            <button onclick="window.print()" style="background:#cc0000;color:#fff;border:none;padding:12px 28px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">🖨️ Cetak / Simpan PDF</button>
+        </div></body></html>`);

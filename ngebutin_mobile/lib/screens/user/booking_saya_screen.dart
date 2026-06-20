@@ -171,11 +171,13 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
     );
   }
 
-  List<dynamic> _getFiltered(List<dynamic> all) {
-    if (_filter == 'active') return all.where((b) => ['pending', 'confirmed', 'returning'].contains(b['status'])).toList();
-    if (_filter == 'pending') return all.where((b) => b['status'] == 'pending').toList();
-    if (_filter == 'completed') return all.where((b) => b['status'] == 'completed').toList();
-    return all;
+  List<Map<String, dynamic>> _getFiltered(List<dynamic> all) {
+    List<Map<String, dynamic>> cast(List<dynamic> lst) =>
+        lst.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    if (_filter == 'active') return cast(all.where((b) => ['pending', 'confirmed', 'returning'].contains(b['status'])).toList());
+    if (_filter == 'pending') return cast(all.where((b) => b['status'] == 'pending').toList());
+    if (_filter == 'completed') return cast(all.where((b) => b['status'] == 'completed').toList());
+    return cast(all);
   }
 
   @override
@@ -244,7 +246,7 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
                           itemCount: filtered.length,
-                          itemBuilder: (ctx, i) => _buildBookingCard(filtered[i], bp),
+                          itemBuilder: (ctx, i) => _buildBookingCard(filtered[i] as Map<String, dynamic>, bp),
                         ),
                 ),
               ],
@@ -275,15 +277,13 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
     );
   }
 
-  Widget _buildBookingCard(dynamic raw, BookingProvider bp) {
-    final b = Map<String, dynamic>.from(raw);
+  Widget _buildBookingCard(Map<String, dynamic> b, BookingProvider bp) {
     final st = b['status'] ?? '';
     final sp = b['statusPembayaran'] ?? b['status_pembayaran'] ?? '';
-    final total = (b['totalHarga'] ?? b['total_harga'] ?? 0) as num;
-    final dp = (b['dpAmount'] ?? b['dp_amount'] ?? 0) as num;
-    final pelunasan = (b['pelunasanAmount'] ?? (total - dp)) as num;
+    final total = ((b['totalHarga'] ?? b['total_harga'] ?? 0) as num);
+    final dp = ((b['dpAmount'] ?? b['dp_amount'] ?? 0) as num);
+    final pelunasan = ((b['pelunasanAmount'] ?? (total - dp)) as num);
     final motor = b['motorName'] ?? b['motor_name'] ?? 'Motor';
-    final userName = b['userName'] ?? '';
     final bookingId = (b['id'] as num).toInt();
     final days = _calcDays(b['startDate'] ?? b['tgl_mulai'], b['endDate'] ?? b['tgl_selesai']);
 
@@ -406,7 +406,7 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
     );
   }
 
-  Widget _buildActions(Map b, BookingProvider bp, int bookingId, int dpAmount, int pelunasanAmount) {
+  Widget _buildActions(Map<String, dynamic> b, BookingProvider bp, int bookingId, int dpAmount, int pelunasanAmount) {
     final st = b['status'] ?? '';
     final sp = b['statusPembayaran'] ?? b['status_pembayaran'] ?? '';
 
@@ -587,7 +587,7 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
     );
   }
 
-  void _showKwitansi(Map b) {
+  void _showKwitansi(Map<String, dynamic> b) {
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => KwitansiScreen(booking: b),
     ));

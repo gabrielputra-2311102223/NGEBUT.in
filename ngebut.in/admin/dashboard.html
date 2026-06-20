@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -41,11 +41,11 @@
                 <i class="fas fa-motorcycle"></i> Kelola Kendaraan
             </a>
             <a href="booking.html" class="nav-item">
-                <i class="fas fa-calendar-check"></i> Approval Booking
-                <span id="pendingBadge" class="pending-badge" style="margin-left: auto; background: var(--danger); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem;">0</span>
+                <i class="fas fa-shield-check"></i> Verifikasi DP
+                <span id="pendingBadge" class="pending-badge" style="margin-left: auto; background: var(--danger); color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; display:none;">0</span>
             </a>
             <a href="pembayaran.html" class="nav-item">
-                <i class="fas fa-credit-card"></i> Pembayaran
+                <i class="fas fa-money-bill-wave"></i> Konfirmasi Pelunasan
             </a>
             <a href="users.html" class="nav-item">
                 <i class="fas fa-users"></i> Manajemen User
@@ -242,186 +242,147 @@
     <script src="../assets/js/api-client.js"></script>
     <script src="../assets/js/script.js"></script>
     <script>
-        // Proteksi halaman admin
         const user = getCurrentUser();
-        if (!user || user.role !== 'admin') {
-            window.location.href = '../login.html';
-        }
+        if (!user || user.role !== 'admin') window.location.href = '../login.html';
 
-        // Render avatar admin
-        document.getElementById('adminAvatar').style.width = '50px';
-        document.getElementById('adminAvatar').style.height = '50px';
-        document.getElementById('adminAvatar').style.fontSize = '20px';
+        const avatarEl = document.getElementById('adminAvatar');
+        avatarEl.style.width = '50px'; avatarEl.style.height = '50px'; avatarEl.style.fontSize = '20px';
         renderAvatar('#adminAvatar', user.nama, user.foto_profil, 50);
 
-        // Update tanggal & waktu
         function updateDateTime() {
-            const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            document.getElementById('currentDateTime').innerText = now.toLocaleDateString('id-ID', options);
+            document.getElementById('currentDateTime').innerText = new Date().toLocaleDateString('id-ID', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
         }
         updateDateTime();
-        setInterval(updateDateTime, 1000);
+        setInterval(updateDateTime, 60000);
 
-        // Render dashboard
-        function renderDashboard() {
-            const motors = getMotor();
-            const bookings = getBooking();
-            const users = getUsers();
-            
-            // Stats motor
-            document.getElementById('totalMotor').innerText = motors.length;
-            document.getElementById('availableMotor').innerText = motors.filter(m => m.status === 'available').length;
-            
-            // Stats booking
-            const pending = bookings.filter(b => b.status === 'confirm').length;
-            const active = bookings.filter(b => b.status === 'booked').length;
-            const paid = bookings.filter(b => b.status === 'paid').length;
-            const returning = bookings.filter(b => b.status === 'returning').length;
-            const completed = bookings.filter(b => b.status === 'done').length;
-            
-            document.getElementById('pendingBooking').innerText = pending;
-            document.getElementById('activeBooking').innerText = active;
-            document.getElementById('paidBooking').innerText = paid;
-            document.getElementById('returningBooking').innerText = returning;
-            document.getElementById('completedBooking').innerText = completed;
-            
-            // Update badge pending di sidebar
-            const badge = document.getElementById('pendingBadge');
-            if (badge) {
-                badge.innerText = pending;
-                badge.style.display = pending > 0 ? 'inline-block' : 'none';
-            }
-            
-            // Recent bookings (5 terbaru)
-            const recentBookings = [...bookings]
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                .slice(0, 5);
-            
-            const tableBody = document.getElementById('recentBookingsTable');
-            if (recentBookings.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--gray-500);">Belum ada booking</td></tr>`;
-            } else {
-                tableBody.innerHTML = recentBookings.map(b => {
-                    const now = new Date();
-                    const endDateObj = new Date(b.endDate);
-                    now.setHours(0,0,0,0);
-                    endDateObj.setHours(0,0,0,0);
-                    
-                    let lateBadge = "";
-                    if (b.status === "paid" && now > endDateObj) {
-                        const lateDays = Math.ceil((now - endDateObj) / (1000 * 60 * 60 * 24));
-                        lateBadge = `<div style="color: var(--danger); font-size: 0.75rem; margin-top: 4px; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> Telat ${lateDays} hr</div>`;
-                    }
+        function getStatusBadge(status) {
+            const map = {
+                pending:   { label: '⏳ Menunggu DP',   bg: '#fef9c3', color: '#854d0e' },
+                confirmed: { label: '🏍️ Aktif Sewa',    bg: '#dcfce7', color: '#166534' },
+                returning: { label: '↩️ Kembali',        bg: '#ede9fe', color: '#5b21b6' },
+                completed: { label: '✅ Selesai',         bg: '#dcfce7', color: '#166534' },
+                rejected:  { label: '❌ Ditolak',         bg: '#fee2e2', color: '#991b1b' },
+                cancelled: { label: '🚫 Dibatalkan',      bg: '#f3f4f6', color: '#374151' },
+            };
+            const s = map[status] || { label: (status||'').toUpperCase(), bg: '#f3f4f6', color: '#374151' };
+            return `<span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${s.bg};color:${s.color};">${s.label}</span>`;
+        }
 
-                    return `
-                    <tr>
-                        <td><code>#${b.id.toString().slice(-6)}</code></td>
-                        <td><strong>${b.userName}</strong></td>
-                        <td>${b.motorName}</td>
-                        <td>${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}${lateBadge}</td>
-                        <td>${formatRupiah(b.totalHarga)}</td>
-                        <td>${getStatusBadge(b.status)}</td>
-                    </tr>
-                    `;
-                }).join('');
+        async function renderDashboard() {
+            try {
+                const [bookings, motors, users] = await Promise.all([
+                    ApiClient.get('/bookings'),
+                    ApiClient.get('/motors'),
+                    ApiClient.get('/users'),
+                ]);
+
+                // Motor stats
+                document.getElementById('totalMotor').innerText = motors.length;
+                document.getElementById('availableMotor').innerText = motors.filter(m => m.status === 'available').length;
+
+                // Booking stats — new status values
+                const pending   = bookings.filter(b => b.status === 'pending').length;
+                const active    = bookings.filter(b => b.status === 'confirmed').length;
+                const returning = bookings.filter(b => b.status === 'returning').length;
+                const completed = bookings.filter(b => b.status === 'completed').length;
+                const lunas     = bookings.filter(b => (b.statusPembayaran || b.status_pembayaran) === 'lunas').length;
+
+                document.getElementById('pendingBooking').innerText   = pending;
+                document.getElementById('activeBooking').innerText    = active;
+                document.getElementById('returningBooking').innerText = returning;
+                document.getElementById('completedBooking').innerText = completed;
+                document.getElementById('paidBooking').innerText      = lunas;
+
+                const badge = document.getElementById('pendingBadge');
+                if (badge) {
+                    const needVerif = bookings.filter(b => b.status === 'pending' && (b.statusPembayaran === 'dp_uploaded'));
+                    badge.innerText = needVerif.length || '';
+                    badge.style.display = needVerif.length > 0 ? 'inline-block' : 'none';
+                }
+
+                // Recent bookings
+                const recent = [...bookings]
+                    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                    .slice(0, 8);
+
+                const tbody = document.getElementById('recentBookingsTable');
+                if (recent.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-500);">Belum ada booking</td></tr>`;
+                } else {
+                    tbody.innerHTML = recent.map(b => `
+                        <tr>
+                            <td><code>#${String(b.id).slice(-6)}</code></td>
+                            <td><strong>${b.userName || '-'}</strong></td>
+                            <td>${b.motorName || '-'}</td>
+                            <td style="font-size:12px;">${formatShortDate(b.startDate)} – ${formatShortDate(b.endDate)}</td>
+                            <td><strong>${formatRupiah(b.totalHarga || 0)}</strong></td>
+                            <td>${getStatusBadge(b.status)}</td>
+                        </tr>`).join('');
+                }
+
+                // Pendapatan — hanya dari booking completed
+                const now       = new Date();
+                const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0,0,0,0);
+                const monthStart= new Date(now.getFullYear(), now.getMonth(), 1);
+
+                let incomeToday = 0, incomeWeek = 0, incomeMonth = 0, incomeTotal = 0;
+                bookings.filter(b => b.status === 'completed').forEach(b => {
+                    const d = new Date(b.createdAt || 0);
+                    const amt = b.totalHarga || 0;
+                    incomeTotal += amt;
+                    if (d >= today)     incomeToday += amt;
+                    if (d >= weekStart) incomeWeek  += amt;
+                    if (d >= monthStart)incomeMonth += amt;
+                });
+
+                document.getElementById('incomeToday').innerText  = formatRupiah(incomeToday);
+                document.getElementById('incomeWeek').innerText   = formatRupiah(incomeWeek);
+                document.getElementById('incomeMonth').innerText  = formatRupiah(incomeMonth);
+                document.getElementById('incomeTotal').innerText  = formatRupiah(incomeTotal);
+
+                // Statistik pelanggan
+                const customers  = users.filter(u => u.role === 'user');
+                const newMonth   = customers.filter(u => new Date(u.createdAt || 0) >= monthStart).length;
+                const totalTrans = bookings.filter(b => b.status === 'completed').length;
+                const avgTrans   = totalTrans > 0 ? Math.round(incomeTotal / totalTrans) : 0;
+
+                document.getElementById('totalCustomers').innerText   = customers.length;
+                document.getElementById('newCustomers').innerText     = newMonth;
+                document.getElementById('totalTransactions').innerText= totalTrans;
+                document.getElementById('avgTransaction').innerText   = formatRupiah(avgTrans);
+
+            } catch (e) {
+                console.error('Dashboard error:', e);
             }
-            
-            // Kalkulasi pendapatan
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - now.getDay());
-            weekStart.setHours(0, 0, 0, 0);
-            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            
-            let incomeToday = 0, incomeWeek = 0, incomeMonth = 0, incomeTotal = 0;
-            
-            bookings.filter(b => b.status === 'paid' || b.status === 'done').forEach(b => {
-                const bookingDate = new Date(b.createdAt);
-                const amount = b.totalHarga || 0;
-                
-                incomeTotal += amount;
-                
-                if (bookingDate >= today) incomeToday += amount;
-                if (bookingDate >= weekStart) incomeWeek += amount;
-                if (bookingDate >= monthStart) incomeMonth += amount;
-            });
-            
-            document.getElementById('incomeToday').innerText = formatRupiah(incomeToday);
-            document.getElementById('incomeWeek').innerText = formatRupiah(incomeWeek);
-            document.getElementById('incomeMonth').innerText = formatRupiah(incomeMonth);
-            document.getElementById('incomeTotal').innerText = formatRupiah(incomeTotal);
-            
-            // Statistik pelanggan
-            const customers = users.filter(u => u.role === 'user');
-            const newThisMonth = customers.filter(u => {
-                const created = new Date(u.createdAt);
-                return created >= monthStart;
-            }).length;
-            
-            const totalTrans = bookings.filter(b => b.status === 'paid' || b.status === 'done').length;
-            const avgTrans = totalTrans > 0 ? incomeTotal / totalTrans : 0;
-            
-            document.getElementById('totalCustomers').innerText = customers.length;
-            document.getElementById('newCustomers').innerText = newThisMonth;
-            document.getElementById('totalTransactions').innerText = totalTrans;
-            document.getElementById('avgTransaction').innerText = formatRupiah(avgTrans);
         }
 
         function exportToCSV() {
-            const bookings = getBooking();
-            if (bookings.length === 0) {
-                alert("Tidak ada data transaksi untuk diexport!");
-                return;
-            }
-
-            const exportDate = new Date().toLocaleString('id-ID');
-            // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
-            let csvContent = "\uFEFFsep=,\n"; 
-            csvContent += `LAPORAN TRANSAKSI NGEBUT.IN,,,Exported: ${exportDate}\n\n`;
-            csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga (Rp),Status\n";
-
-            bookings.forEach(b => {
-                const days = calculateDays(b.startDate, b.endDate);
-                const tglSewa = b.startDate ? b.startDate.split('T')[0] : '-';
-                const tglKembali = b.endDate ? b.endDate.split('T')[0] : '-';
-                
-                const row = [
-                    `#${b.id.toString().slice(-6)}`,
-                    `"${b.userName}"`,
-                    `"${b.motorName}"`,
-                    tglSewa,
-                    tglKembali,
-                    `"${days} Hari"`,
-                    b.totalHarga, // Angka murni agar Excel bisa hitung
-                    b.status.toUpperCase()
-                ].join(",");
-                csvContent += row + "\n";
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Laporan_NgebutIN_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            ApiClient.get('/bookings').then(bookings => {
+                if (!bookings || bookings.length === 0) { alert('Tidak ada data!'); return; }
+                const headers = ['ID', 'Penyewa', 'Motor', 'Tgl Mulai', 'Tgl Selesai', 'Total', 'Status'];
+                const rows = bookings.map(b => [
+                    `#${String(b.id).slice(-6)}`,
+                    `"${b.userName||''}"`, `"${b.motorName||''}"`,
+                    b.startDate||'', b.endDate||'', b.totalHarga||0, (b.status||'').toUpperCase()
+                ]);
+                downloadCSV(`Laporan_NgebutIN_${new Date().toISOString().split('T')[0]}.csv`, headers, rows, 'Laporan Dashboard Admin');
+            }).catch(e => alert('Gagal export: ' + e.message));
         }
 
         renderDashboard();
-        // Auto-refresh setiap 30 detik
-        setInterval(renderDashboard, 30000);
+        // NO auto-refresh setInterval — cegah auto-scroll
+
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.toggle('open');
+            document.getElementById('sidebarOverlay')?.classList.toggle('show');
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.remove('open');
+            document.getElementById('sidebarOverlay')?.classList.remove('show');
+        });
     </script>
 </body>
 </html>
