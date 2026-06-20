@@ -19,27 +19,30 @@ class BookingProvider with ChangeNotifier {
   }
 
   Future<void> fetchMyBookings(int userId) async {
-    if (_isLoading) return; // cegah race condition concurrent calls
+    if (_isLoading) return;
     _isLoading = true;
     notifyListeners();
     try {
-      final response = await ApiClient.get('/bookings');
-      final List<dynamic> allBookings = List<dynamic>.from(response);
-      final uidStr = userId.toString();
-      final newBookings = allBookings
-          .where((b) {
-            final bId = (b['userId'] ?? b['user_id']);
-            return bId?.toString() == uidStr;
-          })
-          .toList();
+      // Gunakan endpoint dedicated per user untuk efisiensi
+      final response = await ApiClient.get('/bookings/my/$userId');
+      final newBookings = List<dynamic>.from(response);
       newBookings.sort((a, b) =>
           _safeParseDate(b['createdAt']).compareTo(_safeParseDate(a['createdAt'])));
-      // Hanya update jika ada data, atau jika sebelumnya kosong
-      if (newBookings.isNotEmpty || _bookings.isEmpty) {
-        _bookings = newBookings;
-      }
+      _bookings = newBookings;
     } catch (e) {
-      // Jangan kosongkan bookings saat error agar banner tetap tampil
+      // Fallback: fetch all dan filter
+      try {
+        final all = await ApiClient.get('/bookings');
+        final uidStr = userId.toString();
+        _bookings = List<dynamic>.from(all).where((b) {
+          final bId = (b['userId'] ?? b['user_id']);
+          return bId?.toString() == uidStr;
+        }).toList();
+        _bookings.sort((a, b) =>
+            _safeParseDate(b['createdAt']).compareTo(_safeParseDate(a['createdAt'])));
+      } catch (_) {
+        // Jangan kosongkan data lama saat error
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -62,10 +65,10 @@ class BookingProvider with ChangeNotifier {
     }
   }
 
-  Future<int> createBooking(int userId, int motorId, String startDate, String endDate, int totalHarga) async {
+  Future<Map<String, dynamic>> createBooking(
+      int userId, int motorId, String startDate, String endDate, int totalHarga) async {
     _isLoading = true;
     notifyListeners();
-    
     try {
       final response = await ApiClient.post('/bookings', {
         'user_id': userId,
@@ -74,21 +77,26 @@ class BookingProvider with ChangeNotifier {
         'tgl_selesai': endDate,
         'total_harga': totalHarga,
       });
-      // API returns { bookingId, dpAmount, message }
-      final id = response['bookingId'] ?? response['id'] ?? 0;
-      return (id as num).toInt();
+      final id = (response['bookingId'] ?? response['id'] ?? 0) as num;
+      final dp = (response['dpAmount'] ?? response['dp_amount'] ?? 0) as num;
+      final pelunasan = (response['pelunasanAmount'] ?? 0) as num;
+      return {
+        'bookingId': id.toInt(),
+        'dpAmount': dp.toInt(),
+        'pelunasanAmount': pelunasan.toInt(),
+      };
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
+  /// Upload bukti DP
   Future<void> uploadDp(int bookingId, String base64Image) async {
     _isLoading = true;
     notifyListeners();
-    
     try {
-      await ApiClient.put('/bookings/$bookingId/dp', {
+      await ApiClient.put('/bookings/$bookingId/upload-dp', {
         'dp_bukti': base64Image,
       });
     } finally {
@@ -97,6 +105,97 @@ class BookingProvider with ChangeNotifier {
     }
   }
 
+  /// Upload bukti pelunasan
+  Future<void> uploadPelunasan(int bookingId, String base64Image) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/bookings/$bookingId/upload-pelunasan', {
+        'bukti_pelunasan': base64Image,
+      });
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Admin: Approve DP
+  Future<void> approveDP(int bookingId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/bookings/$bookingId/approve-dp', {});
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Admin: Reject DP
+  Future<void> rejectDP(int bookingId, {String? alasan}) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/bookings/$bookingId/reject-dp', {
+        'catatan_admin': alasan ?? 'Bukti DP tidak valid',
+      });
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Admin: Konfirmasi motor dikembalikan
+  Future<void> confirmReturn(int bookingId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/bookings/$bookingId/return', {});
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Admin: Approve pelunasan
+  Future<void> approvePelunasan(int bookingId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/bookings/$bookingId/approve-pelunasan', {});
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Admin: Selesaikan dengan pelunasan tunai
+  Future<void> completeCash(int bookingId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/bookings/$bookingId/complete-cash', {});
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// User/Admin: Cancel booking
+  Future<void> cancelBooking(int bookingId, {String? alasan}) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await ApiClient.put('/bookings/$bookingId/cancel', {
+        'catatan_admin': alasan ?? 'Dibatalkan',
+      });
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Legacy compat
   Future<void> updateBookingStatus(int bookingId, String status) async {
     _isLoading = true;
     notifyListeners();
@@ -109,19 +208,10 @@ class BookingProvider with ChangeNotifier {
   }
 
   Future<void> approveBooking(int bookingId, String action) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      if (action == 'approve') {
-        // Approve DP → PUT /bookings/:id/approve-dp
-        await ApiClient.put('/bookings/$bookingId/approve-dp', {});
-      } else {
-        // Reject → PUT /bookings/:id/status with status=rejected
-        await ApiClient.put('/bookings/$bookingId/status', {'status': 'rejected'});
-      }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    if (action == 'approve') {
+      await approveDP(bookingId);
+    } else {
+      await rejectDP(bookingId);
     }
   }
 }

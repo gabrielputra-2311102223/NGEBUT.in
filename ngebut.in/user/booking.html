@@ -3,9 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Saya - Ngebut.in</title>
+    <title>Sewa Saya - Ngebut.in</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Timeline Status */
+        .timeline-steps {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            margin: 12px 0 8px;
+            padding: 0 4px;
+        }
+        .timeline-steps::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+        .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            z-index: 1;
+            flex: 1;
+            text-align: center;
+        }
+        .step-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            border: 2px solid #e5e7eb;
+            background: #fff;
+            color: #9ca3af;
+            font-weight: 700;
+        }
+        .step-dot.done {
+            background: #059669;
+            border-color: #059669;
+            color: #fff;
+        }
+        .step-dot.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 0 4px rgba(204,0,0,0.15);
+        }
+        .step-label {
+            font-size: 10px;
+            color: #9ca3af;
+            max-width: 52px;
+            line-height: 1.2;
+        }
+        .step-label.done { color: #059669; font-weight: 600; }
+        .step-label.active { color: var(--primary); font-weight: 600; }
+
+        /* Booking Card */
+        .booking-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #f0f0f0;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            transition: box-shadow 0.2s;
+        }
+        .booking-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.09); }
+        .booking-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .booking-id { font-size: 13px; color: #9ca3af; font-family: monospace; }
+        .motor-info { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+        .motor-img { width: 80px; height: 60px; object-fit: cover; border-radius: 10px; background: #f3f4f6; flex-shrink: 0; }
+        .motor-img-placeholder { width: 80px; height: 60px; border-radius: 10px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 28px; flex-shrink: 0; }
+        .motor-details h3 { font-size: 16px; font-weight: 700; margin: 0 0 4px; color: #1f2937; }
+        .motor-details small { font-size: 12px; color: #6b7280; }
+        .booking-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; font-size: 13px; }
+        .booking-meta-item { display: flex; flex-direction: column; gap: 2px; }
+        .meta-label { color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .meta-value { color: #1f2937; font-weight: 600; }
+        .booking-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .btn-booking-action {
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-booking-action.primary { background: var(--primary); color: #fff; }
+        .btn-booking-action.primary:hover { opacity: 0.88; }
+        .btn-booking-action.secondary { background: #f3f4f6; color: #374151; }
+        .btn-booking-action.secondary:hover { background: #e5e7eb; }
+        .btn-booking-action.green { background: #059669; color: #fff; }
+        .btn-booking-action.green:hover { opacity: 0.88; }
+        .info-box {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-box.yellow { background: #fefce8; color: #92400e; border: 1px solid #fde68a; }
+        .info-box.blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .info-box.green { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .info-box.red { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+        .empty-state i { font-size: 4rem; opacity: 0.3; display: block; margin-bottom: 16px; }
+        .filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .filter-pill {
+            padding: 6px 16px;
+            border-radius: 999px;
+            border: 1.5px solid #e5e7eb;
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            transition: all 0.2s;
+        }
+        .filter-pill.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        /* Upload Modal */
+        .upload-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .upload-modal.show { display: flex; }
+        .upload-modal-box { background: #fff; border-radius: 20px; padding: 28px; max-width: 420px; width: 100%; }
+        .upload-modal-box h3 { margin: 0 0 6px; font-size: 18px; }
+        .upload-modal-box p { margin: 0 0 16px; color: #6b7280; font-size: 14px; }
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 28px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+        .upload-area:hover { border-color: var(--primary); }
+        .upload-area.has-file { border-color: #059669; background: #f0fdf4; }
+        .upload-area i { font-size: 2rem; color: #9ca3af; display: block; margin-bottom: 8px; }
+        .upload-area.has-file i { color: #059669; }
+        #uploadPreview { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; margin-top: 8px; display: none; }
+        .bank-info { background: #eff6ff; padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 13px; }
+        .bank-info strong { color: var(--primary); font-size: 15px; display: block; margin-bottom: 4px; }
+        .btn-close-modal { position: absolute; top: 14px; right: 14px; background: none; border: none; font-size: 22px; cursor: pointer; color: #9ca3af; }
+    </style>
 </head>
 <body class="dashboard-layout">
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -14,280 +190,477 @@
         <img src="../assets/img/logo.png" alt="Logo" style="height: 35px; mix-blend-mode: multiply;">
         <div style="width: 24px;"></div>
     </div>
-    
+
     <aside class="sidebar">
         <div class="sidebar-header">
             <a href="../index.html" class="logo" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-                <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+                <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply;">
             </a>
-            <div class="user-profile" id="userProfile"></div>
+            <div class="user-profile" id="userProfileSidebar"></div>
         </div>
-        
         <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item">
-                <i class="fas fa-home"></i> Dashboard
-            </a>
-            <a href="booking.html" class="nav-item active">
-                <i class="fas fa-calendar-alt"></i> Booking Saya
-            </a>
-            <a href="riwayat.html" class="nav-item">
-                <i class="fas fa-history"></i> Riwayat
-            </a>
-            <a href="profil.html" class="nav-item">
-                <i class="fas fa-user-circle"></i> Profil
-            </a>
-            <a href="#" class="nav-item logout" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i> Beranda</a>
+            <a href="booking.html" class="nav-item active"><i class="fas fa-motorcycle"></i> Sewa Saya</a>
+            <a href="riwayat.html" class="nav-item"><i class="fas fa-history"></i> Riwayat</a>
+            <a href="profil.html" class="nav-item"><i class="fas fa-user-circle"></i> Profil</a>
+            <a href="#" class="nav-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
     </aside>
 
     <main class="main-content">
         <div class="page-header">
             <div class="page-title">
-                <h1>Booking Saya</h1>
-                <p>Pantau status penyewaan motor Anda</p>
+                <h1>🏍️ Sewa Saya</h1>
+                <p>Pantau status penyewaan motor Anda secara real-time</p>
             </div>
+            <button class="btn-secondary" onclick="loadBookings()"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
 
-        <div id="notificationArea"></div>
-
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Motor</th>
-                        <th>Tanggal Sewa</th>
-                        <th>Durasi</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="bookingList">
-                    <tr><td colspan="6" style="text-align: center; padding: 2rem;">Memuat data...</td></tr>
-                </tbody>
-            </table>
+        <!-- Filter Tabs -->
+        <div class="filter-pills">
+            <button class="filter-pill active" onclick="setFilter('active', this)">⚡ Aktif</button>
+            <button class="filter-pill" onclick="setFilter('all', this)">📋 Semua</button>
+            <button class="filter-pill" onclick="setFilter('pending', this)">⏳ Menunggu</button>
+            <button class="filter-pill" onclick="setFilter('completed', this)">✅ Selesai</button>
         </div>
+
+        <div id="bookingCards"></div>
     </main>
 
-    <!-- DP MODAL -->
-    <div id="dpModal" class="modal-overlay" style="display: none;">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Bayar DP (Down Payment)</h3>
-                <button class="modal-close" onclick="closeDpModal()">&times;</button>
+    <!-- Upload DP Modal -->
+    <div class="upload-modal" id="dpModal">
+        <div class="upload-modal-box" style="position:relative;">
+            <button class="btn-close-modal" onclick="closeModal('dpModal')">&times;</button>
+            <h3>💳 Upload Bukti DP</h3>
+            <p>Booking <strong id="dp-booking-id"></strong> • <strong id="dp-motor-name"></strong></p>
+
+            <div class="bank-info">
+                <strong>Transfer ke Rekening:</strong>
+                BCA: 1234567890 a.n. NGEBUT.IN
             </div>
-            <div class="modal-body">
-                <p>Transfer tepat <strong><span id="dpAmountText" style="color: var(--primary); font-size: 1.25rem; font-weight: bold;"></span></strong> ke rekening berikut:</p>
-                <div style="background: var(--gray-100); padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">
-                    <p style="font-weight: bold; font-size: 1.2rem; letter-spacing: 2px;">BCA 1234567890</p>
-                    <p style="color: var(--gray-500); font-size: 0.9rem;">a.n. PT Ngebut Indonesia</p>
-                </div>
-                <div class="form-group">
-                    <label>Upload Bukti Transfer</label>
-                    <input type="file" id="buktiDP" accept="image/*" class="form-control" style="padding: 10px;">
-                </div>
+
+            <div class="bank-info" style="background:#fff3cd;border-left:3px solid #f59e0b;">
+                <strong style="color:#b45309;">Jumlah DP:</strong>
+                <span id="dp-amount-display" style="font-size:18px;font-weight:700;color:#cc0000;"></span>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeDpModal()">Batal</button>
-                <button class="btn btn-primary" onclick="submitDP()">Kirim Bukti DP</button>
+
+            <div class="upload-area" id="dpUploadArea" onclick="document.getElementById('dpFileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p style="margin:0;color:#6b7280;font-size:13px;">Klik untuk pilih foto bukti transfer</p>
+                <img id="dpUploadPreview" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;margin-top:8px;display:none;" alt="preview">
+            </div>
+            <input type="file" id="dpFileInput" accept="image/*" style="display:none;" onchange="previewUpload('dpFileInput','dpUploadPreview','dpUploadArea')">
+
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button class="btn-booking-action secondary" onclick="closeModal('dpModal')" style="flex:1;">Batal</button>
+                <button class="btn-booking-action primary" onclick="submitDP()" id="btnSubmitDP" style="flex:2;"><i class="fas fa-paper-plane"></i> Kirim Bukti DP</button>
             </div>
         </div>
     </div>
 
-    <script src="../assets/js/api-client.js?v=2.0"></script>
-    <script src="../assets/js/script.js?v=2.0"></script>
+    <!-- Upload Pelunasan Modal -->
+    <div class="upload-modal" id="pelunasanModal">
+        <div class="upload-modal-box" style="position:relative;">
+            <button class="btn-close-modal" onclick="closeModal('pelunasanModal')">&times;</button>
+            <h3>💰 Upload Bukti Pelunasan</h3>
+            <p>Booking <strong id="pel-booking-id"></strong> • <strong id="pel-motor-name"></strong></p>
+
+            <div class="bank-info">
+                <strong>Transfer ke Rekening:</strong>
+                BCA: 1234567890 a.n. NGEBUT.IN
+            </div>
+
+            <div class="bank-info" style="background:#fff3cd;border-left:3px solid #f59e0b;">
+                <strong style="color:#b45309;">Jumlah Pelunasan:</strong>
+                <span id="pel-amount-display" style="font-size:18px;font-weight:700;color:#cc0000;"></span>
+            </div>
+
+            <div class="upload-area" id="pelUploadArea" onclick="document.getElementById('pelFileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p style="margin:0;color:#6b7280;font-size:13px;">Klik untuk pilih foto bukti transfer</p>
+                <img id="pelUploadPreview" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;margin-top:8px;display:none;" alt="preview">
+            </div>
+            <input type="file" id="pelFileInput" accept="image/*" style="display:none;" onchange="previewUpload('pelFileInput','pelUploadPreview','pelUploadArea')">
+
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button class="btn-booking-action secondary" onclick="closeModal('pelunasanModal')" style="flex:1;">Batal</button>
+                <button class="btn-booking-action green" onclick="submitPelunasan()" id="btnSubmitPelunasan" style="flex:2;"><i class="fas fa-paper-plane"></i> Kirim Bukti Pelunasan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api-client.js"></script>
+    <script src="../assets/js/script.js"></script>
     <script>
         const user = getCurrentUser();
-        if (!user) window.location.href = '../login.html';
+        if (!user || user.role !== 'user') window.location.href = '../login.html';
 
-        document.getElementById('userProfile').innerHTML = `
-            <div class="user-avatar" id="userAvatar"></div>
-            <div class="user-info">
-                <h4>${user.nama}</h4>
-                <p><i class="fas fa-user"></i> Member</p>
-            </div>
-        `;
-        renderAvatar('#userAvatar', user.nama, user.foto_profil, 50);
+        // Render sidebar user info
+        const sp = document.getElementById('userProfileSidebar');
+        sp.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:12px;">
+            <div id="sidebarAvatar"></div>
+            <div><strong style="font-size:14px;">${user.nama}</strong><br><small style="color:#9ca3af;">Penyewa</small></div>
+        </div>`;
+        renderAvatar('#sidebarAvatar', user.nama, user.foto_profil, 40);
 
-        function checkNotifications() {
-            const notifications = checkReturnNotifications(user.id);
-            const area = document.getElementById('notificationArea');
-            
-            if (notifications.length > 0) {
-                area.innerHTML = notifications.map(n => `
-                    <div class="notification notification-${n.type}">
-                        <span class="notification-icon"><i class="fas ${n.icon}"></i></span>
-                        <div class="notification-content">
-                            <div class="notification-title">${n.title}</div>
-                            <div>${n.message}</div>
-                        </div>
-                    </div>
-                `).join('');
+        let allBookings = [];
+        let currentFilter = 'active';
+        let currentBookingId = null;
+
+        const STEPS = [
+            { key: 'pending',   label: 'Booking', icon: '📋' },
+            { key: 'dp',        label: 'Upload DP', icon: '💳' },
+            { key: 'confirmed', label: 'Aktif Sewa', icon: '🏍️' },
+            { key: 'returning', label: 'Kembali', icon: '↩️' },
+            { key: 'pelunasan', label: 'Pelunasan', icon: '💰' },
+            { key: 'completed', label: 'Selesai', icon: '✅' },
+        ];
+
+        function getStepIndex(b) {
+            const sp = b.statusPembayaran || '';
+            if (b.status === 'completed') return 5;
+            if (b.status === 'returning' && sp === 'pelunasan_uploaded') return 5;
+            if (b.status === 'returning') return 3;
+            if (b.status === 'confirmed') return 2;
+            if (b.status === 'pending' && (sp === 'dp_uploaded')) return 1;
+            return 0;
+        }
+
+        function renderTimeline(b) {
+            const currentStep = getStepIndex(b);
+            return `<div class="timeline-steps">
+                ${STEPS.map((s, i) => {
+                    const cls = i < currentStep ? 'done' : i === currentStep ? 'active' : '';
+                    return `<div class="timeline-step">
+                        <div class="step-dot ${cls}">${i < currentStep ? '✓' : s.icon}</div>
+                        <span class="step-label ${cls}">${s.label}</span>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        }
+
+        function statusBadge(b) {
+            const sp = b.statusPembayaran || '';
+            const map = {
+                'pending+menunggu_dp':       { text: '⏳ Upload DP', bg: '#fef9c3', color: '#854d0e' },
+                'pending+dp_uploaded':        { text: '🔍 Verifikasi DP', bg: '#dbeafe', color: '#1d4ed8' },
+                'confirmed+dp_approved':      { text: '🏍️ Aktif Sewa', bg: '#dcfce7', color: '#166534' },
+                'returning+menunggu_pelunasan':{ text: '↩️ Upload Pelunasan', bg: '#f3e8ff', color: '#6b21a8' },
+                'returning+pelunasan_uploaded':{ text: '🔍 Verifikasi Pelunasan', bg: '#dbeafe', color: '#1d4ed8' },
+                'completed+lunas':            { text: '✅ Selesai', bg: '#dcfce7', color: '#166534' },
+                'rejected+dp_ditolak':        { text: '❌ DP Ditolak', bg: '#fee2e2', color: '#991b1b' },
+                'cancelled+dibatalkan':       { text: '🚫 Dibatalkan', bg: '#f3f4f6', color: '#374151' },
+            };
+            const key = `${b.status}+${sp}`;
+            const cfg = map[key] || { text: b.status?.toUpperCase() || '-', bg: '#f3f4f6', color: '#374151' };
+            return `<span class="status-badge" style="background:${cfg.bg};color:${cfg.color};">${cfg.text}</span>`;
+        }
+
+        function renderActions(b) {
+            const sp = b.statusPembayaran || '';
+            const actions = [];
+
+            if (b.status === 'pending' && sp === 'menunggu_dp') {
+                actions.push(`<button class="btn-booking-action primary" onclick="openDPModal(${b.id})">
+                    <i class="fas fa-upload"></i> Upload Bukti DP</button>`);
             }
-        }
-
-        async function kembalikanMotor(bookingId, btn) {
-            if (!confirm('Apakah Anda yakin sudah selesai menyewa dan ingin mengembalikan motor ini?')) return;
-            
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
-
-            try {
-                const token = sessionStorage.getItem('token');
-                const res = await fetch(`${API_URL}/api/bookings/${bookingId}/status`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ status: 'returning' })
-                });
-                if (res.ok) {
-                    showNotification('✅ Permintaan pengembalian dikirim! Silakan hubungi admin untuk pengecekan fisik motor.', 'success');
-                    renderBookings();
-                } else {
-                    showNotification('❌ Gagal memproses pengembalian.', 'danger');
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            } catch(e) {
-                showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+            if (b.status === 'pending' && sp === 'dp_uploaded') {
+                actions.push(`<div class="info-box blue"><i class="fas fa-info-circle"></i> Menunggu verifikasi DP oleh admin...</div>`);
             }
+            if (b.status === 'confirmed') {
+                actions.push(`<div class="info-box green"><i class="fas fa-motorcycle"></i> Motor sedang aktif disewa. Kembalikan tepat waktu!</div>`);
+            }
+            if (b.status === 'returning' && sp === 'menunggu_pelunasan') {
+                actions.push(`<button class="btn-booking-action green" onclick="openPelunasanModal(${b.id})">
+                    <i class="fas fa-upload"></i> Upload Bukti Pelunasan</button>`);
+                actions.push(`<div class="info-box yellow"><i class="fas fa-coins"></i> Atau bayar tunai langsung di tempat kepada admin.</div>`);
+            }
+            if (b.status === 'returning' && sp === 'pelunasan_uploaded') {
+                actions.push(`<div class="info-box blue"><i class="fas fa-info-circle"></i> Bukti pelunasan terkirim. Menunggu konfirmasi admin...</div>`);
+            }
+            if (b.status === 'completed') {
+                actions.push(`<button class="btn-booking-action secondary" onclick="viewKwitansi(${b.id})">
+                    <i class="fas fa-receipt"></i> Lihat Kwitansi</button>`);
+            }
+            if (b.status === 'rejected') {
+                const alasan = b.catatanAdmin || 'Bukti DP tidak valid';
+                actions.push(`<div class="info-box red"><i class="fas fa-times-circle"></i> DP ditolak: <strong>${alasan}</strong></div>`);
+            }
+            if (b.status === 'cancelled') {
+                actions.push(`<div class="info-box red"><i class="fas fa-ban"></i> Booking ini dibatalkan.</div>`);
+            }
+            if (['pending','confirmed'].includes(b.status)) {
+                actions.push(`<button class="btn-booking-action secondary" onclick="cancelBooking(${b.id})" style="margin-left:auto;color:#ef4444;font-size:12px;">
+                    <i class="fas fa-times"></i> Batalkan</button>`);
+            }
+
+            return actions.join('');
         }
 
-        let activeDpBookingId = null;
+        function renderCards() {
+            const container = document.getElementById('bookingCards');
+            let list = [...allBookings];
+            if (currentFilter === 'active') list = list.filter(b => ['pending','confirmed','returning'].includes(b.status));
+            if (currentFilter === 'pending') list = list.filter(b => b.status === 'pending');
+            if (currentFilter === 'completed') list = list.filter(b => b.status === 'completed');
 
-        function openDpModal(bookingId, totalHarga) {
-            activeDpBookingId = bookingId;
-            const dp = totalHarga / 2;
-            document.getElementById('dpAmountText').innerText = formatRupiah(dp);
-            document.getElementById('dpModal').style.display = 'flex';
-        }
-
-        function closeDpModal() {
-            document.getElementById('dpModal').style.display = 'none';
-        }
-
-        async function submitDP() {
-            const fileInput = document.getElementById('buktiDP');
-            if (!fileInput.files[0]) {
-                alert('Pilih file bukti transfer terlebih dahulu!');
+            if (list.length === 0) {
+                container.innerHTML = `<div class="empty-state">
+                    <i class="fas fa-motorcycle"></i>
+                    <h3>Tidak ada booking</h3>
+                    <p>Kamu belum punya booking${currentFilter === 'active' ? ' aktif' : ''}.</p>
+                    <a href="dashboard.html" class="btn-primary" style="display:inline-block;padding:12px 24px;border-radius:10px;text-decoration:none;margin-top:12px;">
+                        <i class="fas fa-search"></i> Lihat Katalog Motor
+                    </a>
+                </div>`;
                 return;
             }
 
-            const btn = document.querySelector('.modal-footer .btn-primary');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengunggah...';
+            container.innerHTML = list.map(b => {
+                const total = b.totalHarga || 0;
+                const dp = b.dpAmount || 0;
+                const pelunasan = b.pelunasanAmount || (total - dp);
+                const days = calculateDays(b.startDate, b.endDate);
+                const motorImg = b.motorGambar
+                    ? `<img class="motor-img" src="${b.motorGambar}" alt="${b.motorName}" onerror="this.outerHTML='<div class=motor-img-placeholder><i class=fas fa-motorcycle></i></div>'">`
+                    : `<div class="motor-img-placeholder"><i class="fas fa-motorcycle"></i></div>`;
 
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const base64Data = e.target.result;
-                
-                try {
-                    const res = await fetch(`${API_URL}/api/bookings/${activeDpBookingId}/dp`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-                        },
-                        body: JSON.stringify({ dp_bukti: base64Data })
-                    });
-                    
-                    if (res.ok) {
-                        alert('Bukti DP terkirim! Menunggu konfirmasi admin.');
-                        closeDpModal();
-                        renderBookings();
-                    } else {
-                        alert('Gagal mengirim bukti DP.');
-                    }
-                } catch (err) {
-                    alert('Error koneksi ke server.');
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            };
-            reader.readAsDataURL(fileInput.files[0]);
+                return `<div class="booking-card">
+                    <div class="booking-card-header">
+                        <span class="booking-id"><i class="fas fa-hashtag"></i> Booking #${String(b.id).slice(-6)} • ${formatShortDate(b.createdAt)}</span>
+                        ${statusBadge(b)}
+                    </div>
+
+                    <div class="motor-info">
+                        ${motorImg}
+                        <div class="motor-details">
+                            <h3>${b.motorName || 'Motor'}</h3>
+                            <small>${b.motorKategori || ''} • ${formatRupiah(b.motorHarga || 0)}/hari</small>
+                        </div>
+                    </div>
+
+                    <div class="booking-meta">
+                        <div class="booking-meta-item">
+                            <span class="meta-label"><i class="fas fa-calendar-alt"></i> Tanggal Mulai</span>
+                            <span class="meta-value">${formatDate(b.startDate)}</span>
+                        </div>
+                        <div class="booking-meta-item">
+                            <span class="meta-label"><i class="fas fa-calendar-check"></i> Tanggal Kembali</span>
+                            <span class="meta-value">${formatDate(b.endDate)}</span>
+                        </div>
+                        <div class="booking-meta-item">
+                            <span class="meta-label"><i class="fas fa-clock"></i> Durasi</span>
+                            <span class="meta-value">${days} hari</span>
+                        </div>
+                        <div class="booking-meta-item">
+                            <span class="meta-label"><i class="fas fa-coins"></i> Total Pembayaran</span>
+                            <span class="meta-value" style="color:var(--primary);">${formatRupiah(total)}</span>
+                        </div>
+                    </div>
+
+                    <div style="background:#f9fafb;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+                            <span style="color:#6b7280;">DP (50%)</span>
+                            <span style="font-weight:600;color:#059669;">${formatRupiah(dp)}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;">
+                            <span style="color:#6b7280;">Pelunasan (50%)</span>
+                            <span style="font-weight:600;color:var(--primary);">${formatRupiah(pelunasan)}</span>
+                        </div>
+                    </div>
+
+                    ${renderTimeline(b)}
+
+                    <div class="booking-actions">
+                        ${renderActions(b)}
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        async function renderBookings() {
+        function setFilter(f, el) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderCards();
+        }
+
+        async function loadBookings() {
+            const container = document.getElementById('bookingCards');
+            container.innerHTML = `<div style="text-align:center;padding:60px;color:#9ca3af;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i><p>Memuat...</p></div>`;
             try {
-                const res = await fetch(`${API_URL}/api/bookings`, {
-                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
-                });
-                const allBookings = await res.json();
-                
-                const bookings = allBookings.filter(b => 
-                    String(b.userId) === String(user.id) && 
-                    ['pending', 'confirm', 'booked', 'paid', 'returning'].includes(b.status)
-                );
-                
-                const tbody = document.getElementById('bookingList');
-                const thead = document.querySelector('.data-table thead');
-                
-                if (bookings.length === 0) {
-                    if(thead) thead.style.display = 'none';
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--gray-500); border: none;">
-                        <i class="fas fa-calendar" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
-                        <h3>Tidak ada booking aktif</h3>
-                        <a href="dashboard.html" class="btn btn-primary" style="margin-top: 1rem;">Sewa Motor Sekarang</a>
-                    </td></tr>`;
-                    return;
-                }
-
-                if(thead) {
-                    thead.style.display = '';
-                    thead.style.display = 'table-header-group'; 
-                }
-
-                tbody.innerHTML = bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(b => {
-                    const days = calculateDays(b.startDate, b.endDate);
-                    let aksiHtml = '-';
-                    let statusBadge = getStatusBadge(b.status);
-                    
-                    // Logic based on status_pembayaran
-                    if (b.statusPembayaran === 'menunggu_dp') {
-                        statusBadge = '<span class="badge" style="background: var(--warning); color: white;">Menunggu DP</span>';
-                        aksiHtml = `
-                            <button class="btn btn-sm" style="background: var(--primary); color: white; border-radius: 20px; padding: 5px 15px;" onclick="openDpModal(${b.id}, ${b.dpAmount || (b.totalHarga/2)})">
-                                <i class="fas fa-upload"></i> Bayar DP
-                            </button>
-                        `;
-                    } else if (b.statusPembayaran === 'dp_uploaded') {
-                        statusBadge = '<span class="badge" style="background: var(--info); color: white;">Verifikasi DP</span>';
-                        aksiHtml = '<span style="color: var(--gray-500); font-size: 0.8rem;"><i class="fas fa-clock"></i> Diproses</span>';
-                    } else if (b.status === 'booked' || b.status === 'paid') {
-                        aksiHtml = `
-                            <button class="btn btn-sm" style="background: var(--success); color: white; border-radius: 20px; padding: 5px 15px;" onclick="kembalikanMotor(${b.id}, this)">
-                                <i class="fas fa-undo"></i> Selesai Sewa
-                            </button>
-                        `;
-                    } else if (b.status === 'returning') {
-                        aksiHtml = '<span style="color: var(--warning); font-size: 0.8rem;"><i class="fas fa-clock"></i> Menunggu Admin</span>';
-                    }
-
-                    return `
-                        <tr>
-                            <td><strong>${b.motorName}</strong></td>
-                            <td>${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}</td>
-                            <td>${days} hari</td>
-                            <td>${formatRupiah(b.totalHarga)}<br><small style="color: var(--gray-500)">DP: ${formatRupiah(b.dpAmount || (b.totalHarga/2))}</small></td>
-                            <td>${statusBadge}</td>
-                            <td>${aksiHtml}</td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (err) {
-                console.error("Gagal memuat booking", err);
+                const data = await ApiClient.get(`/bookings/my/${user.id}`);
+                allBookings = Array.isArray(data) ? data : [];
+                allBookings.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                renderCards();
+            } catch (e) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p style="color:red;">Gagal memuat: ${e.message}</p></div>`;
             }
         }
 
-        checkNotifications();
-        renderBookings();
-        setInterval(() => { renderBookings(); checkNotifications(); }, 10000);
+        // DP
+        function openDPModal(bookingId) {
+            const b = allBookings.find(x => String(x.id) === String(bookingId));
+            if (!b) return;
+            currentBookingId = bookingId;
+            document.getElementById('dp-booking-id').textContent = `#${String(bookingId).slice(-6)}`;
+            document.getElementById('dp-motor-name').textContent = b.motorName || '';
+            document.getElementById('dp-amount-display').textContent = formatRupiah(b.dpAmount || 0);
+            document.getElementById('dpFileInput').value = '';
+            document.getElementById('dpUploadPreview').style.display = 'none';
+            document.getElementById('dpUploadArea').classList.remove('has-file');
+            document.getElementById('dpModal').classList.add('show');
+        }
+
+        async function submitDP() {
+            const file = document.getElementById('dpFileInput').files[0];
+            if (!file) { alert('Pilih foto bukti DP terlebih dahulu!'); return; }
+            const btn = document.getElementById('btnSubmitDP');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+            try {
+                const base64 = await fileToBase64(file);
+                await ApiClient.put(`/bookings/${currentBookingId}/upload-dp`, { dp_bukti: base64 });
+                closeModal('dpModal');
+                showNotif('✅ Bukti DP berhasil dikirim! Menunggu verifikasi admin.', 'success');
+                await loadBookings();
+            } catch (e) {
+                showNotif('Gagal upload DP: ' + e.message, 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Bukti DP';
+            }
+        }
+
+        // Pelunasan
+        function openPelunasanModal(bookingId) {
+            const b = allBookings.find(x => String(x.id) === String(bookingId));
+            if (!b) return;
+            currentBookingId = bookingId;
+            document.getElementById('pel-booking-id').textContent = `#${String(bookingId).slice(-6)}`;
+            document.getElementById('pel-motor-name').textContent = b.motorName || '';
+            const pelunasan = b.pelunasanAmount || ((b.totalHarga||0) - (b.dpAmount||0));
+            document.getElementById('pel-amount-display').textContent = formatRupiah(pelunasan);
+            document.getElementById('pelFileInput').value = '';
+            document.getElementById('pelUploadPreview').style.display = 'none';
+            document.getElementById('pelUploadArea').classList.remove('has-file');
+            document.getElementById('pelunasanModal').classList.add('show');
+        }
+
+        async function submitPelunasan() {
+            const file = document.getElementById('pelFileInput').files[0];
+            if (!file) { alert('Pilih foto bukti pelunasan terlebih dahulu!'); return; }
+            const btn = document.getElementById('btnSubmitPelunasan');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+            try {
+                const base64 = await fileToBase64(file);
+                await ApiClient.put(`/bookings/${currentBookingId}/upload-pelunasan`, { bukti_pelunasan: base64 });
+                closeModal('pelunasanModal');
+                showNotif('✅ Bukti pelunasan berhasil dikirim! Menunggu konfirmasi admin.', 'success');
+                await loadBookings();
+            } catch (e) {
+                showNotif('Gagal upload pelunasan: ' + e.message, 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Bukti Pelunasan';
+            }
+        }
+
+        async function cancelBooking(bookingId) {
+            if (!confirm(`Batalkan booking #${String(bookingId).slice(-6)}?`)) return;
+            try {
+                await ApiClient.put(`/bookings/${bookingId}/cancel`, {});
+                showNotif('Booking berhasil dibatalkan.', 'success');
+                await loadBookings();
+            } catch (e) { showNotif('Gagal batalkan: ' + e.message, 'danger'); }
+        }
+
+        function viewKwitansi(bookingId) {
+            const b = allBookings.find(x => String(x.id) === String(bookingId));
+            if (!b) return;
+            const total = b.totalHarga || 0;
+            const dp = b.dpAmount || 0;
+            const pelunasan = b.pelunasanAmount || (total - dp);
+            const win = window.open('', '_blank');
+            win.document.write(`<!DOCTYPE html><html><head><title>Kwitansi #${String(b.id).slice(-6)}</title>
+            <style>body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;}
+            .header{text-align:center;border-bottom:3px solid #cc0000;padding-bottom:15px;margin-bottom:20px;}
+            .logo{font-size:28px;font-weight:900;color:#cc0000;}.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+            .label{color:#666;font-size:14px;}.value{font-weight:600;font-size:14px;}
+            .total-box{background:#fff5f5;padding:14px;border-radius:8px;margin-top:16px;}
+            .lunas-badge{text-align:center;margin:20px 0;padding:12px;background:#dcfce7;border-radius:8px;color:#166534;font-weight:700;font-size:20px;}
+            @media print{button{display:none}}</style></head><body>
+            <div class="header"><div class="logo">🏍️ NGEBUT.IN</div>
+            <h3 style="margin:8px 0;color:#333;">KWITANSI SEWA MOTOR</h3>
+            <small style="color:#666;">No. Transaksi: <strong>#${String(b.id).slice(-6)}</strong></small></div>
+            <div class="row"><span class="label">Tanggal</span><span class="value">${new Date(b.createdAt).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</span></div>
+            <div class="row"><span class="label">Penyewa</span><span class="value">${b.userName||user.nama}</span></div>
+            <div class="row"><span class="label">Motor</span><span class="value">${b.motorName||'-'}</span></div>
+            <div class="row"><span class="label">Kategori</span><span class="value">${b.motorKategori||'-'}</span></div>
+            <div class="row"><span class="label">Tanggal Mulai</span><span class="value">${b.startDate||'-'}</span></div>
+            <div class="row"><span class="label">Tanggal Kembali</span><span class="value">${b.endDate||'-'}</span></div>
+            <div class="row"><span class="label">Durasi</span><span class="value">${calculateDays(b.startDate, b.endDate)} hari</span></div>
+            <div class="total-box">
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">Total Sewa</span><span class="value">Rp ${Number(total).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">DP (50%)</span><span class="value" style="color:#059669;">Rp ${Number(dp).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">Pelunasan (50%)</span><span class="value" style="color:#cc0000;">Rp ${Number(pelunasan).toLocaleString('id-ID')}</span></div>
+            </div>
+            <div class="lunas-badge">✅ LUNAS</div>
+            <p style="text-align:center;color:#9ca3af;font-size:12px;">Terima kasih telah menggunakan layanan NGEBUT.IN</p>
+            <div style="text-align:center;margin-top:16px;">
+                <button onclick="window.print()" style="background:#cc0000;color:#fff;border:none;padding:12px 28px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">🖨️ Cetak Kwitansi</button>
+            </div></body></html>`);
+        }
+
+        // Helpers
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function previewUpload(inputId, previewId, areaId) {
+            const file = document.getElementById(inputId).files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById(previewId);
+                img.src = e.target.result;
+                img.style.display = 'block';
+                document.getElementById(areaId).classList.add('has-file');
+            };
+            reader.readAsDataURL(file);
+        }
+        function fileToBase64(file) {
+            return new Promise((res, rej) => {
+                if (file.size > 3 * 1024 * 1024) { rej(new Error('Ukuran file max 3MB')); return; }
+                const reader = new FileReader();
+                reader.onload = e => res(e.target.result);
+                reader.onerror = () => rej(new Error('Gagal membaca file'));
+                reader.readAsDataURL(file);
+            });
+        }
+        function formatDate(d) {
+            if (!d) return '-';
+            return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+        function showNotif(msg, type) {
+            const n = document.createElement('div');
+            n.className = `notification notification-${type}`;
+            n.innerHTML = `<span class="notification-icon"><i class="fas fa-${type==='success'?'check-circle':'times-circle'}"></i></span>
+                <div class="notification-content"><div class="notification-title">${msg}</div></div>
+                <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>`;
+            document.body.appendChild(n);
+            setTimeout(() => n.remove(), 7000);
+        }
+
+        // Sidebar
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.toggle('open');
+            document.getElementById('sidebarOverlay')?.classList.toggle('show');
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.remove('open');
+            document.getElementById('sidebarOverlay')?.classList.remove('show');
+        });
+
+        loadBookings();
     </script>
 </body>
 </html>

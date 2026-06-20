@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -120,13 +120,9 @@
     <script src="../assets/js/api-client.js"></script>
     <script src="../assets/js/script.js"></script>
     <script>
-        // Proteksi admin
         const user = getCurrentUser();
-        if (!user || user.role !== 'admin') {
-            window.location.href = '../login.html';
-        }
+        if (!user || user.role !== 'admin') window.location.href = '../login.html';
 
-        // Render avatar admin
         const avatarEl = document.getElementById('adminAvatar');
         avatarEl.style.width = '50px';
         avatarEl.style.height = '50px';
@@ -157,8 +153,11 @@
         }
 
         function updateBadges() {
-            const verif = allBookings.filter(b => b.status === 'confirm' && (b.statusPembayaran === 'dp_uploaded' || b.status_pembayaran === 'dp_uploaded')).length;
-            const active = allBookings.filter(b => b.status === 'booked').length;
+            // pending + dp_uploaded = perlu diverifikasi
+            const verif = allBookings.filter(b => b.status === 'pending' && b.statusPembayaran === 'dp_uploaded').length;
+            // confirmed = sewa aktif
+            const active = allBookings.filter(b => b.status === 'confirmed').length;
+            // returning = menunggu pelunasan (sudah dikembalikan)
             const ret = allBookings.filter(b => b.status === 'returning').length;
             document.getElementById('badge-verif').textContent = verif || '';
             document.getElementById('badge-active').textContent = active || '';
@@ -167,9 +166,10 @@
 
         function getFilteredBookings() {
             if (currentFilter === 'verif') {
-                return allBookings.filter(b => b.status === 'confirm' && (b.statusPembayaran === 'dp_uploaded' || b.status_pembayaran === 'dp_uploaded'));
+                // pending = menunggu DP atau menunggu verifikasi
+                return allBookings.filter(b => b.status === 'pending');
             }
-            if (currentFilter === 'active') return allBookings.filter(b => b.status === 'booked');
+            if (currentFilter === 'active') return allBookings.filter(b => b.status === 'confirmed');
             if (currentFilter === 'returning') return allBookings.filter(b => b.status === 'returning');
             return allBookings;
         }
@@ -180,9 +180,9 @@
 
             if (filtered.length === 0) {
                 const msgs = {
-                    verif: 'Tidak ada bukti DP yang perlu diverifikasi.',
+                    verif: 'Tidak ada booking yang perlu diverifikasi.',
                     active: 'Tidak ada sewa yang sedang aktif.',
-                    returning: 'Tidak ada motor yang dikembalikan.',
+                    returning: 'Tidak ada motor yang dalam proses pengembalian.',
                     all: 'Belum ada data booking.'
                 };
                 tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem;color:var(--gray-500);">
@@ -193,46 +193,57 @@
             }
 
             tbody.innerHTML = filtered.map(b => {
-                const sp = b.statusPembayaran || b.status_pembayaran || '';
-                const dpBukti = b.dpBukti || b.dp_bukti || '';
-                const days = calculateDays(b.startDate || b.tgl_mulai, b.endDate || b.tgl_selesai);
-                const total = b.totalHarga || b.total_harga || 0;
-                const dp = b.dpAmount || b.dp_amount || Math.round(total / 2);
-                const nama = b.userName || b.user_name || `User #${b.userId || b.user_id}`;
-                const motor = b.motorName || b.motor_name || `Motor #${b.motorId || b.motor_id}`;
+                const sp = b.statusPembayaran || '';
+                const dpBukti = b.dpBukti || '';
+                const days = calculateDays(b.startDate, b.endDate);
+                const total = b.totalHarga || 0;
+                const dp = b.dpAmount || 0;
+                const nama = b.userName || `User #${b.userId}`;
+                const motor = b.motorName || `Motor #${b.motorId}`;
 
                 let badge = '';
                 let aksi = '';
 
-                if (b.status === 'confirm' && sp === 'menunggu_dp') {
+                if (b.status === 'pending' && sp === 'menunggu_dp') {
                     badge = `<span class="badge-dp badge-menunggu">⏳ MENUNGGU DP</span>`;
-                    aksi = `<span style="color:#9ca3af;font-size:12px;">Menunggu upload</span>`;
-                } else if (b.status === 'confirm' && (sp === 'dp_uploaded' || sp === 'verifikasi')) {
+                    aksi = `<span style="color:#9ca3af;font-size:12px;">Menunggu user upload bukti</span>`;
+
+                } else if (b.status === 'pending' && (sp === 'dp_uploaded' || sp === 'verifikasi')) {
                     badge = `<span class="badge-dp badge-uploaded">🔍 VERIFIKASI DP</span>`;
                     aksi = `
-                        <div class="action-buttons">
-                            <button class="btn-action btn-approve" onclick="verifyDP(${b.id}, 'approve')"><i class="fas fa-check"></i> Terima</button>
-                            <button class="btn-action btn-reject" onclick="verifyDP(${b.id}, 'reject')"><i class="fas fa-times"></i> Tolak</button>
+                        <div class="action-buttons" style="display:flex;flex-direction:column;gap:4px;">
+                            <button class="btn-action btn-approve" onclick="approveDP(${b.id})"><i class="fas fa-check"></i> Terima</button>
+                            <button class="btn-action btn-reject" onclick="rejectDP(${b.id})"><i class="fas fa-times"></i> Tolak</button>
                         </div>`;
-                } else if (b.status === 'booked') {
+
+                } else if (b.status === 'confirmed') {
                     badge = `<span class="badge-dp badge-active">🏍️ AKTIF SEWA</span>`;
-                    aksi = `<span style="color:#9ca3af;font-size:12px;">Menunggu kembali</span>`;
+                    aksi = `<button class="btn-action btn-approve" onclick="confirmReturn(${b.id})" style="background:#8B5CF6;">
+                        <i class="fas fa-undo"></i> Motor Kembali</button>`;
+
                 } else if (b.status === 'returning') {
                     badge = `<span class="badge-dp badge-returning">↩️ DIKEMBALIKAN</span>`;
-                    aksi = `<button class="btn-action btn-approve" onclick="completeReturn(${b.id})"><i class="fas fa-flag-checkered"></i> Selesai</button>`;
-                } else if (b.status === 'done') {
+                    aksi = `<span style="color:#6B21A8;font-size:12px;"><i class="fas fa-credit-card"></i> Proses di tab Pelunasan</span>`;
+
+                } else if (b.status === 'completed') {
                     badge = `<span class="badge-dp badge-done">✅ SELESAI</span>`;
                     aksi = `<button class="btn-action btn-view" onclick="viewKwitansi(${b.id})"><i class="fas fa-receipt"></i> Kwitansi</button>`;
+
                 } else if (b.status === 'rejected') {
                     badge = `<span class="badge-dp badge-rejected">❌ DITOLAK</span>`;
-                    aksi = `<span style="color:#9ca3af;font-size:12px;">Ditolak</span>`;
+                    aksi = `<span style="color:#9ca3af;font-size:12px;">DP Ditolak</span>`;
+
+                } else if (b.status === 'cancelled') {
+                    badge = `<span class="badge-dp" style="background:#f3f4f6;color:#374151;">🚫 DIBATALKAN</span>`;
+                    aksi = `<span style="color:#9ca3af;font-size:12px;">Dibatalkan</span>`;
+
                 } else {
                     badge = `<span class="badge-dp" style="background:#f3f4f6;color:#374151;">${(b.status||'').toUpperCase()}</span>`;
-                    aksi = `<button class="btn-action btn-view" onclick="viewDetail(${b.id})"><i class="fas fa-eye"></i> Detail</button>`;
+                    aksi = '';
                 }
 
                 const dpThumb = dpBukti
-                    ? `<img src="${dpBukti}" class="dp-image-thumb" onclick="previewDP('${dpBukti}')" title="Klik untuk lihat bukti DP" onerror="this.outerHTML='<span style=color:#9ca3af;font-size:12px;>Error</span>'">`
+                    ? `<img src="${dpBukti}" class="dp-image-thumb" onclick="previewDP('${dpBukti}')" title="Klik lihat bukti DP" onerror="this.outerHTML='<span style=color:#9ca3af;font-size:12px;>Error</span>'">`
                     : `<span style="color:#9ca3af;font-size:12px;"><i class="fas fa-minus"></i></span>`;
 
                 return `
@@ -240,7 +251,7 @@
                         <td><code>#${String(b.id).slice(-6)}</code></td>
                         <td><strong>${nama}</strong></td>
                         <td>${motor}</td>
-                        <td style="font-size:12px;">${formatShortDate(b.startDate||b.tgl_mulai)} →<br>${formatShortDate(b.endDate||b.tgl_selesai)}<br><small>${days} hari</small></td>
+                        <td style="font-size:12px;">${formatShortDate(b.startDate)} →<br>${formatShortDate(b.endDate)}<br><small>${days} hari</small></td>
                         <td><strong>${formatRupiah(total)}</strong><br><small style="color:var(--primary);">DP: ${formatRupiah(dp)}</small></td>
                         <td style="text-align:center;">${dpThumb}</td>
                         <td>${badge}</td>
@@ -254,76 +265,84 @@
             document.getElementById('dpPreview').classList.add('show');
         }
 
-        async function verifyDP(bookingId, action) {
-            const label = action === 'approve' ? 'Terima' : 'Tolak';
-            if (!confirm(`${label} bukti DP untuk booking #${bookingId}?`)) return;
+        async function approveDP(bookingId) {
+            if (!confirm(`Terima bukti DP untuk booking #${bookingId}?\nMotor akan berstatus AKTIF DISEWA.`)) return;
             try {
-                if (action === 'approve') {
-                    await ApiClient.put(`/bookings/${bookingId}/approve-dp`, {});
-                    showNotif('✅ DP diverifikasi! Status sewa menjadi AKTIF.', 'success');
-                } else {
-                    await ApiClient.put(`/bookings/${bookingId}/status`, { status: 'rejected' });
-                    showNotif('❌ Bukti DP ditolak.', 'danger');
-                }
+                await ApiClient.put(`/bookings/${bookingId}/approve-dp`, {});
+                showNotif('✅ DP diverifikasi! Status sewa menjadi AKTIF.', 'success');
                 await loadData();
             } catch(e) { showNotif('Gagal: ' + e.message, 'danger'); }
         }
 
-        async function completeReturn(bookingId) {
-            if (!confirm(`Selesaikan sewa #${bookingId}? Motor sudah diterima kembali.`)) return;
+        async function rejectDP(bookingId) {
+            const alasan = prompt('Masukkan alasan penolakan DP (opsional):');
+            if (alasan === null) return; // user cancel
             try {
-                await ApiClient.put(`/bookings/${bookingId}/status`, { status: 'done' });
-                showNotif('✅ Sewa selesai! Motor kembali tersedia.', 'success');
+                await ApiClient.put(`/bookings/${bookingId}/reject-dp`, { catatan_admin: alasan || 'Bukti DP tidak valid' });
+                showNotif('❌ Bukti DP ditolak. Booking dibatalkan.', 'danger');
                 await loadData();
             } catch(e) { showNotif('Gagal: ' + e.message, 'danger'); }
         }
 
-        function viewDetail(bookingId) {
-            const b = allBookings.find(x => String(x.id) === String(bookingId));
-            if (!b) return;
-            alert(`Booking #${b.id}\nPenyewa: ${b.userName||'?'}\nMotor: ${b.motorName||'?'}\nStatus: ${b.status}`);
+        async function confirmReturn(bookingId) {
+            if (!confirm(`Konfirmasi motor untuk booking #${bookingId} sudah dikembalikan?\nUser perlu membayar pelunasan setelah ini.`)) return;
+            try {
+                await ApiClient.put(`/bookings/${bookingId}/return`, {});
+                showNotif('↩️ Motor dikonfirmasi kembali! Proses pelunasan di halaman Pembayaran.', 'success');
+                await loadData();
+            } catch(e) { showNotif('Gagal: ' + e.message, 'danger'); }
         }
 
         function viewKwitansi(bookingId) {
             const b = allBookings.find(x => String(x.id) === String(bookingId));
             if (!b) return;
-            const total = b.totalHarga || b.total_harga || 0;
-            const dp = b.dpAmount || b.dp_amount || Math.round(total / 2);
+            const total = b.totalHarga || 0;
+            const dp = b.dpAmount || 0;
+            const pelunasan = b.pelunasanAmount || (total - dp);
             const win = window.open('', '_blank');
-            win.document.write(`<!DOCTYPE html><html><head><title>Kwitansi #${b.id}</title>
-            <style>body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;}
-            .header{text-align:center;border-bottom:2px solid #cc0000;padding-bottom:15px;margin-bottom:20px;}
-            .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;}
-            .total{font-size:1.3rem;font-weight:bold;color:#cc0000;}
-            @media print{button{display:none}}</style></head>
-            <body>
-            <div class="header"><h2 style="color:#cc0000;">🏍️ NGEBUT.IN</h2><h3>KWITANSI SEWA MOTOR</h3></div>
-            <div class="row"><span>No. Transaksi</span><strong>#${b.id}</strong></div>
-            <div class="row"><span>Penyewa</span><strong>${b.userName||'-'}</strong></div>
-            <div class="row"><span>Motor</span><strong>${b.motorName||'-'}</strong></div>
-            <div class="row"><span>Tanggal Sewa</span><span>${b.startDate||b.tgl_mulai||'-'}</span></div>
-            <div class="row"><span>Tanggal Kembali</span><span>${b.endDate||b.tgl_selesai||'-'}</span></div>
-            <div class="row"><span>Total Sewa</span><span class="total">Rp ${Number(total).toLocaleString('id-ID')}</span></div>
-            <div class="row"><span>DP Dibayar</span><span>Rp ${Number(dp).toLocaleString('id-ID')}</span></div>
-            <div class="row"><span>Pelunasan</span><span>Rp ${Number(total-dp).toLocaleString('id-ID')}</span></div>
+            win.document.write(`<!DOCTYPE html><html><head><title>Kwitansi #${String(b.id).slice(-6)}</title>
+            <style>
+                body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;}
+                .header{text-align:center;border-bottom:3px solid #cc0000;padding-bottom:15px;margin-bottom:20px;}
+                .logo{font-size:28px;font-weight:900;color:#cc0000;}
+                .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+                .label{color:#666;font-size:14px;}
+                .value{font-weight:600;font-size:14px;}
+                .total-row{background:#fff5f5;padding:12px;border-radius:8px;margin-top:12px;}
+                .lunas-badge{text-align:center;margin:20px 0;padding:10px;background:#dcfce7;border-radius:8px;color:#166534;font-weight:700;font-size:18px;}
+                @media print{button{display:none}}
+            </style></head><body>
+            <div class="header">
+                <div class="logo">🏍️ NGEBUT.IN</div>
+                <h3 style="margin:8px 0;color:#333;">KWITANSI SEWA MOTOR</h3>
+                <small style="color:#666;">No. Transaksi: #${String(b.id).slice(-6)}</small>
+            </div>
+            <div class="row"><span class="label">Tanggal</span><span class="value">${new Date(b.createdAt).toLocaleDateString('id-ID')}</span></div>
+            <div class="row"><span class="label">Penyewa</span><span class="value">${b.userName || '-'}</span></div>
+            <div class="row"><span class="label">Motor</span><span class="value">${b.motorName || '-'}</span></div>
+            <div class="row"><span class="label">Kategori</span><span class="value">${b.motorKategori || '-'}</span></div>
+            <div class="row"><span class="label">Tanggal Sewa</span><span class="value">${b.startDate || '-'}</span></div>
+            <div class="row"><span class="label">Tanggal Kembali</span><span class="value">${b.endDate || '-'}</span></div>
+            <div class="total-row">
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">Total Sewa</span><span class="value">Rp ${Number(total).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">DP (50%)</span><span class="value">Rp ${Number(dp).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">Pelunasan (50%)</span><span class="value">Rp ${Number(pelunasan).toLocaleString('id-ID')}</span></div>
+            </div>
+            <div class="lunas-badge">✅ LUNAS</div>
             <div style="text-align:center;margin-top:20px;">
-                <p style="color:#166534;font-weight:bold;">✅ LUNAS</p>
-                <button onclick="window.print()" style="background:#cc0000;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;">🖨️ Cetak Kwitansi</button>
+                <button onclick="window.print()" style="background:#cc0000;color:#fff;border:none;padding:12px 28px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">🖨️ Cetak Kwitansi</button>
             </div></body></html>`);
         }
 
         function exportToCSV() {
             if (allBookings.length === 0) { alert('Tidak ada data!'); return; }
-            const headers = ['ID', 'Penyewa', 'Motor', 'Tgl Mulai', 'Tgl Selesai', 'Total', 'DP', 'Status', 'Status Bayar'];
+            const headers = ['ID', 'Penyewa', 'Motor', 'Tgl Mulai', 'Tgl Selesai', 'Total', 'DP', 'Pelunasan', 'Status', 'Status Bayar'];
             const rows = allBookings.map(b => [
                 `#${String(b.id).slice(-6)}`,
                 b.userName || '', b.motorName || '',
-                b.startDate || b.tgl_mulai || '',
-                b.endDate || b.tgl_selesai || '',
-                b.totalHarga || b.total_harga || 0,
-                b.dpAmount || b.dp_amount || 0,
-                b.status || '',
-                b.statusPembayaran || b.status_pembayaran || ''
+                b.startDate || '', b.endDate || '',
+                b.totalHarga || 0, b.dpAmount || 0, b.pelunasanAmount || 0,
+                b.status || '', b.statusPembayaran || ''
             ]);
             downloadCSV('Verifikasi_DP_NgebutIN.csv', headers, rows, 'Laporan Verifikasi DP');
         }
@@ -335,13 +354,12 @@
                 <div class="notification-content"><div class="notification-title">${msg}</div></div>
                 <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>
             </div>`;
-            setTimeout(() => area.innerHTML='', 5000);
+            setTimeout(() => area.innerHTML='', 6000);
         }
 
-        // Initialize — NO setInterval to avoid auto-scroll
+        // Initialize — NO setInterval
         loadData();
 
-        // Sidebar toggle
         document.getElementById('sidebarToggle')?.addEventListener('click', () => {
             document.querySelector('.sidebar')?.classList.toggle('open');
             document.getElementById('sidebarOverlay')?.classList.toggle('show');

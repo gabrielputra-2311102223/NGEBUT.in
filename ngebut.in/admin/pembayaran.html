@@ -3,15 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pembayaran - Ngebut.in Admin</title>
+    <title>Konfirmasi Pelunasan - Ngebut.in Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    />
-    <!-- Tambahan jsPDF & html2canvas sesuai spesifikasi laporan -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   </head>
   <body class="dashboard-layout">
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -20,465 +14,313 @@
         <img src="../assets/img/logo.png" alt="Logo" style="height: 35px; mix-blend-mode: multiply;">
         <div style="width: 24px;"></div>
     </div>
-    <!-- SIDEBAR -->
+
     <aside class="sidebar">
       <div class="sidebar-header">
         <a href="../index.html" class="logo" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-          <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.05) contrast(1.05);">
+          <img src="../assets/img/logo.png" alt="Ngebut.in Logo" style="height: 70px; width: auto; object-fit: contain; mix-blend-mode: multiply;">
         </a>
         <div class="user-profile">
           <div class="user-avatar" id="adminAvatar"></div>
           <div class="user-info">
-            <h4>Administrator</h4>
+            <h4 id="adminName">Administrator</h4>
             <p><i class="fas fa-shield-alt"></i> Super Admin</p>
           </div>
         </div>
       </div>
-
       <nav class="sidebar-nav">
-        <a href="dashboard.html" class="nav-item">
-          <i class="fas fa-chart-pie"></i> Dashboard
-        </a>
-        <a href="kendaraan.html" class="nav-item">
-          <i class="fas fa-motorcycle"></i> Kelola Kendaraan
-        </a>
-        <a href="booking.html" class="nav-item">
-          <i class="fas fa-shield-check"></i> Verifikasi DP
-        </a>
-        <a href="pembayaran.html" class="nav-item active">
-          <i class="fas fa-credit-card"></i> Pembayaran
-        </a>
-        <a href="users.html" class="nav-item">
-          <i class="fas fa-users"></i> Manajemen User
-        </a>
-        <a href="profil.html" class="nav-item">
-          <i class="fas fa-user-circle"></i> Profil
-        </a>
-        <a href="#" class="nav-item logout" onclick="logout()">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="kendaraan.html" class="nav-item"><i class="fas fa-motorcycle"></i> Kelola Kendaraan</a>
+        <a href="booking.html" class="nav-item"><i class="fas fa-shield-check"></i> Verifikasi DP</a>
+        <a href="pembayaran.html" class="nav-item active"><i class="fas fa-money-bill-wave"></i> Konfirmasi Pelunasan</a>
+        <a href="users.html" class="nav-item"><i class="fas fa-users"></i> Manajemen User</a>
+        <a href="profil.html" class="nav-item"><i class="fas fa-user-circle"></i> Profil</a>
+        <a href="#" class="nav-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
       </nav>
     </aside>
 
     <main class="main-content">
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="page-header">
         <div class="page-title">
-          <h1>Manajemen Pembayaran</h1>
-          <p>Konfirmasi pembayaran dan cetak kuitansi</p>
+          <h1><i class="fas fa-money-bill-wave" style="color:var(--primary);"></i> Konfirmasi Pelunasan</h1>
+          <p>Kelola pengembalian motor dan verifikasi pembayaran pelunasan</p>
         </div>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-outline" onclick="exportToCSV()" title="Export CSV">
-            <i class="fas fa-file-csv"></i>
-          </button>
-          <button class="btn btn-primary" onclick="exportToExcel()" style="background: #1D6F42; border-color: #1D6F42;">
-            <i class="fas fa-file-excel"></i> Export Excel (Premium)
-          </button>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <button class="btn-secondary" onclick="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+          <button class="btn-primary" onclick="exportToCSV()"><i class="fas fa-file-csv"></i> CSV</button>
         </div>
       </div>
 
-      <div class="filter-tabs" style="margin-bottom: 1.5rem">
-        <button class="filter-tab active" onclick="setFilter('booked', event)">
-          <i class="fas fa-motorcycle"></i> Menunggu Pembayaran
+      <div id="notificationArea"></div>
+
+      <!-- Filter Tabs -->
+      <div class="filter-tabs" style="margin-bottom:20px;">
+        <button class="filter-tab active" id="tab-return" onclick="setFilter('return', this)">
+          <i class="fas fa-undo"></i> Menunggu Pelunasan
+          <span class="badge" id="badge-return" style="background:var(--primary);color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;"></span>
         </button>
-        <button class="filter-tab" onclick="setFilter('paid', event)">
-          <i class="fas fa-check-circle"></i> Sudah Dibayar
+        <button class="filter-tab" id="tab-verif" onclick="setFilter('verif', this)">
+          <i class="fas fa-search"></i> Verifikasi Pelunasan
+          <span class="badge" id="badge-verif" style="background:#f59e0b;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;"></span>
         </button>
-        <button class="filter-tab" onclick="setFilter('returning', event)">
-          <i class="fas fa-undo"></i> Permintaan Kembali
+        <button class="filter-tab" id="tab-done" onclick="setFilter('done', this)">
+          <i class="fas fa-check-circle"></i> Selesai
+        </button>
+        <button class="filter-tab" id="tab-all" onclick="setFilter('all', this)">
+          <i class="fas fa-list"></i> Semua
         </button>
       </div>
 
-      <div id="paymentGrid" class="motor-grid"></div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Penyewa</th>
+              <th>Motor</th>
+              <th>Tanggal Sewa</th>
+              <th>Total / Sisa</th>
+              <th>Bukti Pelunasan</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="pelunasanTable">
+            <tr><td colspan="8" style="text-align:center;padding:3rem;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </main>
 
-    <div id="invoiceModal" class="modal-overlay no-print">
-      <div class="modal" style="max-width: 600px">
-        <div class="modal-header no-print">
-          <h3><i class="fas fa-receipt"></i> Kuitansi Pembayaran</h3>
-          <button class="modal-close" onclick="closeInvoiceModal()">
-            &times;
-          </button>
-        </div>
-        <div class="modal-body" id="invoiceContent"></div>
-        <div class="modal-footer no-print">
-          <button class="btn btn-outline" onclick="closeInvoiceModal()">
-            Tutup
-          </button>
-          <button class="btn btn-primary" onclick="printInvoice()">
-            <i class="fas fa-print"></i> Cetak Kuitansi
-          </button>
-        </div>
-      </div>
+    <!-- Preview Bukti Pelunasan -->
+    <div class="dp-preview-overlay" id="buktiPreview" onclick="this.classList.remove('show')">
+        <img id="buktiPreviewImg" src="" alt="Bukti Pelunasan">
     </div>
 
-    <script src="../assets/js/api-client.js?v=2.0"></script>
-    <script src="../assets/js/script.js?v=2.0"></script>
-
+    <script src="../assets/js/api-client.js"></script>
+    <script src="../assets/js/script.js"></script>
     <script>
-      const user = getCurrentUser();
-      if (!user || user.role !== "admin") {
-        window.location.href = "../login.html";
-      }
+        const user = getCurrentUser();
+        if (!user || user.role !== 'admin') window.location.href = '../login.html';
 
-      // Render avatar admin
-      document.getElementById('adminAvatar').style.width = '50px';
-      document.getElementById('adminAvatar').style.height = '50px';
-      document.getElementById('adminAvatar').style.fontSize = '20px';
-      renderAvatar('#adminAvatar', user.nama, user.foto_profil, 50);
+        renderAvatar('#adminAvatar', user.nama, user.foto_profil, 50);
+        document.getElementById('adminName').textContent = user.nama || 'Administrator';
 
-      let currentFilter = "booked";
-      let currentInvoiceData = null;
+        let currentFilter = 'return';
+        let allBookings = [];
 
-      function setFilter(filter, event) {
-        currentFilter = filter;
-        document
-          .querySelectorAll(".filter-tab")
-          .forEach((tab) => tab.classList.remove("active"));
-        event.target.classList.add("active");
-        renderPayments();
-      }
-
-      function renderPayments() {
-        let bookings = getBooking();
-        const motors = getMotor();
-        const grid = document.getElementById("paymentGrid");
-
-        // 🔥 DEBUG
-        console.log("SEMUA BOOKING:", bookings);
-
-        // 🔥 FILTER DIPERBAIKI (ANTI HILANG)
-        if (currentFilter === "booked") {
-          bookings = bookings.filter(
-            (b) =>
-              b.status === "booked" ||
-              b.status === "approved" ||
-              b.status === "confirm",
-          );
-        } else if (currentFilter === "returning") {
-          bookings = bookings.filter((b) => b.status === "returning");
-        } else {
-          bookings = bookings.filter((b) => b.status === "paid" || b.status === "done");
+        function setFilter(f, el) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderTable();
         }
 
-        if (bookings.length === 0) {
-          grid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--gray-500);">
-                    <i class="fas fa-credit-card" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
-                    <h3>Tidak ada data</h3>
-                </div>
-            `;
-          return;
+        async function loadData() {
+            try {
+                const data = await ApiClient.get('/bookings');
+                allBookings = Array.isArray(data) ? data : [];
+                allBookings.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                updateBadges();
+                renderTable();
+            } catch (e) {
+                document.getElementById('pelunasanTable').innerHTML = `<tr><td colspan="8" style="text-align:center;color:red;">Gagal memuat data: ${e.message}</td></tr>`;
+            }
         }
 
-        grid.innerHTML = bookings
-          .map((b) => {
-            const motor = motors.find((m) => m.id === b.motorId);
-            const days = calculateDays(b.startDate, b.endDate);
-            
-            // Logika Denda Keterlambatan
-            const now = new Date();
-            const endDateObj = new Date(b.endDate);
-            now.setHours(0,0,0,0);
-            endDateObj.setHours(0,0,0,0);
-            
-            let lateBadge = "";
-            if (b.status === "paid" && now > endDateObj) {
-                const lateDays = Math.ceil((now - endDateObj) / (1000 * 60 * 60 * 24));
-                const denda = lateDays * 50000; // Denda Rp 50.000 / hari
-                lateBadge = `<div style="color: var(--danger); font-size: 0.8rem; font-weight: bold; margin-top: 5px;"><i class="fas fa-exclamation-triangle"></i> Terlambat ${lateDays} Hari (Denda: ${formatRupiah(denda)})</div>`;
+        function updateBadges() {
+            const ret = allBookings.filter(b => b.status === 'returning' && b.statusPembayaran === 'menunggu_pelunasan').length;
+            const verif = allBookings.filter(b => b.status === 'returning' && b.statusPembayaran === 'pelunasan_uploaded').length;
+            document.getElementById('badge-return').textContent = ret || '';
+            document.getElementById('badge-verif').textContent = verif || '';
+        }
+
+        function getFiltered() {
+            if (currentFilter === 'return') return allBookings.filter(b => b.status === 'returning' && (b.statusPembayaran === 'menunggu_pelunasan' || b.statusPembayaran === 'pelunasan_uploaded'));
+            if (currentFilter === 'verif') return allBookings.filter(b => b.status === 'returning' && b.statusPembayaran === 'pelunasan_uploaded');
+            if (currentFilter === 'done') return allBookings.filter(b => b.status === 'completed');
+            return allBookings.filter(b => ['returning','completed'].includes(b.status));
+        }
+
+        function renderTable() {
+            const list = getFiltered();
+            const tbody = document.getElementById('pelunasanTable');
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem;color:var(--gray-500);">
+                    <i class="fas fa-inbox" style="font-size:3rem;opacity:0.3;display:block;margin-bottom:1rem;"></i>
+                    ${currentFilter === 'return' ? 'Tidak ada motor yang menunggu pelunasan.' :
+                      currentFilter === 'verif' ? 'Tidak ada bukti pelunasan yang perlu diverifikasi.' :
+                      currentFilter === 'done' ? 'Belum ada transaksi selesai.' : 'Tidak ada data.'}
+                </td></tr>`;
+                return;
             }
 
-            return `
-                <div class="motor-card">
-                    <div class="motor-image">
-                        <img src="${getMotorImage(motor?.gambar)}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=Motor'">
-                        <span class="motor-badge ${['paid', 'returning', 'done'].includes(b.status) ? 'badge-available' : 'badge-booked'}">
-                            ${['paid', 'returning', 'done'].includes(b.status) ? 'LUNAS' : 'BELUM BAYAR'}
-                        </span>
-                    </div>
+            tbody.innerHTML = list.map(b => {
+                const sp = b.statusPembayaran || '';
+                const total = b.totalHarga || 0;
+                const dp = b.dpAmount || 0;
+                const pelunasan = b.pelunasanAmount || (total - dp);
+                const nama = b.userName || `User #${b.userId}`;
+                const motor = b.motorName || `Motor #${b.motorId}`;
+                const days = calculateDays(b.startDate, b.endDate);
+                const bukti = b.buktiPelunasan || '';
 
-                    <div class="motor-content">
-                        <h3 class="motor-title">${b.motorName}</h3>
+                let badge = '', aksi = '';
 
-                        <p class="motor-desc">
-                            <i class="fas fa-user"></i> ${b.userName}<br>
-                            <i class="fas fa-calendar"></i> ${formatShortDate(b.startDate)} - ${formatShortDate(b.endDate)}<br>
-                            <i class="fas fa-clock"></i> ${days} hari
-                            ${lateBadge}
-                        </p>
-
-                        <div class="motor-price">
-                            <span class="price-amount">${formatRupiah(b.totalHarga)}</span>
-                        </div>
-
-                        ${
-                          b.status === "paid" || b.status === "done"
-                            ? `
-                            <button class="btn btn-outline" style="width:100%;margin-top:1rem;" onclick="showInvoice(${b.id})">
-                                <i class="fas fa-receipt"></i> Lihat Kuitansi
+                if (b.status === 'returning' && sp === 'menunggu_pelunasan') {
+                    badge = `<span class="badge-dp badge-returning">⏳ MENUNGGU PELUNASAN</span>`;
+                    aksi = `
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <span style="color:#9ca3af;font-size:11px;"><i class="fas fa-info-circle"></i> Menunggu user upload bukti</span>
+                            <button class="btn-action btn-approve" onclick="completeCash(${b.id})" style="background:#059669;font-size:12px;">
+                                <i class="fas fa-coins"></i> Lunas Tunai
                             </button>
-                        `
-                            : b.status === "returning" 
-                            ? `
-                            <button class="btn btn-sm" style="width:100%;margin-top:1rem; background: var(--success); color: white;" onclick="confirmDone(${b.id})">
-                                <i class="fas fa-check-double"></i> Konfirmasi Selesai Sewa
+                        </div>`;
+
+                } else if (b.status === 'returning' && sp === 'pelunasan_uploaded') {
+                    badge = `<span class="badge-dp badge-uploaded">🔍 VERIFIKASI PELUNASAN</span>`;
+                    aksi = `
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                            <button class="btn-action btn-approve" onclick="approvePelunasan(${b.id})">
+                                <i class="fas fa-check"></i> Konfirmasi Lunas
                             </button>
-                            `
-                            : b.statusPembayaran === "dp_uploaded"
-                            ? `
-                            <div style="margin-top:1rem; border:1px solid #ccc; border-radius:8px; padding:8px; background:#f9f9f9; text-align:center;">
-                                <p style="font-size:12px; margin-bottom:5px; color:#555;"><b>Bukti Transfer DP</b></p>
-                                <img src="${b.dpBukti || 'https://placehold.co/400x300/1A1A1A/white?text=Tidak+Ada+Bukti'}" alt="Bukti DP" style="width:100%; max-height:200px; object-fit:contain; border-radius:4px; margin-bottom:10px;">
-                                <a href="${b.dpBukti}" target="_blank" class="btn btn-outline" style="width:100%; display:block; text-align:center; margin-bottom:5px; text-decoration:none;"><i class="fas fa-search"></i> Lihat Full</a>
-                                <button class="btn btn-primary" style="width:100%;" onclick="confirmDp(${b.id})">
-                                    <i class="fas fa-check-circle"></i> Verifikasi DP
-                                </button>
-                            </div>
-                            `
-                            : `
-                            <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="confirmPayment(${b.id})">
-                                <i class="fas fa-check-circle"></i> Konfirmasi Pelunasan
+                            <button class="btn-action btn-approve" onclick="completeCash(${b.id})" style="background:#059669;font-size:12px;">
+                                <i class="fas fa-coins"></i> Lunas Tunai
                             </button>
-                        `
-                        }
-                    </div>
-                </div>
-            `;
-          })
-          .join("");
-      }
+                        </div>`;
 
-      // ✅ KONFIRMASI VERIFIKASI DP
-      async function confirmDp(bookingId) {
-        if (!confirm("Konfirmasi verifikasi DP untuk booking ini?")) return;
-        try {
-            const token = sessionStorage.getItem('token');
-            const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/approve-dp', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-            });
-            if (res.ok) {
-                showNotification('✅ Verifikasi DP berhasil! Status motor sekarang Disewa.', 'success');
-                renderPayments();
-            } else {
-                showNotification('❌ Gagal memverifikasi DP.', 'danger');
-            }
-        } catch(e) {
-            showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
+                } else if (b.status === 'completed') {
+                    badge = `<span class="badge-dp badge-done">✅ SELESAI - LUNAS</span>`;
+                    aksi = `<button class="btn-action btn-view" onclick="viewKwitansi(${b.id})">
+                        <i class="fas fa-receipt"></i> Kwitansi</button>`;
+
+                } else {
+                    badge = `<span class="badge-dp" style="background:#f3f4f6;color:#374151;">${(b.status||'').toUpperCase()}</span>`;
+                    aksi = '';
+                }
+
+                const buktiThumb = bukti
+                    ? `<img src="${bukti}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid #e5e7eb;" onclick="previewBukti('${bukti}')" title="Klik untuk lihat" onerror="this.outerHTML='<span style=color:#ef4444>Error</span>'">`
+                    : `<span style="color:#9ca3af;font-size:12px;"><i class="fas fa-minus"></i></span>`;
+
+                return `
+                    <tr>
+                        <td><code>#${String(b.id).slice(-6)}</code></td>
+                        <td><strong>${nama}</strong><br><small style="color:#9ca3af;">${b.userEmail||''}</small></td>
+                        <td>${motor}<br><small style="color:#9ca3af;">${b.motorKategori||''}</small></td>
+                        <td style="font-size:12px;">${formatShortDate(b.startDate)} →<br>${formatShortDate(b.endDate)}<br><small>${days} hari</small></td>
+                        <td>
+                            <strong>${formatRupiah(total)}</strong><br>
+                            <small style="color:#059669;">DP: ${formatRupiah(dp)}</small><br>
+                            <small style="color:var(--primary);font-weight:600;">Sisa: ${formatRupiah(pelunasan)}</small>
+                        </td>
+                        <td style="text-align:center;">${buktiThumb}</td>
+                        <td>${badge}</td>
+                        <td>${aksi}</td>
+                    </tr>`;
+            }).join('');
         }
-      }
 
-      // ✅ KONFIRMASI PEMBAYARAN LUNAS
-      async function confirmPayment(bookingId) {
-        if (!confirm("Konfirmasi pelunasan untuk booking ini?")) return;
-        try {
-            const token = sessionStorage.getItem('token');
-            const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/status', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status: 'paid' })
-            });
-            if (res.ok) {
-                showNotification('✅ Pembayaran berhasil dikonfirmasi!', 'success');
-                renderPayments();
-                showInvoice(bookingId);
-            } else {
-                showNotification('❌ Gagal mengonfirmasi pembayaran.', 'danger');
-            }
-        } catch(e) {
-            showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
+        function previewBukti(src) {
+            document.getElementById('buktiPreviewImg').src = src;
+            document.getElementById('buktiPreview').classList.add('show');
         }
-      }
 
-      // ✅ KONFIRMASI SELESAI SEWA
-      async function confirmDone(bookingId) {
-        if (!confirm("Konfirmasi bahwa motor sudah dikembalikan dan sewa selesai?")) return;
-        try {
-            const token = sessionStorage.getItem('token');
-            const res = await fetch(API_URL + '/api/bookings/' + bookingId + '/status', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status: 'done' })
-            });
-            if (res.ok) {
-                showNotification('✅ Sewa berhasil diselesaikan! Motor kini tersedia kembali.', 'success');
-                renderPayments();
-            } else {
-                showNotification('❌ Gagal memproses data.', 'danger');
-            }
-        } catch(e) {
-            showNotification('❌ Terjadi kesalahan koneksi.', 'danger');
+        async function approvePelunasan(bookingId) {
+            if (!confirm(`Konfirmasi pelunasan untuk booking #${bookingId}?\nStatus akan menjadi SELESAI - LUNAS.`)) return;
+            try {
+                await ApiClient.put(`/bookings/${bookingId}/approve-pelunasan`, {});
+                showNotif('✅ Pelunasan dikonfirmasi! Sewa selesai. Motor kembali tersedia.', 'success');
+                await loadData();
+            } catch(e) { showNotif('Gagal: ' + e.message, 'danger'); }
         }
-      }
 
-      // ✅ KUITANSI FINAL
-      function showInvoice(id) {
-        const booking = getBooking().find((b) => String(b.id) === String(id));
-        if (!booking) return;
+        async function completeCash(bookingId) {
+            if (!confirm(`Konfirmasi pelunasan TUNAI untuk booking #${bookingId}?\nStatus akan menjadi SELESAI - LUNAS.`)) return;
+            try {
+                await ApiClient.put(`/bookings/${bookingId}/complete-cash`, {});
+                showNotif('✅ Pelunasan tunai dikonfirmasi! Sewa selesai.', 'success');
+                await loadData();
+            } catch(e) { showNotif('Gagal: ' + e.message, 'danger'); }
+        }
 
-        const days = calculateDays(booking.startDate, booking.endDate);
-
-        document.getElementById("invoiceContent").innerHTML = `
-            <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; background: white; color: #1a1a1a; max-width: 800px; margin: auto; border: 1px solid #eee;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px;">
-                    <div>
-                        <img src="../assets/img/logo.png" alt="Ngebut.in" style="height: 60px; margin-bottom: 15px; mix-blend-mode: multiply;">
-                        <p style="font-size: 14px; color: #666; line-height: 1.6; margin: 0;">
-                            Jl. DI Panjaitan No. 128<br>
-                            Purwokerto Selatan, Banyumas<br>
-                            Telp: (022) 123-4567<br>
-                            Halo@ngebut.in
-                        </p>
-                    </div>
-                    <div style="text-align: right;">
-                        <h1 style="margin: 0; color: #cc0000; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">KUITANSI</h1>
-                        <p style="font-size: 16px; font-weight: 600; margin: 5px 0 0;">#${booking.id.toString().slice(-6)}</p>
-                        <p style="font-size: 14px; color: #666; margin: 5px 0 0;">${formatDate(new Date())}</p>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; padding: 25px; background: #f9fafb; border-radius: 12px;">
-                    <div>
-                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Ditujukan Kepada</h4>
-                        <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.userName}</p>
-                        <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Penyewa Terverifikasi</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <h4 style="margin: 0 0 10px; color: #666; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Status Pembayaran</h4>
-                        <span style="display: inline-block; padding: 6px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-weight: 700; font-size: 12px;">LUNAS</span>
-                    </div>
-                </div>
-
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid #1a1a1a;">
-                            <th style="text-align: left; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Deskripsi Unit</th>
-                            <th style="text-align: center; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Durasi</th>
-                            <th style="text-align: right; padding: 15px 0; font-size: 13px; color: #666; text-transform: uppercase;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 25px 0;">
-                                <p style="margin: 0; font-weight: 700; font-size: 16px;">${booking.motorName}</p>
-                                <p style="margin: 5px 0 0; color: #666; font-size: 13px;">Sewa Motor ${formatShortDate(booking.startDate)} - ${formatShortDate(booking.endDate)}</p>
-                            </td>
-                            <td style="text-align: center; padding: 25px 0; font-weight: 600;">${days} Hari</td>
-                            <td style="text-align: right; padding: 25px 0; font-weight: 700; font-size: 16px;">${formatRupiah(booking.totalHarga)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 60px;">
-                    <div style="width: 250px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                            <span style="color: #666;">Subtotal</span>
-                            <span style="font-weight: 600;">${formatRupiah(booking.totalHarga)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding-top: 15px; border-top: 2px solid #1a1a1a;">
-                            <span style="font-weight: 800; font-size: 18px;">TOTAL</span>
-                            <span style="font-weight: 800; font-size: 18px; color: #cc0000;">${formatRupiah(booking.totalHarga)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: #999;">
-                    <div>
-                        <p style="margin: 0;"><b>Catatan:</b></p>
-                        <p style="margin: 5px 0 0;">Kuitansi ini adalah bukti pembayaran yang sah dan dihasilkan secara otomatis oleh sistem.</p>
-                    </div>
-                    <div style="text-align: center; min-width: 150px;">
-                        <div style="margin-bottom: 10px; height: 40px;">
-                             <img src="../assets/img/logo.png" style="height: 30px; opacity: 0.3; filter: grayscale(1);">
-                        </div>
-                        <p style="margin: 0; font-weight: 700; color: #666;">NGEBUT.IN OFFICIAL</p>
-                    </div>
-                </div>
+        function viewKwitansi(bookingId) {
+            const b = allBookings.find(x => String(x.id) === String(bookingId));
+            if (!b) return;
+            const total = b.totalHarga || 0;
+            const dp = b.dpAmount || 0;
+            const pelunasan = b.pelunasanAmount || (total - dp);
+            const win = window.open('', '_blank');
+            win.document.write(`<!DOCTYPE html><html><head><title>Kwitansi #${String(b.id).slice(-6)}</title>
+            <style>
+                body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;padding:20px;}
+                .header{text-align:center;border-bottom:3px solid #cc0000;padding-bottom:15px;margin-bottom:20px;}
+                .logo{font-size:28px;font-weight:900;color:#cc0000;letter-spacing:2px;}
+                .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+                .label{color:#666;font-size:14px;}
+                .value{font-weight:600;font-size:14px;}
+                .total-box{background:#fff5f5;padding:14px;border-radius:8px;margin-top:16px;}
+                .lunas-badge{text-align:center;margin:20px 0;padding:12px;background:#dcfce7;border-radius:8px;color:#166534;font-weight:700;font-size:20px;letter-spacing:2px;}
+                @media print{button{display:none}}
+            </style></head><body>
+            <div class="header">
+                <div class="logo">🏍️ NGEBUT.IN</div>
+                <h3 style="margin:8px 0;color:#333;">KWITANSI SEWA MOTOR</h3>
+                <small style="color:#666;">No. Transaksi: <strong>#${String(b.id).slice(-6)}</strong></small>
             </div>
-        `;
-
-        document.getElementById("invoiceModal").style.display = "flex";
-      }
-
-      function closeInvoiceModal() {
-        document.getElementById("invoiceModal").style.display = "none";
-      }
-
-      async function printInvoice() {
-        const { jsPDF } = window.jspdf;
-        const invoiceContent = document.getElementById("invoiceContent");
-        
-        // Hide scrollbar and adjust styling temporarily for better render
-        const originalBg = invoiceContent.style.background;
-        invoiceContent.style.background = "white";
-        
-        try {
-            const canvas = await html2canvas(invoiceContent, {
-                scale: 2,
-                useCORS: true
-            });
-            
-            const imgData = canvas.toDataURL("image/png");
-            const pdf = new jsPDF("p", "mm", "a4");
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            // Add image to PDF
-            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-            
-            // Generate filename based on date
-            const dateStr = new Date().getTime();
-            pdf.save(`Kuitansi_NgebutIN_${dateStr}.pdf`);
-            
-        } catch (error) {
-            console.error("Gagal membuat PDF:", error);
-            alert("Terjadi kesalahan saat membuat kuitansi PDF.");
-        } finally {
-            invoiceContent.style.background = originalBg;
+            <div class="row"><span class="label">Tanggal Transaksi</span><span class="value">${new Date(b.createdAt).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}</span></div>
+            <div class="row"><span class="label">Nama Penyewa</span><span class="value">${b.userName||'-'}</span></div>
+            <div class="row"><span class="label">Motor</span><span class="value">${b.motorName||'-'} (${b.motorKategori||'-'})</span></div>
+            <div class="row"><span class="label">Tanggal Mulai</span><span class="value">${b.startDate||'-'}</span></div>
+            <div class="row"><span class="label">Tanggal Kembali</span><span class="value">${b.endDate||'-'}</span></div>
+            <div class="row"><span class="label">Durasi</span><span class="value">${calculateDays(b.startDate, b.endDate)} hari</span></div>
+            <div class="total-box">
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">Harga Per Hari</span><span class="value">Rp ${Number(b.motorHarga||0).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">Total Sewa</span><span class="value">Rp ${Number(total).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">DP (50%)</span><span class="value" style="color:#059669;">Rp ${Number(dp).toLocaleString('id-ID')}</span></div>
+                <div class="row" style="border:none;padding:4px 0;"><span class="label">Pelunasan (50%)</span><span class="value" style="color:#cc0000;">Rp ${Number(pelunasan).toLocaleString('id-ID')}</span></div>
+            </div>
+            <div class="lunas-badge">✅ LUNAS</div>
+            <p style="text-align:center;color:#9ca3af;font-size:12px;">Terima kasih telah menggunakan layanan NGEBUT.IN</p>
+            <div style="text-align:center;margin-top:16px;">
+                <button onclick="window.print()" style="background:#cc0000;color:#fff;border:none;padding:12px 28px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">🖨️ Cetak Kwitansi</button>
+            </div></body></html>`);
         }
-      }
 
-      document
-        .getElementById("invoiceModal")
-        .addEventListener("click", function (e) {
-          if (e.target === this) closeInvoiceModal();
+        function exportToCSV() {
+            if (allBookings.length === 0) { alert('Tidak ada data!'); return; }
+            const list = allBookings.filter(b => ['returning','completed'].includes(b.status));
+            const headers = ['ID', 'Penyewa', 'Motor', 'Tgl Mulai', 'Tgl Selesai', 'Total', 'DP', 'Pelunasan', 'Status'];
+            const rows = list.map(b => [
+                `#${String(b.id).slice(-6)}`,
+                b.userName||'', b.motorName||'',
+                b.startDate||'', b.endDate||'',
+                b.totalHarga||0, b.dpAmount||0, b.pelunasanAmount||(b.totalHarga-b.dpAmount)||0,
+                b.status||''
+            ]);
+            downloadCSV('Pelunasan_NgebutIN.csv', headers, rows, 'Laporan Pelunasan');
+        }
+
+        function showNotif(msg, type) {
+            const area = document.getElementById('notificationArea');
+            area.innerHTML = `<div class="notification notification-${type}">
+                <span class="notification-icon"><i class="fas fa-${type==='success'?'check-circle':'times-circle'}"></i></span>
+                <div class="notification-content"><div class="notification-title">${msg}</div></div>
+                <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>
+            </div>`;
+            setTimeout(() => area.innerHTML = '', 6000);
+        }
+
+        loadData();
+
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.toggle('open');
+            document.getElementById('sidebarOverlay')?.classList.toggle('show');
         });
-
-      function exportToExcel() {
-        window.location.href = window.location.origin + '/api/export/excel';
-      }
-
-      function exportToCSV() {
-        const bookings = getBooking().filter(b => b.status === "paid" || b.status === "done");
-        if (bookings.length === 0) {
-            alert("Tidak ada data transaksi untuk diexport!");
-            return;
-        }
-
-        // Gunakan BOM & sep=, agar Excel membagi kolom secara otomatis
-        let csvContent = "\uFEFFsep=,\n"; 
-        csvContent += "ID Transaksi,Penyewa,Motor,Tanggal Sewa,Tanggal Kembali,Durasi,Total Harga,Status\n";
-
-        const headers = ["ID Transaksi", "Penyewa", "Email", "Motor", "Tgl Mulai", "Tgl Selesai", "Durasi", "Total Bayar", "Status", "Waktu Transaksi"];
-        const rows = bookings.map(b => [
-            `#${b.id.toString().slice(-6)}`,
-            b.userName,
-            b.userEmail || "-",
-            b.motorName,
-            b.startDate,
-            b.endDate,
-            `${calculateDays(b.startDate, b.endDate)} Hari`,
-            formatRupiah(b.totalHarga),
-            b.status.toUpperCase(),
-            b.createdAt
-        ]);
-
-        downloadCSV("Laporan_Pembayaran_NgebutIN.csv", headers, rows, "Laporan Riwayat Transaksi & Pembayaran");
-      }
-
-      renderPayments();
-      // Auto-refresh setiap 30 detik
-      setInterval(renderPayments, 30000);
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.querySelector('.sidebar')?.classList.remove('open');
+            document.getElementById('sidebarOverlay')?.classList.remove('show');
+        });
     </script>
   </body>
 </html>

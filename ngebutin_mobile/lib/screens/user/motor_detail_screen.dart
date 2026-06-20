@@ -127,14 +127,17 @@ class _MotorDetailScreenState extends State<MotorDetailScreen> {
       final userId = user != null ? user['id'] : 0;
 
       final provider = Provider.of<BookingProvider>(context, listen: false);
-      final bookingId = await provider.createBooking(userId, widget.motor.id, startStr, endStr, _totalPrice);
+      final result = await provider.createBooking(
+          (userId as num).toInt(), widget.motor.id, startStr, endStr, _totalPrice);
+      final bookingId = result['bookingId'] as int;
+      final dpAmount = result['dpAmount'] as int;
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => DpUploadScreen(
               bookingId: bookingId,
-              dpAmount: _dpAmount,
+              dpAmount: dpAmount,
             ),
           ),
         );
