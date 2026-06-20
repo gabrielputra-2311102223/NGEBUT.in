@@ -48,7 +48,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     IconData icon;
 
     switch (status) {
-      case 'done':
+      case 'completed':
+      case 'done': // legacy compat
         bg = const Color(0xFFDCFCE7); fg = const Color(0xFF166534);
         text = 'SELESAI'; icon = Icons.check_circle;
         break;
@@ -62,7 +63,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         break;
       case 'returning':
         bg = const Color(0xFFE9D5FF); fg = const Color(0xFF6B21A8);
-        text = 'DIKEMBALIKAN'; icon = Icons.undo;
+        text = 'PROSES KEMBALI'; icon = Icons.undo;
         break;
       default:
         bg = Colors.grey.shade200; fg = Colors.grey.shade700;
@@ -97,10 +98,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
             return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
           }
 
-          // Riwayat: HANYA yang sudah selesai/batal/ditolak
+          // Riwayat: yang sudah selesai/batal/ditolak/returning
           final history = provider.bookings.where((b) {
             final s = b['status']?.toString() ?? '';
-            return ['done', 'cancelled', 'rejected', 'returning'].contains(s);
+            return ['completed', 'done', 'cancelled', 'rejected', 'returning'].contains(s);
           }).toList();
 
           if (history.isEmpty) {
@@ -148,7 +149,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,26 +191,43 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ],
                       ),
+                      // DP & Pelunasan breakdown
+                      Builder(builder: (_) {
+                        final dp = (b['dpAmount'] ?? b['dp_amount'] ?? 0) as num;
+                        final pel = (b['pelunasanAmount'] ?? ((totalHarga as num) - dp)) as num;
+                        if (dp.toInt() == 0) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            Text('DP: ${_formatCurrency(dp)}', style: const TextStyle(color: Color(0xFF059669), fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('Pelunasan: ${_formatCurrency(pel)}', style: const TextStyle(color: Color(0xFFCC0000), fontSize: 12, fontWeight: FontWeight.w600)),
+                          ]),
+                        );
+                      }),
                       if (status == 'rejected') ...[
                         const SizedBox(height: 10),
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(8)),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.info_outline, color: Color(0xFFCC0000), size: 16),
-                              SizedBox(width: 6),
-                              Expanded(child: Text('Bukti DP Anda tidak valid. Silakan hubungi admin.', style: TextStyle(color: Color(0xFFCC0000), fontSize: 12))),
+                              const Icon(Icons.info_outline, color: Color(0xFFCC0000), size: 16),
+                              const SizedBox(width: 6),
+                              Expanded(child: Text(
+                                'DP ditolak: ${b['catatanAdmin'] ?? b['catatan_admin'] ?? 'Bukti tidak valid'}',
+                                style: const TextStyle(color: Color(0xFFCC0000), fontSize: 12),
+                              )),
                             ],
                           ),
                         ),
                       ],
-                      if (status == 'done') ...[
+                      if (status == 'completed' || status == 'done') ...[
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
-                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => KwitansiScreen(booking: b))),
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => KwitansiScreen(booking: Map<String, dynamic>.from(b)))),
                             icon: const Icon(Icons.receipt_long, size: 16, color: Color(0xFF059669)),
                             label: const Text('Lihat Kwitansi', style: TextStyle(color: Color(0xFF059669), fontSize: 13)),
                             style: OutlinedButton.styleFrom(

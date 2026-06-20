@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -64,12 +64,15 @@
         <div class="filter-bar">
             <div class="search-box">
                 <i class="fas fa-search" style="color: var(--gray-400);"></i>
-                <input type="text" id="searchInput" placeholder="Cari motor..." onkeyup="filterMotor()">
-                <button onclick="filterMotor()">Cari</button>
+                <input type="text" id="searchInput" placeholder="Cari motor..." onkeyup="renderKatalog()">
+                <button onclick="renderKatalog()">Cari</button>
             </div>
             <div class="filter-tabs">
-                <button class="filter-tab active" onclick="setFilter('all')">Semua</button>
-                <button class="filter-tab" onclick="setFilter('available')">Tersedia</button>
+                <button class="filter-tab active" onclick="setFilter('all', this)">🏍️ Semua</button>
+                <button class="filter-tab" onclick="setFilter('available', this)">✅ Tersedia</button>
+                <button class="filter-tab" onclick="setKategori('matic', this)">⚡ Matic</button>
+                <button class="filter-tab" onclick="setKategori('manual', this)">🔧 Manual</button>
+                <button class="filter-tab" onclick="setKategori('sport', this)">🏁 Sport</button>
             </div>
         </div>
 
@@ -114,19 +117,18 @@
         </div>
     </div>
 
-    <script src="../assets/js/api-client.js?v=2.0"></script>
-    <script src="../assets/js/script.js?v=2.0"></script>
+    <script src="../assets/js/api-client.js"></script>
+    <script src="../assets/js/script.js"></script>
     <script>
-    // Proteksi user
     const user = getCurrentUser();
-    if (!user) {
-        window.location.href = '../login.html';
-    }
+    if (!user || user.role !== 'user') window.location.href = '../login.html';
 
     let currentFilter = 'all';
+    let currentKategori = '';
     let selectedMotorId = null;
+    let allMotors = [];
+    let userBookings = [];
 
-    // Set user profile
     document.getElementById('userName').innerText = user.nama;
     document.getElementById('userProfile').innerHTML = `
         <div class="user-avatar" id="userAvatar"></div>
@@ -137,114 +139,129 @@
     `;
     renderAvatar('#userAvatar', user.nama, user.foto_profil, 50);
 
-    // NOTIF 
-    function checkNotifications() {
-    const notifications = checkReturnNotifications(user.id);
-    const area = document.getElementById('notificationArea');
-    
-    if (notifications.length > 0) {
-        area.innerHTML = notifications.map(n => `
-            <div class="notification notification-${n.type}">
-                <span class="notification-icon"><i class="fas ${n.icon}"></i></span>
-                <div class="notification-content">
-                    <div class="notification-title">${n.title}</div>
-                    <div>${n.message}</div>
-                </div>
-                <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>
-            </div>
-        `).join('');
-    } else {
-        area.innerHTML = '';
-    }
-}
-    // render katalog
-    function setFilter(status) {
+    function setFilter(status, el) {
         currentFilter = status;
-        document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
-        event.target.classList.add('active');
+        currentKategori = '';
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        if (el) el.classList.add('active');
+        renderKatalog();
+    }
+    function setKategori(kat, el) {
+        currentKategori = kat;
+        currentFilter = 'all';
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        if (el) el.classList.add('active');
         renderKatalog();
     }
 
-    function filterMotor() {
-        renderKatalog();
+    async function loadData() {
+        try {
+            [allMotors, userBookings] = await Promise.all([
+                ApiClient.get('/motors'),
+                ApiClient.get(`/bookings/my/${user.id}`).catch(() => [])
+            ]);
+            renderActiveRentals();
+            renderKatalog();
+        } catch (e) {
+            document.getElementById('motorGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#9ca3af;"><i class="fas fa-wifi" style="font-size:3rem;opacity:0.3;"></i><p>Gagal memuat katalog: ${e.message}</p></div>`;
+        }
+    }
+
+    function renderActiveRentals() {
+        const active = userBookings.filter(b => ['confirmed','returning','pending'].includes(b.status));
+        const area = document.getElementById('activeRentalArea');
+        if (active.length === 0) { area.innerHTML = ''; return; }
+
+        const statusMap = {
+            pending:   { label: '⏳ Upload DP', color: '#92400e', bg: '#fefce8', link: 'booking.html' },
+            confirmed: { label: '🏍️ Aktif Disewa', color: '#166534', bg: '#f0fdf4', link: 'booking.html' },
+            returning: { label: '↩️ Proses Kembali', color: '#5b21b6', bg: '#faf5ff', link: 'booking.html' },
+        };
+
+        area.innerHTML = `
+            <div style="background:white;padding:1.5rem;border-radius:16px;border-left:5px solid var(--primary);margin-bottom:2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+                <h3 style="margin:0 0 1rem;color:var(--secondary);font-size:16px;">
+                    <i class="fas fa-motorcycle" style="color:var(--primary);"></i> Sewa Aktif Kamu
+                </h3>
+                ${active.map(b => {
+                    const sm = statusMap[b.status] || { label: b.status, color:'#374151', bg:'#f3f4f6', link:'booking.html' };
+                    const endDate = b.endDate ? new Date(b.endDate).toLocaleDateString('id-ID') : '-';
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:${sm.bg};border-radius:10px;margin-bottom:8px;">
+                        <div>
+                            <strong style="font-size:14px;">${b.motorName||'Motor'}</strong>
+                            <span style="font-size:11px;font-weight:700;background:${sm.bg};color:${sm.color};border:1px solid ${sm.color};padding:2px 8px;border-radius:99px;margin-left:8px;">${sm.label}</span><br>
+                            <small style="color:#6b7280;">Hingga: ${endDate}</small>
+                        </div>
+                        <a href="booking.html" style="background:var(--primary);color:white;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;">
+                            <i class="fas fa-arrow-right"></i> Detail
+                        </a>
+                    </div>`;
+                }).join('')}
+            </div>`;
     }
 
     function renderKatalog() {
-        const motors = getMotor();
-        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
         const grid = document.getElementById('motorGrid');
-        
-        const filtered = motors.filter(m => {
-            const matchSearch = m.nama.toLowerCase().includes(searchTerm);
+
+        let filtered = allMotors.filter(m => {
+            const nama = (m.nama || m.name || '').toLowerCase();
+            const kat = (m.kategori || m.tipe || '').toLowerCase();
+            const matchSearch = nama.includes(search);
             const matchStatus = currentFilter === 'all' || m.status === currentFilter;
-            return matchSearch && matchStatus;
+            const matchKat = !currentKategori || kat.includes(currentKategori);
+            return matchSearch && matchStatus && matchKat;
         });
 
         if (filtered.length === 0) {
-            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--gray-500);">
-                <i class="fas fa-motorcycle" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--gray-500);">
+                <i class="fas fa-motorcycle" style="font-size:3rem;opacity:0.3;margin-bottom:1rem;display:block;"></i>
                 <h3>Tidak ada motor ditemukan</h3>
+                <p style="font-size:13px;">${currentKategori ? 'Coba kategori lain' : 'Coba pencarian lain'}</p>
             </div>`;
             return;
         }
 
         grid.innerHTML = filtered.map(m => {
+            const motorNama = m.nama || m.name || 'Motor';
+            const harga = m.harga || m.price || 0;
+            const gambar = m.gambar || m.image || '';
+            const kat = m.kategori || m.tipe || '';
 
-            // TAMBAHAN (ganti status)
-            let statusClass = '';
-            let statusText = '';
+            let statusClass = '', statusText = '';
+            if (m.status === 'available') { statusClass = 'badge-available'; statusText = 'TERSEDIA'; }
+            else if (m.status === 'booked') { statusClass = 'badge-booked'; statusText = 'DISEWA'; }
+            else { statusClass = 'badge-service'; statusText = 'SERVICE'; }
 
-            if (m.status === 'available') {
-                statusClass = 'badge-available';
-                statusText = 'TERSEDIA';
-            } else if (m.status === 'booked') {
-                statusClass = 'badge-booked';
-                statusText = 'DISEWA';
-            } else if (m.status === 'service') {
-                statusClass = 'badge-service';
-                statusText = 'SERVICE';
-            }
-
-            return `
-                <div class="motor-card">
-                    <div class="motor-image">
-                        <img src="${getMotorImage(m.gambar)}" alt="${m.nama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${m.nama}'">
-                        
-                        <!-- ✅ SUDAH DIPERBAIKI -->
-                        <span class="motor-badge ${statusClass}">
-                            ${statusText}
-                        </span>
-                    </div>
-
-                    <div class="motor-content">
-                        <h3 class="motor-title">${m.nama}</h3>
-                        <p class="motor-desc">${m.desc || 'Motor berkualitas, siap pakai'}</p>
-
-                        <div class="motor-price">
-                            <span class="price-amount">${formatRupiah(m.harga)}</span>
-                            <span class="price-unit">/hari</span>
-                        </div>
-
-                        <!-- ✅ tombol sudah benar -->
-                        <button class="btn btn-book" style="width: 100%;" onclick="openBookingModal(${m.id})" ${m.status !== 'available' ? 'disabled' : ''}>
-                            <i class="fas fa-bolt"></i> ${m.status === 'available' ? 'Sewa Sekarang' : 'Tidak Tersedia'}
-                        </button>
-                    </div>
+            return `<div class="motor-card">
+                <div class="motor-image">
+                    <img src="${getMotorImage(gambar)}" alt="${motorNama}" onerror="this.src='https://placehold.co/400x300/1A1A1A/white?text=${motorNama}'">
+                    <span class="motor-badge ${statusClass}">${statusText}</span>
+                    ${kat ? `<span style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:3px 8px;border-radius:99px;">${kat.toUpperCase()}</span>` : ''}
                 </div>
-            `;
+                <div class="motor-content">
+                    <h3 class="motor-title">${motorNama}</h3>
+                    <p class="motor-desc">${m.desc || m.deskripsi || 'Motor berkualitas, siap pakai'}</p>
+                    <div class="motor-price">
+                        <span class="price-amount">${formatRupiah(harga)}</span>
+                        <span class="price-unit">/hari</span>
+                    </div>
+                    <button class="btn btn-book" style="width:100%;" onclick="openBookingModal(${m.id})" ${m.status !== 'available' ? 'disabled' : ''}>
+                        <i class="fas fa-bolt"></i> ${m.status === 'available' ? 'Sewa Sekarang' : 'Tidak Tersedia'}
+                    </button>
+                </div>
+            </div>`;
         }).join('');
     }
 
     function openBookingModal(motorId) {
         selectedMotorId = motorId;
-        const motor = getMotor().find(m => m.id === motorId);
+        const motor = allMotors.find(m => m.id === motorId || String(m.id) === String(motorId));
         if (!motor) return;
-
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tglMulai').min = today;
         document.getElementById('tglSelesai').min = today;
-
-        document.getElementById('modalMotorName').innerText = `Sewa ${motor.nama}`;
+        document.getElementById('modalMotorName').innerText = `Sewa ${motor.nama || motor.name}`;
         document.getElementById('bookingNama').value = user.nama;
         document.getElementById('tglMulai').value = '';
         document.getElementById('tglSelesai').value = '';
@@ -259,163 +276,80 @@
 
     function hitungTotal() {
         if (!selectedMotorId) return 0;
-        
-        const tglMulai = document.getElementById('tglMulai').value;
-        const tglSelesai = document.getElementById('tglSelesai').value;
-        
-        if (!tglMulai || !tglSelesai) {
-            document.getElementById('totalBayarText').innerText = 'Rp 0';
-            return 0;
-        }
-
-        const days = calculateDays(tglMulai, tglSelesai);
-        const motor = getMotor().find(m => m.id === selectedMotorId);
-        
-        if (!motor) {
-            console.error('Motor not found:', selectedMotorId);
-            return 0;
-        }
-
-        const total = days * Number(motor.harga);
-        console.log('Calculation:', { days, price: motor.harga, total });
-
+        const s = document.getElementById('tglMulai').value;
+        const e = document.getElementById('tglSelesai').value;
+        if (!s || !e) { document.getElementById('totalBayarText').innerText = 'Rp 0'; return 0; }
+        const days = calculateDays(s, e);
+        const motor = allMotors.find(m => m.id === selectedMotorId || String(m.id) === String(selectedMotorId));
+        if (!motor) return 0;
+        const total = days * Number(motor.harga || motor.price || 0);
         document.getElementById('totalBayarText').innerText = formatRupiah(total);
         return total;
     }
 
     async function prosesBooking() {
         if (!selectedMotorId) return;
-        
-        const tglMulai = document.getElementById('tglMulai').value;
-        const tglSelesai = document.getElementById('tglSelesai').value;
-        
-        if (!tglMulai || !tglSelesai) {
-            alert('Silakan pilih tanggal sewa terlebih dahulu.');
-            return;
-        }
-
+        const s = document.getElementById('tglMulai').value;
+        const e = document.getElementById('tglSelesai').value;
+        if (!s || !e) { alert('Pilih tanggal sewa terlebih dahulu.'); return; }
         const total = hitungTotal();
-        if (total <= 0) {
-            alert('Durasi sewa minimal 1 hari.');
-            return;
-        }
+        if (total <= 0) { alert('Durasi sewa minimal 1 hari.'); return; }
 
-        const motor = getMotor().find(m => m.id === selectedMotorId);
-        if (!motor || motor.status !== 'available') {
-            alert('Motor sudah tidak tersedia.');
-            return;
-        }
+        const motor = allMotors.find(m => m.id === selectedMotorId || String(m.id) === String(selectedMotorId));
+        if (!motor || motor.status !== 'available') { alert('Motor sudah tidak tersedia.'); return; }
+
+        const btn = document.querySelector('.modal-footer .btn-primary');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...'; }
 
         try {
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-
-            const res = await fetch(window.location.origin + '/api/bookings', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
-                },
-                body: JSON.stringify({
-                    user_id: user.id,
-                    motor_id: selectedMotorId,
-                    tgl_mulai: tglMulai,
-                    tgl_selesai: tglSelesai,
-                    total_harga: total
-                })
+            const data = await ApiClient.post('/bookings', {
+                user_id: user.id,
+                motor_id: selectedMotorId,
+                tgl_mulai: s,
+                tgl_selesai: e,
+                total_harga: total
             });
-
-            const data = await res.json();
-            if (!res.ok || data.error) {
-                throw new Error(data.error || 'Gagal menyimpan data');
-            }
-
-            alert('✅ Booking berhasil! Menunggu konfirmasi admin.');
             closeModal();
-            renderKatalog();
-            
-            // Redirect ke halaman booking saya agar user bisa melihat statusnya
-            setTimeout(() => {
-                window.location.href = 'booking.html';
-            }, 1000);
-
+            await loadData();
+            // Tampilkan notif lalu redirect
+            const notif = document.createElement('div');
+            notif.className = 'notification notification-success';
+            notif.innerHTML = `<span class="notification-icon"><i class="fas fa-check-circle"></i></span>
+                <div class="notification-content"><div class="notification-title">Booking berhasil! Silakan upload bukti DP.</div></div>
+                <span class="notification-close" onclick="this.parentElement.remove()">&times;</span>`;
+            document.body.appendChild(notif);
+            setTimeout(() => { window.location.href = 'booking.html'; }, 2000);
         } catch (err) {
-            console.error('Booking error:', err);
-            alert('Gagal melakukan booking: ' + err.message);
+            const msg = err.message || 'Gagal melakukan booking';
+            showDialog('Booking Gagal', msg);
         } finally {
-            const btn = document.querySelector('.modal-footer .btn-primary');
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = 'Pesan Sekarang';
-            }
+            if (btn) { btn.disabled = false; btn.innerHTML = 'Pesan Sekarang'; }
         }
     }
 
-    document.getElementById('bookingModal').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
+    function showDialog(title, msg) {
+        const d = document.createElement('div');
+        d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        d.innerHTML = `<div style="background:#fff;border-radius:16px;padding:24px;max-width:380px;width:100%;">
+            <h3 style="margin:0 0 8px;color:#cc0000;">${title}</h3>
+            <p style="margin:0 0 16px;color:#374151;font-size:14px;">${msg}</p>
+            <button onclick="this.closest('div[style]').remove()" style="background:#cc0000;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600;">OK</button>
+        </div>`;
+        document.body.appendChild(d);
+    }
+
+    document.getElementById('bookingModal').addEventListener('click', e => { if (e.target === document.getElementById('bookingModal')) closeModal(); });
+
+    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+        document.querySelector('.sidebar')?.classList.toggle('open');
+        document.getElementById('sidebarOverlay')?.classList.toggle('show');
+    });
+    document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+        document.querySelector('.sidebar')?.classList.remove('open');
+        document.getElementById('sidebarOverlay')?.classList.remove('show');
     });
 
-    // RENDER ACTIVE RENTALS
-    function renderActiveRentals() {
-        const bookings = getBooking().filter(b => 
-            String(b.userId) === String(user.id) && b.status === 'paid'
-        );
-        const area = document.getElementById('activeRentalArea');
-        
-        if (bookings.length > 0) {
-            area.innerHTML = `
-                <div style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); border-left: 5px solid var(--success); margin-bottom: 2rem; box-shadow: var(--shadow-md);">
-                    <h3 style="margin-bottom: 1rem; color: var(--secondary);">
-                        <i class="fas fa-motorcycle" style="color: var(--success);"></i> Sewa Aktif Kamu
-                    </h3>
-                    ${bookings.map(b => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--gray-50); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
-                            <div>
-                                <strong>${b.motorName}</strong><br>
-                                <small style="color: var(--gray-500);">Sampai: ${new Date(b.endDate).toLocaleDateString('id-ID')}</small>
-                            </div>
-                            <button class="btn btn-sm" style="background: var(--success); color: white; border-radius: 50px; padding: 8px 20px;" onclick="kembalikanMotor(${b.id}, this)">
-                                <i class="fas fa-undo"></i> Selesai Sewa
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } else {
-            area.innerHTML = '';
-        }
-    }
-
-    async function kembalikanMotor(bookingId, btn) {
-        if (!confirm('Apakah Anda yakin sudah selesai menyewa dan ingin mengembalikan motor ini?')) return;
-        
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
-
-        const success = updateBookingStatus(bookingId, 'returning');
-        if (success) {
-            alert('✅ Permintaan pengembalian dikirim! Silakan hubungi admin untuk pengecekan fisik motor.');
-            renderActiveRentals();
-            renderKatalog();
-        } else {
-            alert('❌ Gagal memproses pengembalian.');
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-    }
-
-    // Initialize
-    renderActiveRentals();
-    checkNotifications();
-    renderKatalog();
-
-    // AUTO REFRESH
-    setInterval(() => {
-        renderActiveRentals();
-        checkNotifications();
-        renderKatalog();
-    }, 10000);
-</script>
+    loadData();
+    </script>
+</body>
+</html>
