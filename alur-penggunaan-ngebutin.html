@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Alur Penggunaan Aplikasi & Website NGEBUT.IN</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --red: #CC0000;
+    --red-light: #fff0f0;
+    --dark: #1A1A1A;
+    --gray: #6B7280;
+    --gray-light: #F9FAFB;
+    --border: #E5E7EB;
+    --green: #059669;
+    --green-light: #ECFDF5;
+    --blue: #1D4ED8;
+    --blue-light: #EFF6FF;
+    --purple: #7C3AED;
+    --purple-light: #F5F3FF;
+    --orange: #D97706;
+    --orange-light: #FFFBEB;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--dark);
+    background: white;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  /* COVER PAGE */
+  .cover {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 50%, #CC0000 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 30%, rgba(204,0,0,0.15), transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(204,0,0,0.1), transparent 50%);
+  }
+
+  .cover-logo {
+    font-size: 4.5rem;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -3px;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  .cover-logo span { color: var(--red); }
+
+  .cover-tagline {
+    color: rgba(255,255,255,0.6);
+    font-size: 1rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 4rem;
+    position: relative;
+  }
+
+  .cover-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1rem;
+    position: relative;
+    line-height: 1.2;
+  }
+
+  .cover-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 4rem;
+    position: relative;
+  }
+
+  .cover-badges {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .cover-badge {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .cover-footer {
+    position: absolute;
+    bottom: 3rem;
+    left: 0; right: 0;
+    text-align: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+    position: relative;
+    margin-top: 4rem;
+  }
+
+  /* CONTENT */
+  .page {
+    padding: 3rem 4rem;
+    max-width: 100%;
+  }
+
+  .section-divider {
+    page-break-before: always;
+    padding-top: 2rem;
+  }
+
+  /* ROLE HEADER */
+  .role-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    margin-bottom: 2.5rem;
+  }
+
+  .role-header.user { background: linear-gradient(135deg, var(--blue), #3B82F6); }
+  .role-header.admin { background: linear-gradient(135deg, var(--red), #FF4444); }
+  .role-header.owner { background: linear-gradient(135deg, var(--purple), #A78BFA); }
+  .role-header.website { background: linear-gradient(135deg, var(--green), #34D399); }
+
+  .role-icon {
+    font-size: 3rem;
+    background: rgba(255,255,255,0.2);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .role-header h1 {
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+  }
+
+  .role-header p { color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+
+  /* FLOW STEPS */
+  .flow-container {
+    position: relative;
+    padding-left: 2rem;
+  }
+
+  .flow-container::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--border), var(--border));
+    z-index: 0;
+  }
+
+  .flow-step {
+    position: relative;
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    z-index: 1;
+  }
+
+  .step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-left: -2rem;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .step-number.blue { background: var(--blue); color: white; }
+  .step-number.red { background: var(--red); color: white; }
+  .step-number.purple { background: var(--purple); color: white; }
+  .step-number.green { background: var(--green); color: white; }
+
+  .step-content {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    flex: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .step-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--dark);
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .step-desc {
+    color: var(--gray);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .step-sub {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .tag {
+    background: var(--gray-light);
+    border: 1px solid var(--border);
+    color: var(--gray);
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+
+  .tag.green { background: var(--green-light); border-color: #A7F3D0; color: var(--green); }
+  .tag.blue { background: var(--blue-light); border-color: #BFDBFE; color: var(--blue); }
+  .tag.red { background: var(--red-light); border-color: #FECACA; color: var(--red); }
+  .tag.purple { background: var(--purple-light); border-color: #DDD6FE; color: var(--purple); }
+  .tag.orange { background: var(--orange-light); border-color: #FDE68A; color: var(--orange); }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 2rem;
+    font-size: 0.88rem;
+  }
+
+  th {
+    background: var(--dark);
+    color: white;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: var(--gray-light); }
+
+  /* ALERT BOX */
+  .alert {
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: 0.88rem;
+  }
+
+  .alert.info { background: var(--blue-light); border-left: 4px solid var(--blue); color: #1e40af; }
+  .alert.success { background: var(--green-light); border-left: 4px solid var(--green); color: #065f46; }
+  .alert.warning { background: var(--orange-light); border-left: 4px solid var(--orange); color: #92400e; }
+
+  .alert-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+
+  .info-card {
+    background: var(--gray-light);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .info-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .info-card p, .info-card li { font-size: 0.83rem; color: var(--gray); line-height: 1.6; }
+  .info-card ul { padding-left: 1.25rem; }
+
+  /* STATUS BADGE */
+  .status {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .status.pending { background: #FEF3C7; color: #B45309; }
+  .status.confirmed { background: #DBEAFE; color: #1D4ED8; }
+  .status.active { background: #D1FAE5; color: #059669; }
+  .status.returning { background: #EDE9FE; color: #6D28D9; }
+  .status.done { background: #F3F4F6; color: #374151; }
+  .status.rejected { background: #FEE2E2; color: #DC2626; }
+
+  /* PRINT */
+  @media print {
+    body { font-size: 10pt; }
+    .cover { min-height: 100vh; }
+    .section-divider { page-break-before: always; }
+    .flow-step { page-break-inside: avoid; }
+    .no-break { page-break-inside: avoid; }
+    a { text-decoration: none; color: inherit; }
+  }
+
+  /* HR */
+  hr { border: none; border-top: 2px solid var(--border); margin: 2rem 0; }
+
+  .emoji { font-style: normal; }
+</style>
+</head>
+<body>
+
+<!-- ===================== COVER ===================== -->
+<div class="cover">
+  <div class="cover-logo">NGEBUT<span>.IN</span></div>
+  <div class="cover-tagline">Rental Motor Digital Terpercaya</div>
+  <div class="cover-title">Panduan Alur Penggunaan<br>Aplikasi &amp; Website</div>
+  <div class="cover-subtitle">Dokumentasi lengkap untuk semua peran pengguna sistem</div>
+  <div class="cover-badges">
+    <span class="cover-badge">👤 User</span>
+    <span class="cover-badge">🛡️ Admin</span>
+    <span class="cover-badge">👑 Owner</span>
+    <span class="cover-badge">🌐 Website</span>
+  </div>
+  <div class="cover-footer">
+    <p>Versi 2.0 &nbsp;|&nbsp; Ngebut.in &nbsp;|&nbsp; ngebut-in.vercel.app &nbsp;|&nbsp; 2026</p>
+  </div>
+</div>
+
+<!-- ===================== OVERVIEW ===================== -->
+<div class="page">
+  <div class="section-title">📋 Gambaran Umum Sistem</div>
+
+  <p style="color: var(--gray); margin-bottom: 1.5rem;">Ngebut.in adalah platform rental motor berbasis digital yang menyediakan aplikasi mobile (Android) dan website. Sistem ini memiliki <strong>4 peran pengguna</strong> dengan fitur dan alur yang berbeda.</p>
+
+  <div class="grid-2">
+    <div class="info-card" style="border-left: 4px solid var(--blue);">
+      <h4>📱 Aplikasi Mobile</h4>
+      <ul>
+        <li>Download APK dari website (18.3 MB)</li>
+        <li>Tersedia untuk Android</li>
+        <li>Login: User, Admin, Owner</li>
+        <li>Fitur booking, upload DP, kwitansi</li>
+      </ul>
+    </div>
+    <div class="info-card" style="border-left: 4px solid var(--green);">
+      <h4>🌐 Website</h4>
+      <ul>
+        <li>URL: ngebut-in.vercel.app</li>
+        <li>Landing page &amp; katalog motor</li>
+        <li>Dashboard User &amp; Admin berbasis web</li>
+        <li>Booking &amp; manajemen lengkap</li>
+      </ul>
+    </div>
+  </div>
+
+  <table>
+    <tr>
+      <th>Peran</th>
+      <th>Platform</th>
+      <th>Akses Utama</th>
+    </tr>
+    <tr>
+      <td><strong>👤 User</strong></td>
+      <td>App &amp; Website</td>
+      <td>Booking motor, upload DP, lihat status sewa, cetak kwitansi</td>
+    </tr>
+    <tr>
+      <td><strong>🛡️ Admin</strong></td>
+      <td>App &amp; Website</td>
+      <td>Verifikasi DP, kelola kendaraan, manajemen user, konfirmasi pelunasan</td>
+    </tr>
+    <tr>
+      <td><strong>👑 Owner</strong></td>
+      <td>App &amp; Website</td>
+      <td>Dashboard laporan, statistik, export Excel</td>
+    </tr>
+  </table>
+
+  <div class="section-title">🔄 Alur Status Booking</div>
+  <div style="background: var(--gray-light); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.85rem;">
+      <span class="status pending">⏳ Pending</span>
+      <span style="color: var(--gray);">→</span>
+      <em style="color: var(--gray); font-size: 0.8rem;">User upload DP</em>
+      <span style="color: var(--gray);">→</span>
+      <span class="status pending">🕐 DP Uploaded</span>
+      <span style="color: var(--gray);">→</span>
+      <em style="color: var(--gray); font-size: 0.8rem;">Admin verifikasi</em>
+      <span style="color: var(--gray);">→</span>
+      <span class="status confirmed">✅ Confirmed (Aktif)</span>
+      <span style="color: var(--gray);">→</span>
+      <em style="color: var(--gray); font-size: 0.8rem;">Motor dikembalikan</em>
+      <span style="color: var(--gray);">→</span>
+      <span class="status returning">🔄 Returning</span>
+      <span style="color: var(--gray);">→</span>
+      <em style="color: var(--gray); font-size: 0.8rem;">Pelunasan dikonfirmasi</em>
+      <span style="color: var(--gray);">→</span>
+      <span class="status done">🏁 Selesai</span>
+    </div>
+  </div>
+
+  <div class="alert info">
+    <span class="alert-icon">ℹ️</span>
+    <div>Sistem DP: Pembayaran dibagi 2 tahap — <strong>DP 50%</strong> di awal booking (diupload buktinya) dan <strong>Pelunasan 50%</strong> saat motor dikembalikan. Admin memverifikasi kedua pembayaran tersebut.</div>
+  </div>
+</div>
+
+<!-- ===================== USER ===================== -->
+<div class="page section-divider">
+  <div class="role-header user">
+    <div class="role-icon">👤</div>
+    <div>
+      <h1>Alur Pengguna (User)</h1>
+      <p>Penyewa motor — menggunakan Aplikasi Mobile atau Website</p>
+    </div>
+  </div>
+
+  <div class="section-title">📝 1. Registrasi &amp; Login</div>
+  <div class="flow-container">
+
+    <div class="flow-step">
+      <div class="step-number blue">1</div>
+      <div class="step-content">
+        <div class="step-title">🌐 Buka Website atau 📱 Download Aplikasi</div>
+        <div class="step-desc">Kunjungi <strong>ngebut-in.vercel.app</strong> atau download APK dari tombol "Download APK" di halaman utama website (18.3 MB, gratis).</div>
+        <div class="step-sub">
+          <span class="tag blue">Website</span>
+          <span class="tag blue">Android APK</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">2</div>
+      <div class="step-content">
+        <div class="step-title">✍️ Daftar Akun Baru</div>
+        <div class="step-desc">Klik "Daftar" → Isi Nama Lengkap, Email, Password. Akun langsung aktif setelah registrasi berhasil.</div>
+        <div class="step-sub">
+          <span class="tag">Nama Lengkap</span>
+          <span class="tag">Email</span>
+          <span class="tag">Password</span>
+          <span class="tag green">Role: User (otomatis)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">3</div>
+      <div class="step-content">
+        <div class="step-title">🔑 Login ke Akun</div>
+        <div class="step-desc">Masukkan Email dan Password yang terdaftar. Jika salah akan muncul pesan "Email atau password salah" (tanpa detail teknis).</div>
+        <div class="step-sub">
+          <span class="tag blue">App &amp; Website</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">🏍️ 2. Browsing &amp; Booking Motor</div>
+  <div class="flow-container">
+
+    <div class="flow-step">
+      <div class="step-number blue">4</div>
+      <div class="step-content">
+        <div class="step-title">📋 Lihat Katalog Motor</div>
+        <div class="step-desc">Browse daftar motor yang tersedia. Filter berdasarkan kategori: <strong>Matic, Manual, Sport</strong>. Lihat harga per hari, gambar, deskripsi, dan status ketersediaan.</div>
+        <div class="step-sub">
+          <span class="tag">Matic</span>
+          <span class="tag">Manual</span>
+          <span class="tag">Sport</span>
+          <span class="tag green">Status: Tersedia / Disewa</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">5</div>
+      <div class="step-content">
+        <div class="step-title">📅 Isi Form Booking</div>
+        <div class="step-desc">Pilih motor yang diinginkan → Tentukan <strong>Tanggal Mulai</strong> dan <strong>Tanggal Selesai</strong> sewa. Sistem otomatis menghitung total harga dan besaran DP (50%).</div>
+        <div class="step-sub">
+          <span class="tag">Total Harga = Durasi × Harga/hari</span>
+          <span class="tag red">DP = 50% dari Total</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">6</div>
+      <div class="step-content">
+        <div class="step-title">✅ Konfirmasi Booking</div>
+        <div class="step-desc">Klik "Pesan Sekarang". Booking tersimpan dengan status <span class="status pending">Pending</span> dan menunggu pembayaran DP.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">💳 3. Pembayaran DP (50%)</div>
+  <div class="flow-container">
+
+    <div class="flow-step">
+      <div class="step-number blue">7</div>
+      <div class="step-content">
+        <div class="step-title">💸 Transfer DP ke Rekening Ngebut.in</div>
+        <div class="step-desc">Lakukan transfer sejumlah DP (50% dari total harga) ke rekening yang tertera. Simpan bukti transfer/screenshot sebagai bukti pembayaran.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">8</div>
+      <div class="step-content">
+        <div class="step-title">📸 Upload Bukti DP di Aplikasi/Website</div>
+        <div class="step-desc">Buka menu <strong>"Booking Saya"</strong> → Pilih booking yang berstatus Pending → Klik <strong>"Upload Bukti DP"</strong> → Ambil foto atau pilih dari galeri → Submit.</div>
+        <div class="step-sub">
+          <span class="tag blue">App: Booking Saya → Upload DP</span>
+          <span class="tag blue">Website: Dashboard → Booking</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">9</div>
+      <div class="step-content">
+        <div class="step-title">⏳ Tunggu Verifikasi Admin</div>
+        <div class="step-desc">Status berubah menjadi <span class="status pending">DP Uploaded</span>. Admin akan memverifikasi bukti DP dalam <strong>15–30 menit</strong>. Anda akan mendapat <strong>notifikasi email</strong> saat motor dikonfirmasi aktif.</div>
+        <div class="step-sub">
+          <span class="tag">📧 Email Konfirmasi Otomatis</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">🏍️ 4. Masa Sewa Aktif</div>
+  <div class="flow-container">
+
+    <div class="flow-step">
+      <div class="step-number blue">10</div>
+      <div class="step-content">
+        <div class="step-title">✅ Motor Aktif Disewa</div>
+        <div class="step-desc">Setelah DP diverifikasi, status berubah menjadi <span class="status active">Aktif Sewa</span>. Motor siap digunakan sesuai tanggal yang dipilih.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">11</div>
+      <div class="step-content">
+        <div class="step-title">🔔 Pengingat Email Otomatis</div>
+        <div class="step-desc">Sistem mengirim <strong>notifikasi email pengingat</strong> secara otomatis <strong>1 hari sebelum</strong> masa sewa berakhir agar pengembalian tepat waktu.</div>
+        <div class="step-sub">
+          <span class="tag">📧 Email H-1 sebelum tanggal kembali</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">🔄 5. Pengembalian &amp; Pelunasan</div>
+  <div class="flow-container">
+
+    <div class="flow-step">
+      <div class="step-number blue">12</div>
+      <div class="step-content">
+        <div class="step-title">🏍️ Kembalikan Motor</div>
+        <div class="step-desc">Kembalikan motor ke lokasi Ngebut.in sesuai tanggal. Admin akan menandai motor sebagai <span class="status returning">Proses Kembali</span>.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">13</div>
+      <div class="step-content">
+        <div class="step-title">💰 Bayar Pelunasan (50%)</div>
+        <div class="step-desc">Lakukan pembayaran sisa 50% dari total harga. Upload bukti pelunasan lewat aplikasi/website seperti saat upload DP.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-number blue">14</div>
+      <div class="step-content">
+        <div class="step-title">🏁 Sewa Selesai</div>
+        <div class="step-desc">Setelah admin mengkonfirmasi pelunasan, status berubah menjadi <span class="status done">Selesai</span>. Kwitansi digital tersedia untuk diunduh.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">🧾 6. Kwitansi Digital</div>
+  <div class="flow-container">
+
+    <div class="flow-step">
+      <div class="step-number blue">15</div>
+      <div class="step-content">
+        <div class="step-title">📄 Lihat &amp; Cetak Kwitansi</div>
+        <div class="step-desc">Buka <strong>"Booking Saya"</strong> → Pilih booking berstatus Selesai → Klik <strong>"LIHAT KWITANSI"</strong>. Browser akan membuka halaman kwitansi resmi dengan logo Ngebut.in yang bisa dicetak atau disimpan sebagai PDF.</div>
+        <div class="step-sub">
+          <span class="tag green">Berisi: Nama, Motor, Tanggal, Total, DP, Pelunasan</span>
+          <span class="tag green">Bisa Cetak / Simpan PDF</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">👤 7. Edit Profil</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number blue">16</div>
+      <div class="step-content">
+        <div class="step-title">✏️ Ubah Data Profil</div>
+        <div class="step-desc">Menu Profil → Edit data (Nama, Email, Foto Profil dari Kamera/Galeri) atau ganti password. Foto profil tampil proporsional tanpa terpotong.</div>
+        <div class="step-sub">
+          <span class="tag">Nama</span><span class="tag">Email</span><span class="tag">Foto Profil</span><span class="tag">Ganti Password</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ADMIN ===================== -->
+<div class="page section-divider">
+  <div class="role-header admin">
+    <div class="role-icon">🛡️</div>
+    <div>
+      <h1>Alur Administrator</h1>
+      <p>Pengelola operasional — menggunakan Aplikasi Mobile atau Website</p>
+    </div>
+  </div>
+
+  <div class="section-title">🔑 1. Login Admin</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number red">1</div>
+      <div class="step-content">
+        <div class="step-title">🔐 Login dengan Akun Admin</div>
+        <div class="step-desc">Gunakan email dan password akun admin yang diberikan oleh Owner. Sistem otomatis mengarahkan ke Dashboard Admin setelah login berhasil.</div>
+        <div class="step-sub">
+          <span class="tag red">Role: Admin</span>
+          <span class="tag blue">App &amp; Website</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">📊 2. Dashboard Admin</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number red">2</div>
+      <div class="step-content">
+        <div class="step-title">📈 Lihat Statistik Real-time</div>
+        <div class="step-desc">Dashboard menampilkan ringkasan: Total Kendaraan, Tersedia, Disewa, Menunggu DP, Verifikasi DP, Dikembalikan, dan Selesai.</div>
+        <div class="step-sub">
+          <span class="tag">Total Kendaraan</span>
+          <span class="tag green">Tersedia</span>
+          <span class="tag blue">Disewa</span>
+          <span class="tag orange">Menunggu DP</span>
+          <span class="tag purple">Verifikasi DP</span>
+        </div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number red">3</div>
+      <div class="step-content">
+        <div class="step-title">📋 Daftar Booking Terkini</div>
+        <div class="step-desc">Dashboard menampilkan booking terbaru dengan badge status berwarna. Klik item untuk melihat detail atau langsung aksi verifikasi.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">✅ 3. Verifikasi DP</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number red">4</div>
+      <div class="step-content">
+        <div class="step-title">🗂️ Buka Menu Verifikasi DP</div>
+        <div class="step-desc">Dari menu navigasi (drawer/sidebar) pilih <strong>"Verifikasi DP"</strong>. Tampil daftar semua booking yang sudah upload bukti DP dan menunggu verifikasi.</div>
+        <div class="step-sub">
+          <span class="tag orange">Status: DP Uploaded</span>
+        </div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number red">5</div>
+      <div class="step-content">
+        <div class="step-title">🔍 Periksa Bukti DP</div>
+        <div class="step-desc">Klik booking untuk melihat detail: Nama penyewa, motor, tanggal sewa, jumlah DP, dan foto bukti transfer yang diupload user.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number red">6</div>
+      <div class="step-content">
+        <div class="step-title">✅ Setujui atau ❌ Tolak DP</div>
+        <div class="step-desc">
+          <strong>Approve:</strong> DP valid → Klik "Setujui" → Status booking berubah ke <span class="status active">Confirmed</span> → Motor otomatis berubah status Disewa.<br><br>
+          <strong>Tolak:</strong> DP tidak valid → Klik "Tolak" → Masukkan alasan penolakan → User diberi tahu.
+        </div>
+        <div class="step-sub">
+          <span class="tag green">Setujui → Motor Aktif</span>
+          <span class="tag red">Tolak → Kembali Pending</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">💳 4. Manajemen Pembayaran</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number red">7</div>
+      <div class="step-content">
+        <div class="step-title">🗂️ Buka Menu Pembayaran</div>
+        <div class="step-desc">Menu <strong>"Pembayaran"</strong> memiliki 3 tab:<br>
+        <strong>• Aktif Sewa</strong>: Booking yang DP-nya sudah diverifikasi (status Confirmed)<br>
+        <strong>• Proses Kembali</strong>: Motor sudah dikembalikan, menunggu konfirmasi pelunasan<br>
+        <strong>• Selesai</strong>: Transaksi tuntas</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number red">8</div>
+      <div class="step-content">
+        <div class="step-title">🔄 Tandai Motor Dikembalikan</div>
+        <div class="step-desc">Tab <strong>Aktif Sewa</strong> → Temukan booking → Klik <strong>"TANDAI KEMBALI"</strong> saat user menyerahkan motor. Status berubah ke <span class="status returning">Proses Kembali</span>.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number red">9</div>
+      <div class="step-content">
+        <div class="step-title">✅ Konfirmasi Pelunasan &amp; Selesaikan</div>
+        <div class="step-desc">Tab <strong>Proses Kembali</strong> → Verifikasi bukti pelunasan → Klik <strong>"KONFIRMASI PELUNASAN &amp; SELESAI"</strong>. Status berubah ke <span class="status done">Selesai</span> dan kwitansi tersedia.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number red">10</div>
+      <div class="step-content">
+        <div class="step-title">🧾 Lihat Kwitansi</div>
+        <div class="step-desc">Pada booking berstatus Selesai, klik <strong>"LIHAT KWITANSI"</strong> untuk membuka kwitansi resmi di browser. Admin juga bisa melihat dan mencetak kwitansi transaksi.</div>
+        <div class="step-sub">
+          <span class="tag green">Tersedia untuk Admin &amp; User</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">🏍️ 5. Kelola Kendaraan</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number red">11</div>
+      <div class="step-content">
+        <div class="step-title">➕ Tambah Motor Baru</div>
+        <div class="step-desc">Menu <strong>"Kelola Kendaraan"</strong> → Klik Tambah → Isi nama, kategori (Matic/Manual/Sport), harga/hari, deskripsi, dan upload foto motor.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number red">12</div>
+      <div class="step-content">
+        <div class="step-title">✏️ Edit / Hapus Motor</div>
+        <div class="step-desc">Pilih motor dari daftar → Edit data (nama, harga, gambar, kategori) atau hapus motor yang sudah tidak aktif.</div>
+        <div class="step-sub">
+          <span class="tag">Kategori: Matic / Manual / Sport</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">👥 6. Manajemen Pengguna</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number red">13</div>
+      <div class="step-content">
+        <div class="step-title">👁️ Lihat Daftar Pengguna</div>
+        <div class="step-desc">Menu <strong>"Manajemen User"</strong> → Tampil semua akun yang terdaftar beserta nama, email, role, dan jumlah booking.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== OWNER ===================== -->
+<div class="page section-divider">
+  <div class="role-header owner">
+    <div class="role-icon">👑</div>
+    <div>
+      <h1>Alur Pemilik (Owner)</h1>
+      <p>Pemantau bisnis — Laporan &amp; Statistik via Aplikasi Mobile atau Website</p>
+    </div>
+  </div>
+
+  <div class="section-title">🔑 1. Login Owner</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number purple">1</div>
+      <div class="step-content">
+        <div class="step-title">🔐 Login dengan Akun Owner</div>
+        <div class="step-desc">Gunakan email dan password akun owner. Sistem mengarahkan ke Dashboard Owner dengan tampilan laporan bisnis.</div>
+        <div class="step-sub"><span class="tag purple">Role: Owner</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">📊 2. Dashboard &amp; Laporan</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number purple">2</div>
+      <div class="step-content">
+        <div class="step-title">📈 Statistik Bisnis</div>
+        <div class="step-desc">Dashboard menampilkan ringkasan komprehensif: Total pendapatan, jumlah transaksi, motor paling laris, dan status armada secara real-time.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number purple">3</div>
+      <div class="step-content">
+        <div class="step-title">📋 Riwayat Transaksi</div>
+        <div class="step-desc">Lihat semua riwayat booking dan pembayaran. Filter berdasarkan periode atau status untuk analisis bisnis.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number purple">4</div>
+      <div class="step-content">
+        <div class="step-title">📥 Export Laporan Excel</div>
+        <div class="step-desc">Klik tombol <strong>"Export Excel"</strong> untuk mengunduh laporan lengkap transaksi dalam format Excel (.xlsx) dari API server. File otomatis terunduh ke perangkat.</div>
+        <div class="step-sub">
+          <span class="tag purple">Format: .xlsx</span>
+          <span class="tag">Berisi: Semua data booking &amp; pembayaran</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== WEBSITE ===================== -->
+<div class="page section-divider">
+  <div class="role-header website">
+    <div class="role-icon">🌐</div>
+    <div>
+      <h1>Alur Penggunaan Website</h1>
+      <p>ngebut-in.vercel.app — Landing page, booking, &amp; dashboard berbasis web</p>
+    </div>
+  </div>
+
+  <div class="section-title">🏠 1. Halaman Utama (Pengunjung)</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number green">1</div>
+      <div class="step-content">
+        <div class="step-title">🌐 Buka Website</div>
+        <div class="step-desc">Akses <strong>ngebut-in.vercel.app</strong>. Halaman utama menampilkan hero banner, katalog motor, cara sewa, testimoni, dan FAQ.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number green">2</div>
+      <div class="step-content">
+        <div class="step-title">📱 Download Aplikasi Android</div>
+        <div class="step-desc">Klik tombol <strong>"Download APK"</strong> di halaman utama untuk mengunduh aplikasi Android Ngebut.in (18.3 MB, gratis).</div>
+        <div class="step-sub"><span class="tag green">File: Ngebutin.apk (18.3 MB)</span></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number green">3</div>
+      <div class="step-content">
+        <div class="step-title">🏍️ Lihat Katalog Motor</div>
+        <div class="step-desc">Scroll ke bagian Katalog atau klik "Mulai Sewa". Filter motor berdasarkan ketersediaan. Klik motor untuk booking (perlu login).</div>
+        <div class="step-sub">
+          <span class="tag">Filter: Semua / Tersedia / Disewa</span>
+          <span class="tag">Pencarian nama motor</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">🔐 2. Login &amp; Booking via Website</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number green">4</div>
+      <div class="step-content">
+        <div class="step-title">👤 Login / Daftar via Website</div>
+        <div class="step-desc">Klik "Masuk" untuk ke halaman login atau "Daftar" untuk registrasi baru. Setelah login, tombol navbar berubah menampilkan link Dashboard.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number green">5</div>
+      <div class="step-content">
+        <div class="step-title">📅 Booking Motor dari Website</div>
+        <div class="step-desc">Klik "Sewa Sekarang" pada motor yang tersedia → Popup booking muncul → Isi tanggal → Sistem kalkulasi total &amp; DP → Klik "Pesan Sekarang".</div>
+        <div class="step-sub"><span class="tag green">Redirect ke Dashboard setelah booking</span></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-number green">6</div>
+      <div class="step-content">
+        <div class="step-title">📊 Dashboard User (Website)</div>
+        <div class="step-desc">Akses dashboard untuk melihat booking aktif, upload bukti DP, pantau status, dan lihat kwitansi. Semua fitur yang ada di aplikasi tersedia juga di website.</div>
+        <div class="step-sub">
+          <span class="tag blue">user/dashboard.html</span>
+          <span class="tag blue">user/booking.html</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">🛡️ 3. Dashboard Admin (Website)</div>
+  <div class="flow-container">
+    <div class="flow-step">
+      <div class="step-number green">7</div>
+      <div class="step-content">
+        <div class="step-title">🔐 Login sebagai Admin</div>
+        <div class="step-desc">Login dengan akun admin → Otomatis diarahkan ke <strong>admin/dashboard.html</strong>. Semua fitur admin (verifikasi DP, kelola kendaraan, manajemen user) tersedia via browser.</div>
+        <div class="step-sub">
+          <span class="tag blue">admin/dashboard.html</span>
+          <span class="tag blue">admin/kendaraan.html</span>
+          <span class="tag blue">admin/pembayaran.html</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== RINGKASAN ===================== -->
+<div class="page section-divider">
+  <div class="section-title">📌 Ringkasan Fitur per Peran</div>
+
+  <table>
+    <tr>
+      <th>Fitur</th>
+      <th>👤 User</th>
+      <th>🛡️ Admin</th>
+      <th>👑 Owner</th>
+    </tr>
+    <tr>
+      <td>Lihat Katalog Motor</td>
+      <td>✅</td><td>✅</td><td>✅</td>
+    </tr>
+    <tr>
+      <td>Booking Motor</td>
+      <td>✅</td><td>—</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Upload Bukti DP</td>
+      <td>✅</td><td>—</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Upload Bukti Pelunasan</td>
+      <td>✅</td><td>—</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Lihat Status Booking</td>
+      <td>✅ (milik sendiri)</td><td>✅ (semua)</td><td>✅ (semua)</td>
+    </tr>
+    <tr>
+      <td>Cetak Kwitansi</td>
+      <td>✅</td><td>✅</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Verifikasi DP</td>
+      <td>—</td><td>✅</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Konfirmasi Pelunasan</td>
+      <td>—</td><td>✅</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Kelola Kendaraan</td>
+      <td>—</td><td>✅</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Manajemen User</td>
+      <td>—</td><td>✅</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Dashboard Laporan</td>
+      <td>—</td><td>—</td><td>✅</td>
+    </tr>
+    <tr>
+      <td>Export Excel</td>
+      <td>—</td><td>—</td><td>✅</td>
+    </tr>
+    <tr>
+      <td>Edit Profil &amp; Foto</td>
+      <td>✅</td><td>✅</td><td>✅</td>
+    </tr>
+    <tr>
+      <td>Notifikasi Email</td>
+      <td>✅ (konfirmasi &amp; pengingat)</td><td>—</td><td>—</td>
+    </tr>
+  </table>
+
+  <div class="section-title">⚙️ Informasi Teknis</div>
+  <div class="grid-2">
+    <div class="info-card">
+      <h4>📱 Aplikasi Mobile</h4>
+      <ul>
+        <li>Platform: Android (arm64)</li>
+        <li>Ukuran APK: 18.3 MB (Release)</li>
+        <li>Framework: Flutter (Dart)</li>
+        <li>Min Android: 5.0+</li>
+        <li>Download: ngebut-in.vercel.app</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>🌐 Website &amp; API</h4>
+      <ul>
+        <li>Hosting: Vercel (Global CDN)</li>
+        <li>URL: ngebut-in.vercel.app</li>
+        <li>Backend: Node.js + Express</li>
+        <li>Database: MySQL (Azure)</li>
+        <li>Kwitansi: HTML-to-PDF via browser</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert success">
+    <span class="alert-icon">✅</span>
+    <div><strong>Sistem berjalan 24/7</strong> — Website, API, dan notifikasi email otomatis berjalan di server cloud Vercel tanpa perlu diaktifkan manual.</div>
+  </div>
+
+  <div class="alert warning">
+    <span class="alert-icon">⚠️</span>
+    <div><strong>Instalasi APK Android:</strong> Karena APK didistribusikan langsung (bukan Play Store), aktifkan <strong>"Instal dari sumber tidak dikenal"</strong> di Pengaturan → Keamanan sebelum instalasi.</div>
+  </div>
+
+  <hr>
+  <div style="text-align: center; color: var(--gray); font-size: 0.8rem; padding: 1rem 0;">
+    <p><strong>NGEBUT.IN</strong> — Rental Motor Digital Terpercaya</p>
+    <p>ngebut-in.vercel.app &nbsp;|&nbsp; Dokumen ini dibuat otomatis &nbsp;|&nbsp; 2026</p>
+    <p style="margin-top: 0.5rem;">Untuk cetak PDF: Buka file di browser → Ctrl+P → Pilih "Save as PDF" → Print</p>
+  </div>
+</div>
+
+</body>
+</html>
