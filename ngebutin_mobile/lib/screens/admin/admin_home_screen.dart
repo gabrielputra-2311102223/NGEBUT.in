@@ -109,7 +109,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.task_alt),
+              leading: const Icon(Icons.fact_check),
               title: const Text('Verifikasi DP'),
               selected: _currentIndex == 2,
               selectedColor: const Color(0xFFCC0000),
