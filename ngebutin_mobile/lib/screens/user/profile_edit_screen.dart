@@ -17,6 +17,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _currentPasswordController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
 
   @override
   void initState() {
@@ -154,22 +156,30 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             const SizedBox(height: 16),
             TextField(
               controller: _currentPasswordController,
-              decoration: const InputDecoration(
+              obscureText: _obscureCurrent,
+              decoration: InputDecoration(
                 labelText: 'Password Saat Ini (Untuk Ganti Password)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock_outline),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureCurrent ? Icons.visibility_off : Icons.visibility, color: Colors.grey, size: 20),
+                  onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                ),
               ),
-              obscureText: true,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
-              decoration: const InputDecoration(
+              obscureText: _obscureNew,
+              decoration: InputDecoration(
                 labelText: 'Password Baru (Opsional)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility, color: Colors.grey, size: 20),
+                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                ),
               ),
-              obscureText: true,
             ),
             const SizedBox(height: 32),
             SizedBox(

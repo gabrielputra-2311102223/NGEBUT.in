@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/motor_provider.dart';
 import '../../providers/booking_provider.dart';
@@ -215,11 +216,26 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Laporan Excel berhasil diunduh (Simulasi)')));
+                      onPressed: () async {
+                        try {
+                          final url = Uri.parse('https://ngebut-in.vercel.app/api/export/excel');
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } else if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Tidak bisa membuka browser untuk unduh Excel'), backgroundColor: Colors.red),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
                       },
                       icon: const Icon(Icons.download, size: 16),
-                      label: const Text('Excel'),
+                      label: const Text('Export Excel'),
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF166534), foregroundColor: Colors.white),
                     ),
                   ],

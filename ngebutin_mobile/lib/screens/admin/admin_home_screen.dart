@@ -95,8 +95,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.event_available),
-              title: const Text('Approval Booking'),
+              leading: const Icon(Icons.verified_user_outlined),
+              title: const Text('Verifikasi DP'),
               selected: _currentIndex == 2,
               selectedColor: const Color(0xFFCC0000),
               onTap: () {

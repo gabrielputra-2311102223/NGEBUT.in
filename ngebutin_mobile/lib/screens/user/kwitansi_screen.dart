@@ -1,13 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class KwitansiScreen extends StatelessWidget {
   final Map<String, dynamic> booking;
-
   const KwitansiScreen({Key? key, required this.booking}) : super(key: key);
 
-  String _formatRupiah(dynamic val) {
+  String _fmt(dynamic val) {
     final n = (val is num) ? val.toInt() : int.tryParse(val.toString()) ?? 0;
     final s = n.toString();
     final result = StringBuffer();
@@ -20,49 +20,135 @@ class KwitansiScreen extends StatelessWidget {
 
   int _calcDays() {
     try {
-      final start = DateTime.parse((booking['startDate'] ?? booking['tgl_mulai'] ?? '').toString());
-      final end = DateTime.parse((booking['endDate'] ?? booking['tgl_selesai'] ?? '').toString());
-      return end.difference(start).inDays.abs() + 1;
+      final s = DateTime.parse((booking['startDate'] ?? booking['tgl_mulai'] ?? '').toString());
+      final e = DateTime.parse((booking['endDate'] ?? booking['tgl_selesai'] ?? '').toString());
+      return e.difference(s).inDays.abs() + 1;
     } catch (_) { return 1; }
   }
 
-  String _buildKwitansiText(String userName, String motorName, String startDate, String endDate, int days, int harga, int total, int dp, int pelunasan, String noTrx, String tanggal) {
-    return '''==============================
-🏍️ KWITANSI NGEBUT.IN
-==============================
-No. Transaksi : $noTrx
-Penyewa       : $userName
-Motor         : $motorName
-Tgl Sewa      : $startDate
-Tgl Kembali   : $endDate
-Durasi        : $days Hari
-Harga/Hari    : ${_formatRupiah(harga)}
-------------------------------
-Total Sewa    : ${_formatRupiah(total)}
-DP Dibayar    : ${_formatRupiah(dp)}
-Pelunasan     : ${_formatRupiah(pelunasan)}
-------------------------------
-Status        : ✅ LUNAS
-Tgl Cetak     : $tanggal
-==============================
-Terima kasih menggunakan Ngebut.in!''';
+  /// Generate logo as base64 from assets
+  Future<String> _logoBase64() async {
+    try {
+      final data = await rootBundle.load('assets/logo.png');
+      return base64Encode(data.buffer.asUint8List());
+    } catch (_) { return ''; }
+  }
+
+  Future<void> _printKwitansi(BuildContext context) async {
+    final id = booking['id']?.toString() ?? '';
+    final userName = (booking['userName'] ?? booking['user_name'] ?? 'Penyewa').toString();
+    final motorName = (booking['motorName'] ?? booking['motor_name'] ?? 'Motor').toString();
+    final startDate = (booking['startDate'] ?? booking['tgl_mulai'] ?? '-').toString();
+    final endDate = (booking['endDate'] ?? booking['tgl_selesai'] ?? '-').toString();
+    final int total = ((booking['totalHarga'] ?? booking['total_harga'] ?? 0) as num).toInt();
+    final int days = _calcDays();
+    final int dp = ((booking['dpAmount'] ?? booking['dp_amount'] ?? (total ~/ 2)) as num).toInt();
+    final int pelunasan = total - dp;
+    final int harga = days > 0 ? total ~/ days : total;
+    final now = DateTime.now();
+    final tglCetak = '${now.day}/${now.month}/${now.year}';
+    final noTrx = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
+    final logoB64 = await _logoBase64();
+    final logoTag = logoB64.isNotEmpty
+        ? '<img src="data:image/png;base64,$logoB64" style="height:48px;margin-bottom:8px" alt="NGEBUT.IN"/>'
+        : '🏍️';
+
+    final html = '''<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kwitansi NGEBUT.IN</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:20px}
+  .card{background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.12)}
+  .header{background:#CC0000;color:#fff;padding:28px 20px;text-align:center}
+  .header img{height:52px;margin-bottom:8px}
+  .header h1{font-size:22px;letter-spacing:2px;margin-bottom:4px}
+  .header p{font-size:11px;opacity:.8;letter-spacing:1px}
+  .no-trx{display:inline-block;background:rgba(255,255,255,.2);border-radius:8px;padding:6px 16px;margin-top:10px;font-weight:700;font-size:14px}
+  .body{padding:24px}
+  .row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid #f3f4f6}
+  .row:last-child{border-bottom:none}
+  .label{color:#6b7280}
+  .value{font-weight:600;color:#111}
+  .value.red{color:#CC0000;font-size:16px;font-weight:700}
+  .value.green{color:#059669}
+  .value.blue{color:#1E40AF}
+  hr{border:none;border-top:2px dashed #e5e7eb;margin:12px 0}
+  .lunas{background:#DCFCE7;color:#166534;text-align:center;padding:14px;border-radius:12px;font-size:18px;font-weight:700;letter-spacing:2px;margin:16px 0}
+  .footer{background:#f9fafb;padding:14px 20px;text-align:center;font-size:11px;color:#9ca3af;line-height:1.6}
+  .btn{display:block;width:100%;padding:14px;background:#CC0000;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin:16px 0 0}
+  @media print{.btn{display:none}.card{box-shadow:none}body{background:#fff;padding:0}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    $logoTag
+    <h1>NGEBUT.IN</h1>
+    <p>KWITANSI SEWA MOTOR</p>
+    <span class="no-trx">$noTrx</span>
+  </div>
+  <div class="body">
+    <div class="row"><span class="label">Penyewa</span><span class="value">$userName</span></div>
+    <div class="row"><span class="label">Motor</span><span class="value">$motorName</span></div>
+    <hr>
+    <div class="row"><span class="label">Tanggal Sewa</span><span class="value">$startDate</span></div>
+    <div class="row"><span class="label">Tanggal Kembali</span><span class="value">$endDate</span></div>
+    <div class="row"><span class="label">Durasi</span><span class="value">$days Hari</span></div>
+    <div class="row"><span class="label">Harga/Hari</span><span class="value">${_fmt(harga)}</span></div>
+    <hr>
+    <div class="row"><span class="label">Total Sewa</span><span class="value red">${_fmt(total)}</span></div>
+    <div class="row"><span class="label">DP Dibayar (50%)</span><span class="value green">${_fmt(dp)}</span></div>
+    <div class="row"><span class="label">Pelunasan (50%)</span><span class="value blue">${_fmt(pelunasan)}</span></div>
+    <hr>
+    <div class="row"><span class="label">Tanggal Cetak</span><span class="value">$tglCetak</span></div>
+    <div class="lunas">✅ &nbsp;LUNAS</div>
+  </div>
+  <div class="footer">
+    Terima kasih telah menggunakan layanan Ngebut.in<br>
+    Dokumen ini merupakan bukti transaksi yang sah.
+  </div>
+  <div style="padding:0 20px 20px">
+    <button class="btn" onclick="window.print()">🖨️ &nbsp;Cetak / Simpan PDF</button>
+  </div>
+</div>
+</body>
+</html>''';
+
+    final encoded = Uri.dataFromString(html, mimeType: 'text/html', encoding: utf8);
+    try {
+      if (await canLaunchUrl(encoded)) {
+        await launchUrl(encoded, mode: LaunchMode.externalApplication);
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak bisa membuka browser. Coba salin kwitansi.'), backgroundColor: Colors.orange),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Future<void> _shareWhatsApp(BuildContext context, String text) async {
-    final encoded = Uri.encodeComponent(text);
-    final uri = Uri.parse('whatsapp://send?text=$encoded');
+    final uri = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(text)}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    } else {
-      // Fallback: copy to clipboard
-      if (context.mounted) _copyText(context, text);
+    } else if (context.mounted) {
+      _copyText(context, text);
     }
   }
 
   void _copyText(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('✅ Kwitansi disalin! Tempelkan di WhatsApp atau dokumen.'), backgroundColor: Colors.green),
+      const SnackBar(content: Text('✅ Kwitansi disalin ke clipboard!'), backgroundColor: Colors.green),
     );
   }
 
@@ -79,9 +165,28 @@ Terima kasih menggunakan Ngebut.in!''';
     final int pelunasan = total - dp;
     final int harga = days > 0 ? total ~/ days : total;
     final now = DateTime.now();
-    final tanggalCetak = '${now.day}/${now.month}/${now.year}';
-    final noTransaksi = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
-    final kwitansiText = _buildKwitansiText(userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak);
+    final tglCetak = '${now.day}/${now.month}/${now.year}';
+    final noTrx = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
+
+    final kwitansiText = '''==============================
+🏍️ KWITANSI NGEBUT.IN
+==============================
+No. Transaksi : $noTrx
+Penyewa       : $userName
+Motor         : $motorName
+Tgl Sewa      : $startDate
+Tgl Kembali   : $endDate
+Durasi        : $days Hari
+Harga/Hari    : ${_fmt(harga)}
+------------------------------
+Total Sewa    : ${_fmt(total)}
+DP Dibayar    : ${_fmt(dp)}
+Pelunasan     : ${_fmt(pelunasan)}
+------------------------------
+Status        : ✅ LUNAS
+Tgl Cetak     : $tglCetak
+==============================
+Terima kasih menggunakan Ngebut.in!''';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -89,8 +194,13 @@ Terima kasih menggunakan Ngebut.in!''';
         title: const Text('Kwitansi Sewa', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share, color: Color(0xFFCC0000)),
-            tooltip: 'Bagikan Kwitansi',
+            icon: const Icon(Icons.print, color: Color(0xFFCC0000)),
+            tooltip: 'Cetak / Simpan PDF',
+            onPressed: () => _printKwitansi(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.share, color: Color(0xFF25D366)),
+            tooltip: 'Kirim WhatsApp',
             onPressed: () => _shareWhatsApp(context, kwitansiText),
           ),
         ],
@@ -109,7 +219,7 @@ Terima kasih menggunakan Ngebut.in!''';
               ),
               child: Column(
                 children: [
-                  // Header Red
+                  // Header
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
@@ -119,16 +229,15 @@ Terima kasih menggunakan Ngebut.in!''';
                     ),
                     child: Column(
                       children: [
-                        const Icon(Icons.motorcycle, color: Colors.white, size: 40),
-                        const SizedBox(height: 8),
-                        const Text('NGEBUT.IN', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2)),
-                        const SizedBox(height: 4),
-                        const Text('KWITANSI SEWA MOTOR', style: TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 1)),
+                        Image.asset('assets/logo.png', height: 52, color: Colors.white, colorBlendMode: BlendMode.srcATop),
+                        const SizedBox(height: 6),
+                        const Text('NGEBUT.IN', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                        const Text('KWITANSI SEWA MOTOR', style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 1)),
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(color: const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(8)),
-                          child: Text(noTransaksi, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                          child: Text(noTrx, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
                         ),
                       ],
                     ),
@@ -136,23 +245,23 @@ Terima kasih menggunakan Ngebut.in!''';
 
                   // Body
                   Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
                         _row('Penyewa', userName),
                         _row('Motor', motorName),
-                        const Divider(height: 24),
+                        const Divider(height: 20),
                         _row('Tanggal Sewa', startDate),
                         _row('Tanggal Kembali', endDate),
                         _row('Durasi', '$days Hari'),
-                        _row('Harga/Hari', _formatRupiah(harga)),
-                        const Divider(height: 24),
-                        _row('Total Sewa', _formatRupiah(total), isBold: true, valueColor: const Color(0xFFCC0000)),
-                        _row('DP Dibayar', _formatRupiah(dp), valueColor: const Color(0xFF059669)),
-                        _row('Pelunasan', _formatRupiah(pelunasan), valueColor: const Color(0xFF1E40AF)),
-                        const Divider(height: 24),
-                        _row('Tanggal Cetak', tanggalCetak),
-                        const SizedBox(height: 20),
+                        _row('Harga/Hari', _fmt(harga)),
+                        const Divider(height: 20),
+                        _row('Total Sewa', _fmt(total), isBold: true, valueColor: const Color(0xFFCC0000)),
+                        _row('DP Dibayar (50%)', _fmt(dp), valueColor: const Color(0xFF059669)),
+                        _row('Pelunasan (50%)', _fmt(pelunasan), valueColor: const Color(0xFF1E40AF)),
+                        const Divider(height: 20),
+                        _row('Tanggal Cetak', tglCetak),
+                        const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(14),
@@ -160,7 +269,7 @@ Terima kasih menggunakan Ngebut.in!''';
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_circle, color: Color(0xFF059669), size: 20),
+                              Icon(Icons.check_circle, color: Color(0xFF059669), size: 22),
                               SizedBox(width: 8),
                               Text('LUNAS', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 2)),
                             ],
@@ -173,7 +282,7 @@ Terima kasih menggunakan Ngebut.in!''';
                   // Footer
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: const BoxDecoration(
                       color: Color(0xFFF8F9FA),
                       borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
@@ -181,7 +290,7 @@ Terima kasih menggunakan Ngebut.in!''';
                     child: const Text(
                       'Terima kasih telah menggunakan layanan Ngebut.in\nDokumen ini merupakan bukti transaksi yang sah.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                   ),
                 ],
@@ -189,6 +298,23 @@ Terima kasih menggunakan Ngebut.in!''';
             ),
 
             const SizedBox(height: 20),
+
+            // Print Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _printKwitansi(context),
+                icon: const Icon(Icons.print),
+                label: const Text('🖨️  Cetak / Simpan PDF'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFCC0000),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
 
             // Share WhatsApp button
             SizedBox(
@@ -200,33 +326,31 @@ Terima kasih menggunakan Ngebut.in!''';
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF25D366),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-
-            // Copy button
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _copyText(context, kwitansiText),
                 icon: const Icon(Icons.copy, size: 18),
-                label: const Text('Salin Teks Kwitansi'),
+                label: const Text('Salin Teks'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFCC0000),
                   side: const BorderSide(color: Color(0xFFCC0000)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
             const SizedBox(height: 8),
             const Text(
-              '💡 Tip: Salin kwitansi lalu tempel di WhatsApp, Email,\natau screenshot halaman ini untuk cetak.',
+              '💡 Tombol Cetak membuka kwitansi di browser.\nGunakan "Print" di browser untuk menyimpan PDF.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 11),
+              style: TextStyle(color: Colors.grey, fontSize: 11, height: 1.5),
             ),
           ],
         ),
@@ -236,12 +360,12 @@ Terima kasih menggunakan Ngebut.in!''';
 
   Widget _row(String label, String value, {bool isBold = false, Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.w900 : FontWeight.w600, fontSize: isBold ? 16 : 13, color: valueColor ?? const Color(0xFF1A1A1A))),
+          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.w900 : FontWeight.w600, fontSize: isBold ? 15 : 13, color: valueColor ?? const Color(0xFF1A1A1A))),
         ],
       ),
     );

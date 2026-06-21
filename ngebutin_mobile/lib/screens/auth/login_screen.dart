@@ -45,8 +45,27 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        final msg = e.toString().replaceFirst('Exception: ', '');
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.error_outline, color: Color(0xFFCC0000)),
+                SizedBox(width: 8),
+                Text('Login Gagal', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(msg.isNotEmpty ? msg : 'Email atau password salah. Silakan coba lagi.'),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFCC0000), foregroundColor: Colors.white),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
     } finally {

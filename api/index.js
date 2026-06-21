@@ -734,4 +734,74 @@ app.post('/api/admin/broadcast', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+
+// ============================================================
+// RENTAL EXPIRY NOTIFICATION CRON
+// ============================================================
+
+app.get('/api/cron/check-expiring', async (req, res) => {
+    try {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        const [bookings] = await poolPromise.query(`
+            SELECT b.id, b.tgl_selesai, b.status,
+                   u.nama as userName, u.email as userEmail,
+                   m.nama as motorNama
+            FROM Bookings b
+            LEFT JOIN Users u ON b.user_id = u.id
+            LEFT JOIN Motors m ON b.motor_id = m.id
+            WHERE DATE(b.tgl_selesai) = ? AND b.status IN ('confirmed', 'pending')
+        `, [tomorrowStr]);
+
+        let sent = 0;
+        for (const b of bookings) {
+            if (!b.userEmail) continue;
+            try {
+                const nodemailer = require('nodemailer');
+                const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: { user: process.env.EMAIL_USER || 'ngebutin.id@gmail.com', pass: process.env.EMAIL_PASS || 'vnhz hgnt qhvy sfhm' }
+                });
+                await transporter.sendMail({
+                    from: '"NgebutIN 🏍️" <no-reply@ngebut.in>',
+                    to: b.userEmail,
+                    subject: '⏰ Pengingat: Masa Sewa Motor Anda Berakhir Besok!',
+                    html: `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+                        <div style="background:#CC0000;padding:24px;text-align:center;">
+                            <h1 style="color:#fff;font-size:24px;margin:0;letter-spacing:2px">🏍️ NGEBUT.IN</h1>
+                            <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Pengingat Masa Sewa</p>
+                        </div>
+                        <div style="padding:28px 24px;">
+                            <p style="font-size:16px">Halo, <strong>${b.userName}</strong>! 👋</p>
+                            <p style="color:#374151;margin-top:12px">
+                                Masa sewa motor <strong style="color:#CC0000">${b.motorNama}</strong> kamu akan berakhir
+                                <strong>besok, ${tomorrowStr}</strong>.
+                            </p>
+                            <div style="background:#FEF9C3;border-left:4px solid #D97706;padding:14px 16px;border-radius:6px;margin:20px 0;">
+                                ⚠️ <strong>Segera kembalikan motor</strong> tepat waktu untuk menghindari biaya keterlambatan.
+                            </div>
+                            <p style="color:#6b7280;font-size:13px">
+                                Jika kamu ingin memperpanjang masa sewa, hubungi kami melalui aplikasi Ngebut.in.
+                            </p>
+                            <div style="text-align:center;margin-top:24px">
+                                <a href="https://ngebut-in.vercel.app" style="background:#CC0000;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600">Buka Aplikasi</a>
+                            </div>
+                        </div>
+                        <div style="background:#f9fafb;padding:14px;text-align:center;font-size:11px;color:#9ca3af">
+                            © 2025 Ngebut.in · Layanan Rental Motor Terpercaya
+                        </div>
+                    </div>`
+                });
+                sent++;
+            } catch (emailErr) {
+                console.error(`Email gagal ke ${b.userEmail}:`, emailErr.message);
+            }
+        }
+        res.json({ message: `Notifikasi terkirim ke ${sent} dari ${bookings.length} penyewa.`, date: tomorrowStr });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = app;

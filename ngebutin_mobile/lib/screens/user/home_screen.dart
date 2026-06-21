@@ -20,7 +20,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   String _searchQuery = '';
   String _selectedCategory = 'Semua';
-  final List<String> _categories = ['Semua', 'Matic', 'Manual', 'Sport'];
+  final List<Map<String, dynamic>> _categories = [
+    {'label': 'Semua',  'icon': Icons.motorcycle},
+    {'label': 'Matic',  'icon': Icons.speed},
+    {'label': 'Manual', 'icon': Icons.settings},
+    {'label': 'Sport',  'icon': Icons.bolt},
+  ];
 
   @override
   void initState() {
@@ -75,19 +80,19 @@ class _HomeScreenState extends State<HomeScreen> {
           return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
         }
 
-        // Filter berdasarkan kategori dengan toleransi typo (metic, matic, umum, dll)
+        // Filter kategori: toleransi 'metic', 'matic', 'Matic' semua cocok
         final motors = motorProvider.motors.where((m) {
           final k = m.kategori.toLowerCase().trim();
           if (_selectedCategory != 'Semua') {
             final s = _selectedCategory.toLowerCase();
-            // Motor tanpa kategori valid (umum/kosong) tampil di semua filter
-            final isUnknown = !k.contains('mat') && !k.contains('met') && !k.contains('man') && !k.contains('sport');
-            if (!isUnknown) {
-              if (s == 'matic' && !k.contains('mat') && !k.contains('met') && !k.contains('atik') && k != 'automatic') return false;
-              if (s == 'manual' && !k.contains('man')) return false;
-              if (s == 'sport' && !k.contains('sport')) return false;
+            if (s == 'matic') {
+              // Cocok: matic, metic, matik, automatic, scooter
+              if (!k.contains('mat') && !k.contains('met') && !k.contains('atik') && k != 'automatic' && !k.contains('scooter')) return false;
+            } else if (s == 'manual') {
+              if (!k.contains('man') && !k.contains('bebek') && !k.contains('cub')) return false;
+            } else if (s == 'sport') {
+              if (!k.contains('sport') && !k.contains('racing') && !k.contains('naked')) return false;
             }
-            // isUnknown = tampil di semua kategori (tidak difilter)
           }
           if (_searchQuery.isNotEmpty && !m.nama.toLowerCase().contains(_searchQuery.toLowerCase())) return false;
           return true;
@@ -191,26 +196,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 56,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     itemCount: _categories.length,
                     itemBuilder: (context, index) {
-                      final category = _categories[index];
-                      final isSelected = category == _selectedCategory;
+                      final cat = _categories[index];
+                      final label = cat['label'] as String;
+                      final icon = cat['icon'] as IconData;
+                      final isSelected = label == _selectedCategory;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(category),
-                          selected: isSelected,
-                          onSelected: (_) => setState(() => _selectedCategory = category),
-                          selectedColor: const Color(0xFFCC0000),
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(color: isSelected ? const Color(0xFFCC0000) : Colors.grey.shade300),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedCategory = label),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFFCC0000) : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: isSelected ? const Color(0xFFCC0000) : Colors.grey.shade300),
+                              boxShadow: isSelected ? [const BoxShadow(color: Color(0x33CC0000), blurRadius: 8, offset: Offset(0, 2))] : [],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(icon, size: 14, color: isSelected ? Colors.white : Colors.grey.shade600),
+                                const SizedBox(width: 5),
+                                Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+                              ],
+                            ),
                           ),
                         ),
                       );
