@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:printing/printing.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
+import 'package:url_launcher/url_launcher.dart';
 
 class KwitansiScreen extends StatelessWidget {
   final Map<String, dynamic> booking;
@@ -28,109 +26,45 @@ class KwitansiScreen extends StatelessWidget {
     } catch (_) { return 1; }
   }
 
-  Future<void> _printKwitansi(BuildContext context) async {
-    final id = booking['id']?.toString() ?? '';
-    final userName = (booking['userName'] ?? booking['user_name'] ?? 'Penyewa').toString();
-    final motorName = (booking['motorName'] ?? booking['motor_name'] ?? 'Motor').toString();
-    final startDate = (booking['startDate'] ?? booking['tgl_mulai'] ?? '-').toString();
-    final endDate = (booking['endDate'] ?? booking['tgl_selesai'] ?? '-').toString();
-    final int total = ((booking['totalHarga'] ?? booking['total_harga'] ?? 0) as num).toInt();
-    final int days = _calcDays();
-    final int dp = ((booking['dpAmount'] ?? booking['dp_amount'] ?? (total ~/ 2)) as num).toInt();
-    final int pelunasan = total - dp;
-    final int harga = days > 0 ? total ~/ days : total;
-    final now = DateTime.now();
-    final tanggalCetak = '${now.day}/${now.month}/${now.year}';
-    final noTransaksi = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
+  String _buildKwitansiText(String userName, String motorName, String startDate, String endDate, int days, int harga, int total, int dp, int pelunasan, String noTrx, String tanggal) {
+    return '''==============================
+🏍️ KWITANSI NGEBUT.IN
+==============================
+No. Transaksi : $noTrx
+Penyewa       : $userName
+Motor         : $motorName
+Tgl Sewa      : $startDate
+Tgl Kembali   : $endDate
+Durasi        : $days Hari
+Harga/Hari    : ${_formatRupiah(harga)}
+------------------------------
+Total Sewa    : ${_formatRupiah(total)}
+DP Dibayar    : ${_formatRupiah(dp)}
+Pelunasan     : ${_formatRupiah(pelunasan)}
+------------------------------
+Status        : ✅ LUNAS
+Tgl Cetak     : $tanggal
+==============================
+Terima kasih menggunakan Ngebut.in!''';
+  }
 
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a5,
-        margin: const pw.EdgeInsets.all(24),
-        build: (pw.Context ctx) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            pw.Container(
-              padding: const pw.EdgeInsets.all(16),
-              decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFCC0000)),
-              child: pw.Column(children: [
-                pw.Text('🏍️ NGEBUT.IN', style: pw.TextStyle(color: PdfColors.white, fontSize: 20, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 4),
-                pw.Text('KWITANSI SEWA MOTOR', style: pw.TextStyle(color: PdfColors.white, fontSize: 12)),
-                pw.SizedBox(height: 8),
-                pw.Text('No. Transaksi: $noTransaksi', style: pw.TextStyle(color: PdfColors.white, fontSize: 11, fontWeight: pw.FontWeight.bold)),
-              ]),
-            ),
-            pw.SizedBox(height: 16),
-            // Detail
-            _pdfRow('Penyewa', userName),
-            _pdfRow('Motor', motorName),
-            pw.Divider(),
-            _pdfRow('Tanggal Sewa', startDate),
-            _pdfRow('Tanggal Kembali', endDate),
-            _pdfRow('Durasi', '$days Hari'),
-            _pdfRow('Harga/Hari', _formatRupiah(harga)),
-            pw.Divider(),
-            _pdfRowBold('Total Sewa', _formatRupiah(total)),
-            _pdfRow('DP Dibayar (50%)', _formatRupiah(dp)),
-            _pdfRow('Pelunasan (50%)', _formatRupiah(pelunasan)),
-            pw.Divider(),
-            _pdfRow('Tanggal Cetak', tanggalCetak),
-            pw.SizedBox(height: 12),
-            pw.Container(
-              padding: const pw.EdgeInsets.all(12),
-              decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFDCFCE7)),
-              child: pw.Center(
-                child: pw.Text('✅ LUNAS', style: pw.TextStyle(color: PdfColor.fromInt(0xFF166534), fontSize: 18, fontWeight: pw.FontWeight.bold)),
-              ),
-            ),
-            pw.SizedBox(height: 12),
-            pw.Center(
-              child: pw.Text(
-                'Terima kasih telah menggunakan layanan Ngebut.in',
-                style: pw.TextStyle(color: PdfColors.grey600, fontSize: 10),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    try {
-      await Printing.layoutPdf(
-        onLayout: (format) async => pdf.save(),
-        name: 'Kwitansi_NgebutIN_$noTransaksi.pdf',
-      );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal mencetak: $e'), backgroundColor: Colors.red));
-      }
+  Future<void> _shareWhatsApp(BuildContext context, String text) async {
+    final encoded = Uri.encodeComponent(text);
+    final uri = Uri.parse('whatsapp://send?text=$encoded');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      // Fallback: copy to clipboard
+      if (context.mounted) _copyText(context, text);
     }
   }
 
-  pw.Widget _pdfRow(String label, String value) => pw.Padding(
-    padding: const pw.EdgeInsets.symmetric(vertical: 4),
-    child: pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(label, style: pw.TextStyle(color: PdfColors.grey700, fontSize: 11)),
-        pw.Text(value, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-      ],
-    ),
-  );
-
-  pw.Widget _pdfRowBold(String label, String value) => pw.Padding(
-    padding: const pw.EdgeInsets.symmetric(vertical: 4),
-    child: pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(label, style: pw.TextStyle(color: PdfColors.grey700, fontSize: 12)),
-        pw.Text(value, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFFCC0000))),
-      ],
-    ),
-  );
+  void _copyText(BuildContext context, String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Kwitansi disalin! Tempelkan di WhatsApp atau dokumen.'), backgroundColor: Colors.green),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +81,7 @@ class KwitansiScreen extends StatelessWidget {
     final now = DateTime.now();
     final tanggalCetak = '${now.day}/${now.month}/${now.year}';
     final noTransaksi = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
+    final kwitansiText = _buildKwitansiText(userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -154,9 +89,9 @@ class KwitansiScreen extends StatelessWidget {
         title: const Text('Kwitansi Sewa', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
         actions: [
           IconButton(
-            icon: const Icon(Icons.print, color: Color(0xFFCC0000)),
-            tooltip: 'Cetak PDF',
-            onPressed: () => _printKwitansi(context),
+            icon: const Icon(Icons.share, color: Color(0xFFCC0000)),
+            tooltip: 'Bagikan Kwitansi',
+            onPressed: () => _shareWhatsApp(context, kwitansiText),
           ),
         ],
       ),
@@ -174,7 +109,7 @@ class KwitansiScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Header
+                  // Header Red
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
@@ -204,20 +139,19 @@ class KwitansiScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        _kwitansiRow('Penyewa', userName),
-                        _kwitansiRow('Motor', motorName),
+                        _row('Penyewa', userName),
+                        _row('Motor', motorName),
                         const Divider(height: 24),
-                        _kwitansiRow('Tanggal Sewa', startDate),
-                        _kwitansiRow('Tanggal Kembali', endDate),
-                        _kwitansiRow('Durasi', '$days Hari'),
-                        _kwitansiRow('Harga/Hari', _formatRupiah(harga)),
+                        _row('Tanggal Sewa', startDate),
+                        _row('Tanggal Kembali', endDate),
+                        _row('Durasi', '$days Hari'),
+                        _row('Harga/Hari', _formatRupiah(harga)),
                         const Divider(height: 24),
-                        _kwitansiRow('Total Sewa', _formatRupiah(total), isBold: true, valueColor: const Color(0xFFCC0000)),
-                        _kwitansiRow('DP Dibayar', _formatRupiah(dp), valueColor: const Color(0xFF059669)),
-                        _kwitansiRow('Pelunasan', _formatRupiah(pelunasan), valueColor: const Color(0xFF1E40AF)),
+                        _row('Total Sewa', _formatRupiah(total), isBold: true, valueColor: const Color(0xFFCC0000)),
+                        _row('DP Dibayar', _formatRupiah(dp), valueColor: const Color(0xFF059669)),
+                        _row('Pelunasan', _formatRupiah(pelunasan), valueColor: const Color(0xFF1E40AF)),
                         const Divider(height: 24),
-                        _kwitansiRow('Tanggal Cetak', tanggalCetak),
-
+                        _row('Tanggal Cetak', tanggalCetak),
                         const SizedBox(height: 20),
                         Container(
                           width: double.infinity,
@@ -256,29 +190,28 @@ class KwitansiScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Print Button
+            // Share WhatsApp button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _printKwitansi(context),
-                icon: const Icon(Icons.print),
-                label: const Text('🖨️  Cetak / Simpan PDF'),
+                onPressed: () => _shareWhatsApp(context, kwitansiText),
+                icon: const Icon(Icons.send),
+                label: const Text('Kirim via WhatsApp'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFCC0000),
+                  backgroundColor: const Color(0xFF25D366),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
 
-            // Copy Button
+            // Copy button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak),
+                onPressed: () => _copyText(context, kwitansiText),
                 icon: const Icon(Icons.copy, size: 18),
                 label: const Text('Salin Teks Kwitansi'),
                 style: OutlinedButton.styleFrom(
@@ -289,55 +222,28 @@ class KwitansiScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            const Text(
+              '💡 Tip: Salin kwitansi lalu tempel di WhatsApp, Email,\natau screenshot halaman ini untuk cetak.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 11),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _kwitansiRow(String label, String value, {bool isBold = false, Color? valueColor}) {
+  Widget _row(String label, String value, {bool isBold = false, Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
-              fontSize: isBold ? 16 : 13,
-              color: valueColor ?? const Color(0xFF1A1A1A),
-            ),
-          ),
+          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.w900 : FontWeight.w600, fontSize: isBold ? 16 : 13, color: valueColor ?? const Color(0xFF1A1A1A))),
         ],
       ),
     );
-  }
-
-  void _copyToClipboard(BuildContext ctx, String userName, String motorName, String startDate, String endDate, int days, int harga, int total, int dp, int pelunasan, String noTrx, String tanggal) {
-    final text = '''
-==============================
-🏍️ KWITANSI NGEBUT.IN
-==============================
-No. Transaksi : $noTrx
-Penyewa       : $userName
-Motor         : $motorName
-Tgl Sewa      : $startDate
-Tgl Kembali   : $endDate
-Durasi        : $days Hari
-Harga/Hari    : ${_formatRupiah(harga)}
-------------------------------
-Total Sewa    : ${_formatRupiah(total)}
-DP Dibayar    : ${_formatRupiah(dp)}
-Pelunasan     : ${_formatRupiah(pelunasan)}
-------------------------------
-Status        : ✅ LUNAS
-Tgl Cetak     : $tanggal
-==============================
-Terima kasih menggunakan Ngebut.in!
-''';
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('✅ Kwitansi disalin ke clipboard!'), backgroundColor: Colors.green));
   }
 }
