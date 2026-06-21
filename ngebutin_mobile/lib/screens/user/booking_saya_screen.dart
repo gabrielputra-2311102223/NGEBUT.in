@@ -427,14 +427,6 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
     );
   }
 
-  Widget _motorPlaceholder() {
-    return Container(
-      width: 80, height: 60,
-      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
-      child: const Icon(Icons.motorcycle, color: Colors.grey, size: 32),
-    );
-  }
-
   Widget _buildActions(Map<String, dynamic> b, BookingProvider bp, int bookingId, int dpAmount, int pelunasanAmount) {
     final st = b['status'] ?? '';
     final sp = b['statusPembayaran'] ?? b['status_pembayaran'] ?? '';
