@@ -219,17 +219,11 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                       onPressed: () async {
                         try {
                           final url = Uri.parse('https://ngebut-in.vercel.app/api/export/excel');
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(url, mode: LaunchMode.externalApplication);
-                          } else if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Tidak bisa membuka browser untuk unduh Excel'), backgroundColor: Colors.red),
-                            );
-                          }
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                              SnackBar(content: Text('Gagal buka browser: $e'), backgroundColor: Colors.red),
                             );
                           }
                         }

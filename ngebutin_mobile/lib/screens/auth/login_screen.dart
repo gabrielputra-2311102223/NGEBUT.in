@@ -45,7 +45,18 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final msg = e.toString().replaceFirst('Exception: ', '');
+        // Ambil pesan yang bermakna saja, hapus semua prefix teknis
+        String raw = e.toString();
+        // Strip semua 'Exception: ' prefix (bisa bersarang)
+        while (raw.contains('Exception: ')) {
+          raw = raw.substring(raw.indexOf('Exception: ') + 'Exception: '.length);
+        }
+        // Jika masih panjang atau mengandung prefix server, ambil bagian terakhir setelah ':'
+        if (raw.contains('Gagal') || raw.contains('server') || raw.length > 60) {
+          final parts = raw.split(': ');
+          raw = parts.last.trim();
+        }
+        final msg = raw.isNotEmpty ? raw : 'Email atau password salah';
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
@@ -57,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text('Login Gagal', style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
-            content: Text(msg.isNotEmpty ? msg : 'Email atau password salah. Silakan coba lagi.'),
+            content: Text(msg),
             actions: [
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),

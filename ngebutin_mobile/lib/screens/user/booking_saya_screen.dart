@@ -257,6 +257,38 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
     );
   }
 
+
+  Widget _buildMotorImage(String gambar) {
+    const w = 80.0;
+    const h = 60.0;
+    if (gambar.isEmpty) return _motorPlaceholder();
+    try {
+      if (gambar.startsWith('data:image')) {
+        final parts = gambar.split(',');
+        if (parts.length > 1) {
+          return Image.memory(
+            base64Decode(parts[1]),
+            width: w, height: h, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _motorPlaceholder(),
+          );
+        }
+      }
+      // Network URL
+      return Image.network(
+        gambar, width: w, height: h, fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _motorPlaceholder(),
+      );
+    } catch (_) { return _motorPlaceholder(); }
+  }
+
+  Widget _motorPlaceholder() {
+    return Container(
+      width: 80, height: 60,
+      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+      child: Icon(Icons.motorcycle, color: Colors.grey.shade400, size: 32),
+    );
+  }
+
   Widget _filterPill(String key, String label) {
     final isActive = _filter == key;
     return GestureDetector(
@@ -328,10 +360,7 @@ class _BookingSayaScreenState extends State<BookingSayaScreen> {
                 // Motor image
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: gambar.isNotEmpty
-                    ? Image.network(gambar, width: 80, height: 60, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _motorPlaceholder())
-                    : _motorPlaceholder(),
+                  child: _buildMotorImage(gambar),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
