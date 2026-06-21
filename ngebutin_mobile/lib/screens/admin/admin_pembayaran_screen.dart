@@ -13,6 +13,16 @@ class AdminPembayaranScreen extends StatefulWidget {
 class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
   String _currentFilter = 'confirmed'; // confirmed, returning, completed
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Provider.of<BookingProvider>(context, listen: false).fetchAllBookings();
+      }
+    });
+  }
+
   String _formatCurrency(int amount) {
     return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
@@ -50,11 +60,17 @@ class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
 
         List<dynamic> filteredBookings = [];
         if (_currentFilter == 'confirmed') {
-          filteredBookings = provider.bookings.where((b) => b['status'] == 'confirmed').toList();
+          // Toleransi: 'confirmed' = sudah approve DP, 'booked' = legacy
+          filteredBookings = provider.bookings.where((b) {
+            final s = (b['status'] ?? '').toString();
+            return s == 'confirmed' || s == 'booked';
+          }).toList();
         } else if (_currentFilter == 'returning') {
-          filteredBookings = provider.bookings.where((b) => b['status'] == 'returning').toList();
+          filteredBookings = provider.bookings.where((b) =>
+              (b['status'] ?? '').toString() == 'returning').toList();
         } else {
-          filteredBookings = provider.bookings.where((b) => b['status'] == 'completed').toList();
+          filteredBookings = provider.bookings.where((b) =>
+              (b['status'] ?? '').toString() == 'completed').toList();
         }
 
         return Column(
@@ -184,7 +200,19 @@ class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
                                     SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton.icon(
-                                        onPressed: () => _updateStatus(context, provider, bookingId, 'returning'),
+                                        onPressed: () async {
+                                          try {
+                                            await provider.confirmReturn(bookingId);
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('✅ Motor ditandai dikembalikan'), backgroundColor: Colors.green));
+                                              provider.fetchAllBookings();
+                                            }
+                                          } catch (e) {
+                                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+                                          }
+                                        },
                                         icon: const Icon(Icons.undo, size: 16),
                                         label: const Text('TANDAI KEMBALI'),
                                         style: ElevatedButton.styleFrom(
@@ -198,7 +226,19 @@ class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
                                     SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton.icon(
-                                        onPressed: () => _updateStatus(context, provider, bookingId, 'completed'),
+                                        onPressed: () async {
+                                          try {
+                                            await provider.approvePelunasan(bookingId);
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('✅ Pelunasan dikonfirmasi, sewa selesai!'), backgroundColor: Colors.green));
+                                              provider.fetchAllBookings();
+                                            }
+                                          } catch (e) {
+                                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+                                          }
+                                        },
                                         icon: const Icon(Icons.check_circle, size: 16),
                                         label: const Text('KONFIRMASI PELUNASAN & SELESAI'),
                                         style: ElevatedButton.styleFrom(

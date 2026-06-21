@@ -799,7 +799,7 @@ app.get('/api/kwitansi/:bookingId', async (req, res) => {
 <body>
 <div class="card">
   <div class="hd">
-    <img src="https://ngebut-in.vercel.app/assets/img/logo.png" alt="NGEBUT.IN" style="height:56px;margin-bottom:10px;object-fit:contain;filter:brightness(0) invert(1);" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='block'"/>
+    <img src="https://ngebut-in.vercel.app/assets/img/logo.png" alt="NGEBUT.IN" style="height:60px;margin-bottom:10px;object-fit:contain;background:rgba(255,255,255,0.9);border-radius:10px;padding:6px 14px;" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='block'"/>
     <div id="logoFallback" style="display:none;font-size:28px;margin-bottom:8px">🏍️</div>
     <h1>NGEBUT.IN</h1>
     <p>Kwitansi Resmi Sewa Motor</p>

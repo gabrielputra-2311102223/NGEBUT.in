@@ -75,11 +75,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               accountName: Text(auth.user?['nama'] ?? 'Administrator', style: const TextStyle(fontWeight: FontWeight.bold)),
               accountEmail: Text(auth.user?['email'] ?? ''),
               currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                backgroundImage: _getProfileImage(auth.user),
-                child: _getProfileImage(auth.user) == null
-                    ? const Icon(Icons.shield, color: Color(0xFF1A1A1A), size: 28)
-                    : null,
+                backgroundColor: const Color(0xFF333333),
+                child: ClipOval(
+                  child: _getProfileImage(auth.user) != null
+                      ? Image(
+                          image: _getProfileImage(auth.user)!,
+                          width: 72, height: 72,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: Colors.white, size: 28),
+                        )
+                      : const Icon(Icons.shield, color: Colors.white, size: 28),
+                ),
               ),
             ),
             ListTile(
@@ -103,7 +109,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.verified_user_outlined),
+              leading: const Icon(Icons.task_alt),
               title: const Text('Verifikasi DP'),
               selected: _currentIndex == 2,
               selectedColor: const Color(0xFFCC0000),
