@@ -36,101 +36,22 @@ class KwitansiScreen extends StatelessWidget {
 
   Future<void> _printKwitansi(BuildContext context) async {
     final id = booking['id']?.toString() ?? '';
-    final userName = (booking['userName'] ?? booking['user_name'] ?? 'Penyewa').toString();
-    final motorName = (booking['motorName'] ?? booking['motor_name'] ?? 'Motor').toString();
-    final startDate = (booking['startDate'] ?? booking['tgl_mulai'] ?? '-').toString();
-    final endDate = (booking['endDate'] ?? booking['tgl_selesai'] ?? '-').toString();
-    final int total = ((booking['totalHarga'] ?? booking['total_harga'] ?? 0) as num).toInt();
-    final int days = _calcDays();
-    final int dp = ((booking['dpAmount'] ?? booking['dp_amount'] ?? (total ~/ 2)) as num).toInt();
-    final int pelunasan = total - dp;
-    final int harga = days > 0 ? total ~/ days : total;
-    final now = DateTime.now();
-    final tglCetak = '${now.day}/${now.month}/${now.year}';
-    final noTrx = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
-    final logoB64 = await _logoBase64();
-    final logoTag = logoB64.isNotEmpty
-        ? '<img src="data:image/png;base64,$logoB64" style="height:48px;margin-bottom:8px" alt="NGEBUT.IN"/>'
-        : '🏍️';
-
-    final html = '''<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kwitansi NGEBUT.IN</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Arial,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:20px}
-  .card{background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.12)}
-  .header{background:#CC0000;color:#fff;padding:28px 20px;text-align:center}
-  .header img{height:52px;margin-bottom:8px}
-  .header h1{font-size:22px;letter-spacing:2px;margin-bottom:4px}
-  .header p{font-size:11px;opacity:.8;letter-spacing:1px}
-  .no-trx{display:inline-block;background:rgba(255,255,255,.2);border-radius:8px;padding:6px 16px;margin-top:10px;font-weight:700;font-size:14px}
-  .body{padding:24px}
-  .row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid #f3f4f6}
-  .row:last-child{border-bottom:none}
-  .label{color:#6b7280}
-  .value{font-weight:600;color:#111}
-  .value.red{color:#CC0000;font-size:16px;font-weight:700}
-  .value.green{color:#059669}
-  .value.blue{color:#1E40AF}
-  hr{border:none;border-top:2px dashed #e5e7eb;margin:12px 0}
-  .lunas{background:#DCFCE7;color:#166534;text-align:center;padding:14px;border-radius:12px;font-size:18px;font-weight:700;letter-spacing:2px;margin:16px 0}
-  .footer{background:#f9fafb;padding:14px 20px;text-align:center;font-size:11px;color:#9ca3af;line-height:1.6}
-  .btn{display:block;width:100%;padding:14px;background:#CC0000;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin:16px 0 0}
-  @media print{.btn{display:none}.card{box-shadow:none}body{background:#fff;padding:0}}
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="header">
-    $logoTag
-    <h1>NGEBUT.IN</h1>
-    <p>KWITANSI SEWA MOTOR</p>
-    <span class="no-trx">$noTrx</span>
-  </div>
-  <div class="body">
-    <div class="row"><span class="label">Penyewa</span><span class="value">$userName</span></div>
-    <div class="row"><span class="label">Motor</span><span class="value">$motorName</span></div>
-    <hr>
-    <div class="row"><span class="label">Tanggal Sewa</span><span class="value">$startDate</span></div>
-    <div class="row"><span class="label">Tanggal Kembali</span><span class="value">$endDate</span></div>
-    <div class="row"><span class="label">Durasi</span><span class="value">$days Hari</span></div>
-    <div class="row"><span class="label">Harga/Hari</span><span class="value">${_fmt(harga)}</span></div>
-    <hr>
-    <div class="row"><span class="label">Total Sewa</span><span class="value red">${_fmt(total)}</span></div>
-    <div class="row"><span class="label">DP Dibayar (50%)</span><span class="value green">${_fmt(dp)}</span></div>
-    <div class="row"><span class="label">Pelunasan (50%)</span><span class="value blue">${_fmt(pelunasan)}</span></div>
-    <hr>
-    <div class="row"><span class="label">Tanggal Cetak</span><span class="value">$tglCetak</span></div>
-    <div class="lunas">✅ &nbsp;LUNAS</div>
-  </div>
-  <div class="footer">
-    Terima kasih telah menggunakan layanan Ngebut.in<br>
-    Dokumen ini merupakan bukti transaksi yang sah.
-  </div>
-  <div style="padding:0 20px 20px">
-    <button class="btn" onclick="window.print()">🖨️ &nbsp;Cetak / Simpan PDF</button>
-  </div>
-</div>
-</body>
-</html>''';
-
-    final encoded = Uri.dataFromString(html, mimeType: 'text/html', encoding: utf8);
-    try {
-      if (await canLaunchUrl(encoded)) {
-        await launchUrl(encoded, mode: LaunchMode.externalApplication);
-      } else if (context.mounted) {
+    if (id.isEmpty) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak bisa membuka browser. Coba salin kwitansi.'), backgroundColor: Colors.orange),
+          const SnackBar(content: Text('ID Booking tidak ditemukan'), backgroundColor: Colors.red),
         );
       }
+      return;
+    }
+
+    final url = Uri.parse('https://ngebut-in.vercel.app/api/kwitansi/$id');
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Gagal membuka kwitansi: $e'), backgroundColor: Colors.red),
         );
       }
     }

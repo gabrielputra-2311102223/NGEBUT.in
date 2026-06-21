@@ -43,6 +43,16 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     super.dispose();
   }
 
+  ImageProvider? _getProfileImage(Map? user) {
+    if (user == null) return null;
+    final foto = user['foto_profil']?.toString() ?? '';
+    if (foto.isEmpty) return null;
+    if (foto.startsWith('data:image')) {
+      try { return MemoryImage(base64Decode(foto.split(',').last)); } catch (_) { return null; }
+    }
+    return NetworkImage(foto);
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
@@ -66,11 +76,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               accountEmail: Text(auth.user?['email'] ?? ''),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                backgroundImage: (auth.user?['foto_profil'] != null && auth.user!['foto_profil'].toString().isNotEmpty)
-                    ? NetworkImage(auth.user!['foto_profil'].toString()) as ImageProvider
-                    : null,
-                child: (auth.user?['foto_profil'] == null || auth.user!['foto_profil'].toString().isEmpty)
-                    ? const Icon(Icons.shield, color: Color(0xFF1A1A1A))
+                backgroundImage: _getProfileImage(auth.user),
+                child: _getProfileImage(auth.user) == null
+                    ? const Icon(Icons.shield, color: Color(0xFF1A1A1A), size: 28)
                     : null,
               ),
             ),

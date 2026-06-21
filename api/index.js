@@ -736,7 +736,109 @@ app.post('/api/admin/broadcast', async (req, res) => {
 
 
 // ============================================================
-// RENTAL EXPIRY NOTIFICATION CRON
+// KWITANSI HTML PAGE (printable in browser)
+// ============================================================
+
+app.get('/api/kwitansi/:bookingId', async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+        const [rows] = await poolPromise.query(`
+            SELECT b.id, b.tgl_mulai, b.tgl_selesai, b.total_harga, b.dp_amount, b.status,
+                   u.nama as userName, u.email as userEmail,
+                   m.nama as motorNama, m.kategori as motorKategori, m.harga as motorHarga
+            FROM Bookings b
+            LEFT JOIN Users u ON b.user_id = u.id
+            LEFT JOIN Motors m ON b.motor_id = m.id
+            WHERE b.id = ?
+        `, [bookingId]);
+        if (!rows.length) return res.status(404).send('<h1>Booking tidak ditemukan</h1>');
+
+        const b = rows[0];
+        const total = parseInt(b.total_harga) || 0;
+        const dp = parseInt(b.dp_amount) || Math.floor(total / 2);
+        const pelunasan = total - dp;
+        const start = b.tgl_mulai ? new Date(b.tgl_mulai) : null;
+        const end = b.tgl_selesai ? new Date(b.tgl_selesai) : null;
+        const days = (start && end) ? Math.abs(Math.ceil((end - start) / (1000*60*60*24))) + 1 : 1;
+        const hargaPerHari = days > 0 ? Math.floor(total / days) : b.motorHarga || 0;
+        const fmt = (n) => 'Rp ' + parseInt(n).toLocaleString('id-ID');
+        const fmtDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'}) : '-';
+        const noTrx = '#' + String(b.id).padStart(6, '0');
+        const now = new Date().toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'});
+
+        const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kwitansi ${noTrx} - NGEBUT.IN</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f3f4f6;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+  .card{background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(0,0,0,.12)}
+  .hd{background:#CC0000;color:#fff;padding:28px 24px;text-align:center}
+  .hd h1{font-size:28px;letter-spacing:3px;font-weight:900;margin-bottom:4px}
+  .hd p{font-size:11px;opacity:.8;letter-spacing:2px;text-transform:uppercase}
+  .no-trx{display:inline-block;background:rgba(255,255,255,.2);border-radius:8px;padding:6px 20px;margin-top:12px;font-weight:700;font-size:15px;letter-spacing:1px}
+  .bd{padding:24px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+  .row:last-child{border:none}
+  .lbl{color:#6b7280}
+  .val{font-weight:600;color:#111}
+  .val.r{color:#CC0000;font-size:16px;font-weight:800}
+  .val.g{color:#059669;font-weight:700}
+  .val.b{color:#1E40AF;font-weight:700}
+  .sep{border:none;border-top:2px dashed #e5e7eb;margin:10px 0}
+  .lunas{background:#DCFCE7;color:#166534;text-align:center;padding:14px;border-radius:12px;font-size:18px;font-weight:900;letter-spacing:2px;margin:16px 0}
+  .ft{background:#f9fafb;padding:14px;text-align:center;font-size:11px;color:#9ca3af;line-height:1.8}
+  .btn{display:block;width:100%;padding:14px;background:#CC0000;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin:16px 0 0;letter-spacing:.5px}
+  .btn:hover{background:#aa0000}
+  @media print{.btn{display:none}body{background:#fff;padding:0}.card{box-shadow:none;border-radius:0}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="hd">
+    <div style="font-size:32px;margin-bottom:8px">🏍️</div>
+    <h1>NGEBUT.IN</h1>
+    <p>Kwitansi Resmi Sewa Motor</p>
+    <span class="no-trx">${noTrx}</span>
+  </div>
+  <div class="bd">
+    <div class="row"><span class="lbl">Penyewa</span><span class="val">${b.userName || '-'}</span></div>
+    <div class="row"><span class="lbl">Email</span><span class="val">${b.userEmail || '-'}</span></div>
+    <div class="row"><span class="lbl">Motor</span><span class="val">${b.motorNama || '-'}</span></div>
+    <div class="row"><span class="lbl">Kategori</span><span class="val">${b.motorKategori || '-'}</span></div>
+    <hr class="sep">
+    <div class="row"><span class="lbl">Tanggal Sewa</span><span class="val">${fmtDate(b.tgl_mulai)}</span></div>
+    <div class="row"><span class="lbl">Tanggal Kembali</span><span class="val">${fmtDate(b.tgl_selesai)}</span></div>
+    <div class="row"><span class="lbl">Durasi</span><span class="val">${days} Hari</span></div>
+    <div class="row"><span class="lbl">Harga/Hari</span><span class="val">${fmt(hargaPerHari)}</span></div>
+    <hr class="sep">
+    <div class="row"><span class="lbl">Total Sewa</span><span class="val r">${fmt(total)}</span></div>
+    <div class="row"><span class="lbl">DP Dibayar (50%)</span><span class="val g">${fmt(dp)}</span></div>
+    <div class="row"><span class="lbl">Pelunasan (50%)</span><span class="val b">${fmt(pelunasan)}</span></div>
+    <hr class="sep">
+    <div class="row"><span class="lbl">Tanggal Cetak</span><span class="val">${now}</span></div>
+    <div class="lunas">✅ &nbsp;LUNAS</div>
+  </div>
+  <div class="ft">
+    Terima kasih telah menggunakan layanan <strong>Ngebut.in</strong><br>
+    Dokumen ini merupakan bukti transaksi yang sah.<br>
+    © 2025 Ngebut.in · Layanan Rental Motor Terpercaya
+  </div>
+  <div style="padding:0 20px 20px">
+    <button class="btn" onclick="window.print()">🖨️ &nbsp;Cetak / Simpan PDF</button>
+  </div>
+</div>
+</body>
+</html>`;
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ============================================================
 
 app.get('/api/cron/check-expiring', async (req, res) => {
