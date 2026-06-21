@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   builder: (ctx, bp, _) {
                     final active = bp.bookings.where((b) {
                       final s = b['status']?.toString() ?? '';
-                      return s == 'confirm' || s == 'booked' || s == 'returning';
+                      return s == 'pending' || s == 'confirmed' || s == 'returning';
                     }).toList();
                     if (active.isEmpty) return const SizedBox.shrink();
                     final b = active.first;
@@ -160,11 +160,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     Color cardColor;
                     Color textColor;
                     IconData icon;
-                    if (s == 'confirm' && sp == 'menunggu_dp') {
-                      statusText = '⏳ Upload bukti DP untuk $motorName'; cardColor = const Color(0xFFFEF9C3); textColor = const Color(0xFF854D0E); icon = Icons.upload_file;
-                    } else if (s == 'confirm') {
+                    if (s == 'pending' && sp == 'menunggu_dp') {
+                      statusText = '⏳ Segera upload bukti DP untuk $motorName'; cardColor = const Color(0xFFFEF9C3); textColor = const Color(0xFF854D0E); icon = Icons.upload_file;
+                    } else if (s == 'pending') {
                       statusText = '🔍 DP sedang diverifikasi - $motorName'; cardColor = const Color(0xFFDBEAFE); textColor = const Color(0xFF1E40AF); icon = Icons.hourglass_top;
-                    } else if (s == 'booked') {
+                    } else if (s == 'confirmed') {
                       statusText = '🏍️ Kamu sedang menyewa $motorName'; cardColor = const Color(0xFFDCFCE7); textColor = const Color(0xFF166534); icon = Icons.motorcycle;
                     } else {
                       statusText = '↩️ $motorName dalam proses pengembalian'; cardColor = const Color(0xFFEDE9FE); textColor = const Color(0xFF6B21A8); icon = Icons.undo;
@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: textColor.withOpacity(0.3), width: 1.5)),
+                        decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: textColor.withValues(alpha: 0.3), width: 1.5)),
                         child: Row(children: [
                           Icon(icon, color: textColor, size: 20),
                           const SizedBox(width: 10),
@@ -382,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final bookingProv = Provider.of<BookingProvider>(context);
     final activeCount = bookingProv.bookings.where((b) {
       final s = b['status']?.toString() ?? '';
-      return s == 'confirm' || s == 'booked' || s == 'returning';
+      return s == 'pending' || s == 'confirmed' || s == 'returning';
     }).length;
 
     final screens = [

@@ -10,7 +10,7 @@ class AdminPembayaranScreen extends StatefulWidget {
 }
 
 class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
-  String _currentFilter = 'booked'; // booked, paid, returning
+  String _currentFilter = 'confirmed'; // confirmed, returning, completed
 
   String _formatCurrency(int amount) {
     return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
@@ -35,12 +35,12 @@ class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
         if (provider.isLoading) return const Center(child: CircularProgressIndicator(color: Color(0xFFCC0000)));
 
         List<dynamic> filteredBookings = [];
-        if (_currentFilter == 'booked') {
-          filteredBookings = provider.bookings.where((b) => b['status'] == 'booked' || b['status'] == 'approved' || b['status'] == 'confirm').toList();
+        if (_currentFilter == 'confirmed') {
+          filteredBookings = provider.bookings.where((b) => b['status'] == 'confirmed').toList();
         } else if (_currentFilter == 'returning') {
           filteredBookings = provider.bookings.where((b) => b['status'] == 'returning').toList();
         } else {
-          filteredBookings = provider.bookings.where((b) => b['status'] == 'paid' || b['status'] == 'done' || b['status'] == 'finished').toList();
+          filteredBookings = provider.bookings.where((b) => b['status'] == 'completed').toList();
         }
 
         return Column(
@@ -50,11 +50,11 @@ class _AdminPembayaranScreenState extends State<AdminPembayaranScreen> {
               color: Colors.white,
               child: Row(
                 children: [
-                  Expanded(child: _buildTab('Menunggu Sisa', 'booked')),
+                  Expanded(child: _buildTab('Aktif Sewa', 'confirmed')),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildTab('Sudah Lunas', 'paid')),
+                  Expanded(child: _buildTab('Proses Kembali', 'returning')),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildTab('Kembali', 'returning')),
+                  Expanded(child: _buildTab('Selesai', 'completed')),
                 ],
               ),
             ),

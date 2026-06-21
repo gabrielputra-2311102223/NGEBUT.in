@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -197,3 +197,20 @@
         <div style="text-align:center;margin-top:16px;">
             <button onclick="window.print()" style="background:#cc0000;color:#fff;border:none;padding:12px 28px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">🖨️ Cetak / Simpan PDF</button>
         </div></body></html>`);
+        win.document.close();
+    }
+
+    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+        document.querySelector('.sidebar')?.classList.toggle('open');
+        document.getElementById('sidebarOverlay')?.classList.toggle('show');
+    });
+    document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+        document.querySelector('.sidebar')?.classList.remove('open');
+        document.getElementById('sidebarOverlay')?.classList.remove('show');
+    });
+
+    // ✅ Panggil fungsi utama
+    renderRiwayat();
+    </script>
+</body>
+</html>

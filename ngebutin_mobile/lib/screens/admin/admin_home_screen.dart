@@ -162,32 +162,31 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         final available = allMotors.where((m) => m.status == 'available').length;
         final booked = allMotors.where((m) => m.status == 'booked').length;
 
-        // Status counts — menggunakan status sebenarnya dari API
+        // Status counts — menggunakan status BARU dari API
         final waiting = allBookings.where((b) {
           final s = b['status']?.toString() ?? '';
           final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
-          return s == 'confirm' && (sp == 'dp_uploaded' || sp == 'verifikasi');
+          return s == 'pending' && (sp == 'dp_uploaded' || sp == 'verifikasi');
         }).length;
 
         final active = allBookings.where((b) {
           final s = b['status']?.toString() ?? '';
-          final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
-          return s == 'booked' && sp == 'dp_lunas';
+          return s == 'confirmed';
         }).length;
 
         final returning = allBookings.where((b) => b['status']?.toString() == 'returning').length;
-        final done = allBookings.where((b) => b['status']?.toString() == 'done').length;
+        final done = allBookings.where((b) => b['status']?.toString() == 'completed').length;
         final menungguDP = allBookings.where((b) {
           final s = b['status']?.toString() ?? '';
           final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
-          return s == 'confirm' && sp == 'menunggu_dp';
+          return s == 'pending' && sp == 'menunggu_dp';
         }).length;
 
-        // Pendapatan: dari booking 'done' DAN 'booked+dp_lunas' (sama seperti website: paid || done)
+        // Pendapatan: dari booking 'completed'
         final paidBookings = allBookings.where((b) {
           final s = b['status']?.toString() ?? '';
           final sp = (b['statusPembayaran'] ?? b['status_pembayaran'] ?? '').toString();
-          return s == 'done' || (s == 'booked' && sp == 'dp_lunas');
+          return s == 'completed' || sp == 'lunas';
         }).toList();
 
         int totalPendapatan = 0;

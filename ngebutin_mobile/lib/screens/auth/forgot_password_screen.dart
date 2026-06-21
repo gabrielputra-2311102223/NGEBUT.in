@@ -17,6 +17,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   
   bool _isLoading = false;
   int _step = 1; // 1: Email, 2: OTP & New Password
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
   Future<void> _requestOtp() async {
     final email = _emailController.text.trim();
@@ -129,22 +131,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _newPasswordController,
-                  decoration: const InputDecoration(
+                  obscureText: _obscureNew,
+                  decoration: InputDecoration(
                     labelText: 'Password Baru',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility, color: Colors.grey, size: 20),
+                      onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                    ),
                   ),
-                  obscureText: true,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _confirmPasswordController,
-                  decoration: const InputDecoration(
+                  obscureText: _obscureConfirm,
+                  decoration: InputDecoration(
                     labelText: 'Ulangi Password Baru',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility, color: Colors.grey, size: 20),
+                      onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
                   ),
-                  obscureText: true,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

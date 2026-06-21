@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class KwitansiScreen extends StatelessWidget {
   final Map<String, dynamic> booking;
@@ -25,6 +28,110 @@ class KwitansiScreen extends StatelessWidget {
     } catch (_) { return 1; }
   }
 
+  Future<void> _printKwitansi(BuildContext context) async {
+    final id = booking['id']?.toString() ?? '';
+    final userName = (booking['userName'] ?? booking['user_name'] ?? 'Penyewa').toString();
+    final motorName = (booking['motorName'] ?? booking['motor_name'] ?? 'Motor').toString();
+    final startDate = (booking['startDate'] ?? booking['tgl_mulai'] ?? '-').toString();
+    final endDate = (booking['endDate'] ?? booking['tgl_selesai'] ?? '-').toString();
+    final int total = ((booking['totalHarga'] ?? booking['total_harga'] ?? 0) as num).toInt();
+    final int days = _calcDays();
+    final int dp = ((booking['dpAmount'] ?? booking['dp_amount'] ?? (total ~/ 2)) as num).toInt();
+    final int pelunasan = total - dp;
+    final int harga = days > 0 ? total ~/ days : total;
+    final now = DateTime.now();
+    final tanggalCetak = '${now.day}/${now.month}/${now.year}';
+    final noTransaksi = id.isNotEmpty ? '#${id.substring(id.length >= 6 ? id.length - 6 : 0)}' : '#-';
+
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a5,
+        margin: const pw.EdgeInsets.all(24),
+        build: (pw.Context ctx) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            pw.Container(
+              padding: const pw.EdgeInsets.all(16),
+              decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFCC0000)),
+              child: pw.Column(children: [
+                pw.Text('🏍️ NGEBUT.IN', style: pw.TextStyle(color: PdfColors.white, fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 4),
+                pw.Text('KWITANSI SEWA MOTOR', style: pw.TextStyle(color: PdfColors.white, fontSize: 12)),
+                pw.SizedBox(height: 8),
+                pw.Text('No. Transaksi: $noTransaksi', style: pw.TextStyle(color: PdfColors.white, fontSize: 11, fontWeight: pw.FontWeight.bold)),
+              ]),
+            ),
+            pw.SizedBox(height: 16),
+            // Detail
+            _pdfRow('Penyewa', userName),
+            _pdfRow('Motor', motorName),
+            pw.Divider(),
+            _pdfRow('Tanggal Sewa', startDate),
+            _pdfRow('Tanggal Kembali', endDate),
+            _pdfRow('Durasi', '$days Hari'),
+            _pdfRow('Harga/Hari', _formatRupiah(harga)),
+            pw.Divider(),
+            _pdfRowBold('Total Sewa', _formatRupiah(total)),
+            _pdfRow('DP Dibayar (50%)', _formatRupiah(dp)),
+            _pdfRow('Pelunasan (50%)', _formatRupiah(pelunasan)),
+            pw.Divider(),
+            _pdfRow('Tanggal Cetak', tanggalCetak),
+            pw.SizedBox(height: 12),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFDCFCE7)),
+              child: pw.Center(
+                child: pw.Text('✅ LUNAS', style: pw.TextStyle(color: PdfColor.fromInt(0xFF166534), fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Center(
+              child: pw.Text(
+                'Terima kasih telah menggunakan layanan Ngebut.in',
+                style: pw.TextStyle(color: PdfColors.grey600, fontSize: 10),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdf.save(),
+        name: 'Kwitansi_NgebutIN_$noTransaksi.pdf',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal mencetak: $e'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  pw.Widget _pdfRow(String label, String value) => pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(vertical: 4),
+    child: pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(label, style: pw.TextStyle(color: PdfColors.grey700, fontSize: 11)),
+        pw.Text(value, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+      ],
+    ),
+  );
+
+  pw.Widget _pdfRowBold(String label, String value) => pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(vertical: 4),
+    child: pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(label, style: pw.TextStyle(color: PdfColors.grey700, fontSize: 12)),
+        pw.Text(value, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFFCC0000))),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final id = booking['id']?.toString() ?? '';
@@ -32,7 +139,6 @@ class KwitansiScreen extends StatelessWidget {
     final motorName = (booking['motorName'] ?? booking['motor_name'] ?? 'Motor').toString();
     final startDate = (booking['startDate'] ?? booking['tgl_mulai'] ?? '-').toString();
     final endDate = (booking['endDate'] ?? booking['tgl_selesai'] ?? '-').toString();
-    // Konversi semua angka ke int eksplisit dari awal agar tidak ada type error
     final int total = ((booking['totalHarga'] ?? booking['total_harga'] ?? 0) as num).toInt();
     final int days = _calcDays();
     final int dp = ((booking['dpAmount'] ?? booking['dp_amount'] ?? (total ~/ 2)) as num).toInt();
@@ -48,8 +154,9 @@ class KwitansiScreen extends StatelessWidget {
         title: const Text('Kwitansi Sewa', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share, color: Color(0xFFCC0000)),
-            onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak),
+            icon: const Icon(Icons.print, color: Color(0xFFCC0000)),
+            tooltip: 'Cetak PDF',
+            onPressed: () => _printKwitansi(context),
           ),
         ],
       ),
@@ -63,7 +170,7 @@ class KwitansiScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))],
+                boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 20, offset: Offset(0, 8))],
               ),
               child: Column(
                 children: [
@@ -85,7 +192,7 @@ class KwitansiScreen extends StatelessWidget {
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(color: const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(8)),
                           child: Text(noTransaksi, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
                         ),
                       ],
@@ -149,16 +256,34 @@ class KwitansiScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Share button
+            // Print Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total.toInt(), dp, pelunasan, noTransaksi, tanggalCetak),
-                icon: const Icon(Icons.copy),
-                label: const Text('Salin Kwitansi'),
+                onPressed: () => _printKwitansi(context),
+                icon: const Icon(Icons.print),
+                label: const Text('🖨️  Cetak / Simpan PDF'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFCC0000),
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Copy Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _copyToClipboard(context, userName, motorName, startDate, endDate, days, harga, total, dp, pelunasan, noTransaksi, tanggalCetak),
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Salin Teks Kwitansi'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFCC0000),
+                  side: const BorderSide(color: Color(0xFFCC0000)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),

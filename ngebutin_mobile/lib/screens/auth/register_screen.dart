@@ -15,6 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _register() async {
     final nama = _namaController.text.trim();
@@ -120,6 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _passwordController,
+                        obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
                           filled: true,
@@ -129,8 +131,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderSide: BorderSide.none,
                           ),
                           prefixIcon: const Icon(Icons.lock, color: Color(0xFFCC0000)),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
                         ),
-                        obscureText: true,
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
